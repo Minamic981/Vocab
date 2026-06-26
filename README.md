@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # My WordBook — Vocabulary Learning App
 
 A personal English vocabulary tracker for Persian speakers, built with Flask.
@@ -81,3 +82,6 @@ The simplest upgrade is **Vercel KV** — replace the `load_words`/`save_words` 
 | PUT | `/api/words/<index>` | Edit a word |
 | DELETE | `/api/words/<index>` | Delete a word |
 | POST | `/api/words/batch` | Batch import |
+=======
+# Vocab
+>>>>>>> 1a256691fcc37bc724e9df4e2b98be86d471fc77
