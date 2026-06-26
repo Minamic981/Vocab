@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Word Book</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+  <style>
+    /* ── Reset & tokens ──────────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --ink:       #1a1a1a;
+      --ink-light: #555;
+      --ink-faint: #999;
+      --paper:     #faf9f6;
+      --paper-2:   #f1efe9;
+      --rule:      #e0ddd5;
+      --accent:    #2d6a4f;
+      --accent-lt: #d8f3dc;
+      --danger:    #c0392b;
+      --danger-lt: #fdecea;
+      --warn:      #b8850a;
+      --warn-lt:   #fff8e1;
+      --radius:    8px;
+      --shadow:    0 2px 12px rgba(0,0,0,.08);
+    }
+
+    body {
+      font-family: 'Inter', sans-serif;
+      background: var(--paper);
+      color: var(--ink);
+      min-height: 100vh;
+      line-height: 1.6;
+    }
+
+    /* ── Layout ──────────────────────────────────────────────── */
+    .shell {
+      max-width: 860px;
+      margin: 0 auto;
+      padding: 0 20px 80px;
+    }
+
+    /* ── Header ──────────────────────────────────────────────── */
+    header {
+      padding: 36px 0 24px;
+      border-bottom: 2px solid var(--ink);
+      margin-bottom: 36px;
+      display: flex;
+      align-items: flex-end;
+      justify-content: space-between;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .wordmark {
+      font-family: 'Lora', serif;
+      font-size: 28px;
+      font-weight: 600;
+      letter-spacing: -.5px;
+      line-height: 1;
+    }
+    .wordmark span {
+      color: var(--accent);
+    }
+
+    .word-count {
+      font-size: 13px;
+      color: var(--ink-faint);
+      font-style: italic;
+    }
+
+    /* ── Tab nav ─────────────────────────────────────────────── */
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 28px;
+      border-bottom: 1px solid var(--rule);
+      padding-bottom: 0;
+    }
+
+    .tab-btn {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 10px 20px;
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      color: var(--ink-light);
+      transition: color .15s, border-color .15s;
+      margin-bottom: -1px;
+    }
+    .tab-btn:hover { color: var(--ink); }
+    .tab-btn.active {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+    }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Cards ───────────────────────────────────────────────── */
+    .card {
+      background: #fff;
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow);
+    }
+
+    .card-title {
+      font-family: 'Lora', serif;
+      font-size: 17px;
+      font-weight: 600;
+      margin-bottom: 16px;
+      color: var(--ink);
+    }
+
+    /* ── Form elements ───────────────────────────────────────── */
+    .field-group {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+
+    .field {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+      min-width: 160px;
+    }
+
+    label {
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+      color: var(--ink-light);
+    }
+
+    input[type="text"], textarea {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      padding: 9px 12px;
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
+      background: var(--paper);
+      color: var(--ink);
+      outline: none;
+      transition: border-color .15s;
+      width: 100%;
+    }
+    input[type="text"]:focus, textarea:focus {
+      border-color: var(--accent);
+      background: #fff;
+    }
+
+    textarea {
+      resize: vertical;
+      min-height: 130px;
+      line-height: 1.7;
+      direction: ltr;
+    }
+
+    /* ── Buttons ─────────────────────────────────────────────── */
+    .btn {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 500;
+      padding: 9px 20px;
+      border: none;
+      border-radius: var(--radius);
+      cursor: pointer;
+      transition: opacity .15s, transform .1s;
+      white-space: nowrap;
+    }
+    .btn:active { transform: scale(.98); }
+    .btn:hover { opacity: .88; }
+
+    .btn-primary { background: var(--accent); color: #fff; }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--rule);
+      color: var(--ink-light);
+    }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-sm { padding: 5px 12px; font-size: 12px; }
+
+    /* ── Alerts ──────────────────────────────────────────────── */
+    .alert {
+      padding: 10px 14px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      margin-top: 12px;
+      display: none;
+    }
+    .alert.show { display: block; }
+    .alert-success { background: var(--accent-lt); color: #1b5e38; }
+    .alert-error   { background: var(--danger-lt); color: var(--danger); }
+    .alert-warn    { background: var(--warn-lt);   color: var(--warn); }
+
+    /* ── Word list ───────────────────────────────────────────── */
+    .search-bar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .search-bar input { flex: 1; }
+
+    #word-list {
+      display: flex;
+      flex-direction: column;
+      gap: 1px;
+    }
+
+    .word-row {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 12px 16px;
+      background: #fff;
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
+      transition: background .1s;
+    }
+    .word-row:hover { background: var(--paper-2); }
+
+    .word-en {
+      font-family: 'Lora', serif;
+      font-size: 15px;
+      font-weight: 600;
+      flex: 1;
+      color: var(--ink);
+    }
+    .word-fa {
+      font-family: Vazirmatn, sans-serif;
+      font-size: 14px;
+      color: var(--ink-light);
+      text-align: right;
+      direction: rtl;
+      flex: 1;
+    }
+    .word-actions {
+      display: flex;
+      gap: 6px;
+      flex-shrink: 0;
+    }
+
+    .no-words {
+      text-align: center;
+      padding: 48px 20px;
+      color: var(--ink-faint);
+      font-style: italic;
+    }
+
+    /* ── Practice mode ───────────────────────────────────────── */
+    .practice-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+
+    .progress-bar-wrap {
+      height: 4px;
+      background: var(--rule);
+      border-radius: 99px;
+      margin-bottom: 28px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--accent);
+      border-radius: 99px;
+      transition: width .3s ease;
+    }
+
+    /* Flip card */
+    .flip-wrap {
+      perspective: 900px;
+      margin: 0 auto 28px;
+      max-width: 480px;
+      height: 220px;
+    }
+    .flip-inner {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      transition: transform .5s cubic-bezier(.4,0,.2,1);
+      transform-style: preserve-3d;
+      cursor: pointer;
+    }
+    .flip-inner.flipped { transform: rotateY(180deg); }
+
+    .flip-front, .flip-back {
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 28px;
+      backface-visibility: hidden;
+      -webkit-backface-visibility: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,.1);
+    }
+    .flip-front {
+      background: var(--ink);
+      color: #fff;
+    }
+    .flip-back {
+      background: var(--accent);
+      color: #fff;
+      transform: rotateY(180deg);
+    }
+    .flip-hint {
+      font-size: 11px;
+      opacity: .5;
+      margin-bottom: 12px;
+      letter-spacing: .08em;
+      text-transform: uppercase;
+    }
+    .flip-word {
+      font-family: 'Lora', serif;
+      font-size: 30px;
+      font-weight: 600;
+      text-align: center;
+      line-height: 1.25;
+    }
+    .flip-fa {
+      font-size: 22px;
+      direction: rtl;
+    }
+
+    .practice-controls {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .practice-stat {
+      font-size: 13px;
+      color: var(--ink-faint);
+      text-align: center;
+      margin-top: 16px;
+    }
+
+    /* ── Edit modal ──────────────────────────────────────────── */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,.4);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 20px;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal {
+      background: #fff;
+      border-radius: 12px;
+      padding: 28px;
+      width: 100%;
+      max-width: 440px;
+      box-shadow: 0 8px 40px rgba(0,0,0,.2);
+    }
+    .modal-title {
+      font-family: 'Lora', serif;
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 20px;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      justify-content: flex-end;
+    }
+
+    /* ── Responsive ──────────────────────────────────────────── */
+    @media (max-width: 540px) {
+      .word-fa { display: none; }
+      .flip-word { font-size: 24px; }
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <header>
+    <div>
+      <div class="wordmark">My Word<span>Book</span></div>
+      <div class="word-count" id="header-count">{{ count }} word{% if count != 1 %}s{% endif %} saved</div>
+    </div>
+  </header>
+
+  <!-- Tabs -->
+  <nav class="tabs">
+    <button class="tab-btn active" data-tab="library">📚 Library</button>
+    <button class="tab-btn" data-tab="add">➕ Add Word</button>
+    <button class="tab-btn" data-tab="import">📋 Batch Import</button>
+    <button class="tab-btn" data-tab="practice">🎯 Practice</button>
+  </nav>
+
+  <!-- ── Library ──────────────────────────────────────────── -->
+  <div class="tab-panel active" id="tab-library">
+    <div class="search-bar">
+      <input type="text" id="search-input" placeholder="Search words…" />
+    </div>
+    <div id="word-list">
+      {% if words %}
+        {% for word in words %}
+        <div class="word-row" data-index="{{ loop.index0 }}" data-en="{{ word.english }}" data-fa="{{ word.persian }}">
+          <span class="word-en">{{ word.english }}</span>
+          <span class="word-fa">{{ word.persian }}</span>
+          <div class="word-actions">
+            <button class="btn btn-ghost btn-sm edit-btn" data-index="{{ loop.index0 }}">Edit</button>
+            <button class="btn btn-danger btn-sm delete-btn" data-index="{{ loop.index0 }}">✕</button>
+          </div>
+        </div>
+        {% endfor %}
+      {% else %}
+        <div class="no-words">No words yet — add some using the tabs above!</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- ── Add Word ─────────────────────────────────────────── -->
+  <div class="tab-panel" id="tab-add">
+    <div class="card">
+      <div class="card-title">Add a New Word</div>
+      <div class="field-group">
+        <div class="field">
+          <label for="add-en">English</label>
+          <input type="text" id="add-en" placeholder="e.g. tough" />
+        </div>
+        <div class="field">
+          <label for="add-fa">Persian (فارسی)</label>
+          <input type="text" id="add-fa" placeholder="e.g. سخت" dir="rtl" />
+        </div>
+        <button class="btn btn-primary" id="add-btn" style="align-self:flex-end">Add</button>
+      </div>
+      <div class="alert" id="add-alert"></div>
+    </div>
+  </div>
+
+  <!-- ── Batch Import ─────────────────────────────────────── -->
+  <div class="tab-panel" id="tab-import">
+    <div class="card">
+      <div class="card-title">Paste Words from Clipboard</div>
+      <p style="font-size:13px;color:var(--ink-light);margin-bottom:14px;">
+        One word per line in the format: <code style="background:var(--paper-2);padding:2px 6px;border-radius:4px">English = فارسی</code>
+      </p>
+      <div class="field">
+        <label for="import-text">Paste here</label>
+        <textarea id="import-text" placeholder="tough = سخت&#10;depiction = تصویر سازی&#10;amused = خوشش نیامد"></textarea>
+      </div>
+      <div style="margin-top:14px;">
+        <button class="btn btn-primary" id="import-btn">Import All</button>
+      </div>
+      <div class="alert" id="import-alert"></div>
+    </div>
+  </div>
+
+  <!-- ── Practice ─────────────────────────────────────────── -->
+  <div class="tab-panel" id="tab-practice">
+    <div class="practice-header">
+      <div>
+        <div style="font-family:'Lora',serif;font-size:18px;font-weight:600">Practice Mode</div>
+        <div style="font-size:13px;color:var(--ink-faint);margin-top:2px">Tap the card to reveal the Persian meaning</div>
+      </div>
+      <button class="btn btn-ghost" id="shuffle-btn">🔀 Shuffle</button>
+    </div>
+
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+    </div>
+
+    <div id="practice-area">
+      <div class="no-words" id="practice-empty" style="display:none">
+        Add some words first to start practicing!
+      </div>
+
+      <div id="practice-card-wrap">
+        <div class="flip-wrap" id="flip-wrap" onclick="flipCard()">
+          <div class="flip-inner" id="flip-inner">
+            <div class="flip-front">
+              <div class="flip-hint">English</div>
+              <div class="flip-word" id="card-en">—</div>
+            </div>
+            <div class="flip-back">
+              <div class="flip-hint">Persian</div>
+              <div class="flip-word flip-fa" id="card-fa">—</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="practice-controls">
+          <button class="btn btn-ghost" id="prev-btn">← Previous</button>
+          <button class="btn btn-primary" id="next-btn">Next →</button>
+        </div>
+
+        <div class="practice-stat" id="practice-stat"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Edit Modal ─────────────────────────────────────────── -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title">Edit Word</div>
+    <div class="field" style="margin-bottom:12px">
+      <label for="edit-en">English</label>
+      <input type="text" id="edit-en" />
+    </div>
+    <div class="field">
+      <label for="edit-fa">Persian (فارسی)</label>
+      <input type="text" id="edit-fa" dir="rtl" />
+    </div>
+    <div class="alert" id="edit-alert"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="modal-cancel">Cancel</button>
+      <button class="btn btn-primary" id="modal-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────
+let words = {{ words | tojson }};
+let practiceQueue = [];
+let practiceIndex = 0;
+let editingIndex = null;
+
+// ── Helpers ────────────────────────────────────────────────────
+function showAlert(id, msg, type = 'error') {
+  const el = document.getElementById(id);
+  el.textContent = msg;
+  el.className = `alert show alert-${type}`;
+  setTimeout(() => { el.className = 'alert'; }, 4000);
+}
+
+function updateHeaderCount() {
+  const c = words.length;
+  document.getElementById('header-count').textContent = `${c} word${c !== 1 ? 's' : ''} saved`;
+}
+
+// ── Tabs ───────────────────────────────────────────────────────
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+    if (btn.dataset.tab === 'practice') initPractice();
+  });
+});
+
+// ── Render word list ───────────────────────────────────────────
+function renderList(filter = '') {
+  const list = document.getElementById('word-list');
+  const f = filter.toLowerCase().trim();
+  const filtered = f
+    ? words.filter(w => w.english.includes(f) || w.persian.includes(f))
+    : words;
+
+  if (!filtered.length) {
+    list.innerHTML = `<div class="no-words">${f ? 'No matches found.' : 'No words yet — add some!'}</div>`;
+    return;
+  }
+
+  list.innerHTML = filtered.map((w, i) => {
+    const realIndex = words.indexOf(w);
+    return `
+      <div class="word-row" data-index="${realIndex}">
+        <span class="word-en">${escHtml(w.english)}</span>
+        <span class="word-fa">${escHtml(w.persian)}</span>
+        <div class="word-actions">
+          <button class="btn btn-ghost btn-sm edit-btn" data-index="${realIndex}">Edit</button>
+          <button class="btn btn-danger btn-sm delete-btn" data-index="${realIndex}">✕</button>
+        </div>
+      </div>`;
+  }).join('');
+
+  list.querySelectorAll('.edit-btn').forEach(b => b.addEventListener('click', () => openEdit(+b.dataset.index)));
+  list.querySelectorAll('.delete-btn').forEach(b => b.addEventListener('click', () => deleteWord(+b.dataset.index)));
+}
+
+function escHtml(s) {
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+document.getElementById('search-input').addEventListener('input', e => renderList(e.target.value));
+
+// ── Add word ───────────────────────────────────────────────────
+document.getElementById('add-btn').addEventListener('click', async () => {
+  const en = document.getElementById('add-en').value.trim();
+  const fa = document.getElementById('add-fa').value.trim();
+  if (!en || !fa) { showAlert('add-alert', 'Fill in both fields.'); return; }
+
+  const res = await fetch('/api/words', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({english: en, persian: fa})
+  });
+  const data = await res.json();
+
+  if (!res.ok) { showAlert('add-alert', data.error); return; }
+
+  words.push(data.word);
+  document.getElementById('add-en').value = '';
+  document.getElementById('add-fa').value = '';
+  renderList();
+  updateHeaderCount();
+  showAlert('add-alert', `"${data.word.english}" added!`, 'success');
+  document.getElementById('add-en').focus();
+});
+
+// Enter key support
+['add-en','add-fa'].forEach(id => {
+  document.getElementById(id).addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('add-btn').click();
+  });
+});
+
+// ── Delete word ────────────────────────────────────────────────
+async function deleteWord(index) {
+  const word = words[index];
+  if (!confirm(`Delete "${word.english}"?`)) return;
+
+  const res = await fetch(`/api/words/${index}`, {method:'DELETE'});
+  if (!res.ok) { alert('Failed to delete.'); return; }
+
+  words.splice(index, 1);
+  renderList(document.getElementById('search-input').value);
+  updateHeaderCount();
+}
+
+// ── Edit modal ─────────────────────────────────────────────────
+function openEdit(index) {
+  editingIndex = index;
+  document.getElementById('edit-en').value = words[index].english;
+  document.getElementById('edit-fa').value = words[index].persian;
+  document.getElementById('edit-modal').classList.add('open');
+  document.getElementById('edit-en').focus();
+}
+
+document.getElementById('modal-cancel').addEventListener('click', () => {
+  document.getElementById('edit-modal').classList.remove('open');
+});
+document.getElementById('edit-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('edit-modal'))
+    document.getElementById('edit-modal').classList.remove('open');
+});
+
+document.getElementById('modal-save').addEventListener('click', async () => {
+  const en = document.getElementById('edit-en').value.trim();
+  const fa = document.getElementById('edit-fa').value.trim();
+  if (!en || !fa) { showAlert('edit-alert', 'Fill in both fields.'); return; }
+
+  const res = await fetch(`/api/words/${editingIndex}`, {
+    method: 'PUT',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({english: en, persian: fa})
+  });
+  const data = await res.json();
+  if (!res.ok) { showAlert('edit-alert', data.error); return; }
+
+  words[editingIndex] = data.word;
+  document.getElementById('edit-modal').classList.remove('open');
+  renderList(document.getElementById('search-input').value);
+});
+
+// ── Batch import ───────────────────────────────────────────────
+document.getElementById('import-btn').addEventListener('click', async () => {
+  const text = document.getElementById('import-text').value;
+  if (!text.trim()) { showAlert('import-alert', 'Paste some words first.'); return; }
+
+  const res = await fetch('/api/words/batch', {
+    method: 'POST',
+    headers: {'Content-Type':'application/json'},
+    body: JSON.stringify({text})
+  });
+  const data = await res.json();
+
+  if (!res.ok) { showAlert('import-alert', data.error); return; }
+
+  words.push(...data.added);
+  renderList();
+  updateHeaderCount();
+  document.getElementById('import-text').value = '';
+
+  let msg = `✓ Added ${data.added_count} word${data.added_count !== 1 ? 's' : ''}.`;
+  let type = 'success';
+  if (data.duplicates.length) {
+    msg += ` ${data.duplicates.length} duplicate${data.duplicates.length>1?'s':''} skipped.`;
+    type = data.added_count ? 'warn' : 'warn';
+  }
+  if (data.errors.length) msg += ` ${data.errors.length} line${data.errors.length>1?'s':''} had errors.`;
+  showAlert('import-alert', msg, type);
+});
+
+// ── Practice mode ──────────────────────────────────────────────
+function initPractice() {
+  if (!words.length) {
+    document.getElementById('practice-card-wrap').style.display = 'none';
+    document.getElementById('practice-empty').style.display = 'block';
+    return;
+  }
+  document.getElementById('practice-card-wrap').style.display = 'block';
+  document.getElementById('practice-empty').style.display = 'none';
+  if (!practiceQueue.length) shuffleQueue();
+  showCard();
+}
+
+function shuffleQueue() {
+  practiceQueue = [...words].sort(() => Math.random() - .5);
+  practiceIndex = 0;
+}
+
+document.getElementById('shuffle-btn').addEventListener('click', () => {
+  shuffleQueue();
+  showCard();
+});
+
+function showCard() {
+  if (!practiceQueue.length) return;
+  const idx = practiceIndex % practiceQueue.length;
+  const w = practiceQueue[idx];
+  document.getElementById('card-en').textContent = w.english;
+  document.getElementById('card-fa').textContent = w.persian;
+  document.getElementById('flip-inner').classList.remove('flipped');
+  const pct = Math.round(((idx + 1) / practiceQueue.length) * 100);
+  document.getElementById('progress-fill').style.width = pct + '%';
+  document.getElementById('practice-stat').textContent = `${idx + 1} / ${practiceQueue.length}`;
+}
+
+function flipCard() {
+  document.getElementById('flip-inner').classList.toggle('flipped');
+}
+
+document.getElementById('next-btn').addEventListener('click', () => {
+  practiceIndex = (practiceIndex + 1) % practiceQueue.length;
+  showCard();
+});
+document.getElementById('prev-btn').addEventListener('click', () => {
+  practiceIndex = (practiceIndex - 1 + practiceQueue.length) % practiceQueue.length;
+  showCard();
+});
+
+// Keyboard shortcuts in practice
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('tab-practice').classList.contains('active')) return;
+  if (e.key === ' ') { e.preventDefault(); flipCard(); }
+  if (e.key === 'ArrowRight') document.getElementById('next-btn').click();
+  if (e.key === 'ArrowLeft') document.getElementById('prev-btn').click();
+});
+
+// ── Init ───────────────────────────────────────────────────────
+renderList();
+</script>
+</body>
+</html>
