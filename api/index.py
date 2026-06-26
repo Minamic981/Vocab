@@ -2,12 +2,14 @@ from flask import Flask, render_template, request, jsonify, redirect, url_for
 import os
 import json
 import requests
-
+from dotenv import load_dotenv
 app = Flask(
     __name__,
     template_folder=os.path.join(os.path.dirname(__file__), '..', 'templates'),
     static_folder=os.path.join(os.path.dirname(__file__), '..', 'static')
 )
+
+load_dotenv()
 
 # Cloudflare KV Configuration
 ACCOUNT_ID = os.environ.get('CLOUDFLARE_ACCOUNT_ID')

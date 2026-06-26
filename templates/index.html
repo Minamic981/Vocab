@@ -223,7 +223,8 @@
     .word-row {
       display: flex;
       align-items: center;
-      gap: 12px;
+      justify-content: center; /* <-- ADD THIS: Centers the content horizontally */
+      gap: 24px;               /* <-- CHANGE THIS: Consistent spacing between elements */
       padding: 12px 16px;
       background: #fff;
       border: 1px solid var(--rule);
@@ -236,16 +237,15 @@
       font-family: 'Lora', serif;
       font-size: 15px;
       font-weight: 600;
-      flex: 1;
       color: var(--ink);
+      text-align: right;       /* <-- ADD THIS: Keeps right edges aligned for varying lengths */
     }
     .word-fa {
       font-family: Vazirmatn, sans-serif;
       font-size: 14px;
       color: var(--ink-light);
-      text-align: right;
+      text-align: left;        /* <-- CHANGE THIS: Aligns the start of the Persian text */
       direction: rtl;
-      flex: 1;
     }
     .word-actions {
       display: flex;
