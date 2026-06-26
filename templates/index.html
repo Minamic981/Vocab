@@ -121,6 +121,83 @@
       color: var(--ink);
     }
 
+    /* ── Inline add form at end of list ──────────────────────── */
+    .inline-add-card {
+      background: var(--paper-2);
+      border: 2px dashed var(--rule);
+      border-radius: var(--radius);
+      padding: 20px 24px;
+      margin-top: 8px;
+      transition: border-color .2s, background .2s;
+    }
+    .inline-add-card:focus-within {
+      border-color: var(--accent);
+      background: #fff;
+    }
+
+    .inline-add-header {
+      font-family: 'Lora', serif;
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--ink-faint);
+      margin-bottom: 14px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .inline-add-header .plus-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: var(--accent);
+      color: #fff;
+      font-size: 14px;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .inline-add-fields {
+      display: flex;
+      gap: 12px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+
+    .inline-add-fields .field {
+      flex: 1;
+      min-width: 140px;
+    }
+
+    .inline-add-fields input {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      padding: 9px 12px;
+      border: 1px solid var(--rule);
+      border-radius: var(--radius);
+      background: #fff;
+      color: var(--ink);
+      outline: none;
+      transition: border-color .15s;
+      width: 100%;
+    }
+    .inline-add-fields input:focus {
+      border-color: var(--accent);
+    }
+
+    .inline-add-alert {
+      padding: 8px 12px;
+      border-radius: var(--radius);
+      font-size: 13px;
+      margin-top: 10px;
+      display: none;
+    }
+    .inline-add-alert.show { display: block; }
+    .inline-add-alert.alert-success { background: var(--accent-lt); color: #1b5e38; }
+    .inline-add-alert.alert-error   { background: var(--danger-lt); color: var(--danger); }
+
     /* ── Form elements ───────────────────────────────────────── */
     .field-group {
       display: flex;
@@ -146,7 +223,7 @@
     }
 
     input[type="text"], textarea {
-      font-family: 'Inter', sans-serif;
+      font-family: Vazirmatn, sans-serif;
       font-size: 14px;
       padding: 9px 12px;
       border: 1px solid var(--rule);
@@ -161,7 +238,9 @@
       border-color: var(--accent);
       background: #fff;
     }
-
+    code {
+      font-family: Vazirmatn, sans-serif;
+    }
     textarea {
       resize: vertical;
       min-height: 130px;
@@ -223,8 +302,8 @@
     .word-row {
       display: flex;
       align-items: center;
-      justify-content: center; /* <-- ADD THIS: Centers the content horizontally */
-      gap: 24px;               /* <-- CHANGE THIS: Consistent spacing between elements */
+      justify-content: center;
+      gap: 24px;
       padding: 12px 16px;
       background: #fff;
       border: 1px solid var(--rule);
@@ -238,13 +317,13 @@
       font-size: 15px;
       font-weight: 600;
       color: var(--ink);
-      text-align: right;       /* <-- ADD THIS: Keeps right edges aligned for varying lengths */
+      text-align: right;
     }
     .word-fa {
       font-family: Vazirmatn, sans-serif;
       font-size: 14px;
       color: var(--ink-light);
-      text-align: left;        /* <-- CHANGE THIS: Aligns the start of the Persian text */
+      text-align: left;
       direction: rtl;
     }
     .word-actions {
@@ -259,7 +338,6 @@
       color: var(--ink-faint);
       font-style: italic;
     }
-
     /* ── Practice mode ───────────────────────────────────────── */
     .practice-header {
       display: flex;
@@ -338,6 +416,7 @@
       line-height: 1.25;
     }
     .flip-fa {
+      font-family: Vazirmatn, sans-serif;
       font-size: 22px;
       direction: rtl;
     }
@@ -393,6 +472,8 @@
     @media (max-width: 540px) {
       .word-fa { display: none; }
       .flip-word { font-size: 24px; }
+      .inline-add-fields .field { min-width: 100%; }
+      .inline-add-fields .btn { width: 100%; }
     }
   </style>
 </head>
@@ -406,15 +487,14 @@
     </div>
   </header>
 
-  <!-- Tabs -->
+  <!-- Tabs — no more "Add Word" tab -->
   <nav class="tabs">
     <button class="tab-btn active" data-tab="library">📚 Library</button>
-    <button class="tab-btn" data-tab="add">➕ Add Word</button>
     <button class="tab-btn" data-tab="import">📋 Batch Import</button>
     <button class="tab-btn" data-tab="practice">🎯 Practice</button>
   </nav>
 
-  <!-- ── Library ──────────────────────────────────────────── -->
+  <!-- ── Library (with inline add at bottom) ───────────────── -->
   <div class="tab-panel active" id="tab-library">
     <div class="search-bar">
       <input type="text" id="search-input" placeholder="Search words…" />
@@ -432,27 +512,28 @@
         </div>
         {% endfor %}
       {% else %}
-        <div class="no-words">No words yet — add some using the tabs above!</div>
+        <div class="no-words" id="no-words-msg">No words yet — add one below!</div>
       {% endif %}
     </div>
-  </div>
 
-  <!-- ── Add Word ─────────────────────────────────────────── -->
-  <div class="tab-panel" id="tab-add">
-    <div class="card">
-      <div class="card-title">Add a New Word</div>
-      <div class="field-group">
+    <!-- Inline add form — always at the end of the word list -->
+    <div class="inline-add-card" id="inline-add">
+      <div class="inline-add-header">
+        <span class="plus-icon">+</span>
+        Add a new word
+      </div>
+      <div class="inline-add-fields">
         <div class="field">
           <label for="add-en">English</label>
           <input type="text" id="add-en" placeholder="e.g. tough" />
         </div>
         <div class="field">
           <label for="add-fa">Persian (فارسی)</label>
-          <input type="text" id="add-fa" placeholder="e.g. سخت" dir="rtl" />
+          <input type="text" class="add-fa" id="add-fa" placeholder="e.g. سخت" dir="rtl" />
         </div>
         <button class="btn btn-primary" id="add-btn" style="align-self:flex-end">Add</button>
       </div>
-      <div class="alert" id="add-alert"></div>
+      <div class="inline-add-alert" id="add-alert"></div>
     </div>
   </div>
 
@@ -550,8 +631,20 @@ let editingIndex = null;
 function showAlert(id, msg, type = 'error') {
   const el = document.getElementById(id);
   el.textContent = msg;
-  el.className = `alert show alert-${type}`;
-  setTimeout(() => { el.className = 'alert'; }, 4000);
+  el.className = `show alert-${type === 'success' ? 'alert-success' : type === 'warn' ? 'alert-warn' : 'alert-error'}`;
+  // For inline add alert, it uses a different base class
+  if (id === 'add-alert') {
+    el.className = `inline-add-alert show alert-${type === 'success' ? 'success' : type === 'warn' ? 'warn' : 'error'}`;
+  } else {
+    el.className = `alert show alert-${type === 'success' ? 'success' : type === 'warn' ? 'warn' : 'error'}`;
+  }
+  setTimeout(() => {
+    if (id === 'add-alert') {
+      el.className = 'inline-add-alert';
+    } else {
+      el.className = 'alert';
+    }
+  }, 4000);
 }
 
 function updateHeaderCount() {
@@ -575,15 +668,15 @@ function renderList(filter = '') {
   const list = document.getElementById('word-list');
   const f = filter.toLowerCase().trim();
   const filtered = f
-    ? words.filter(w => w.english.includes(f) || w.persian.includes(f))
+    ? words.filter(w => w.english.toLowerCase().includes(f) || w.persian.includes(f))
     : words;
 
   if (!filtered.length) {
-    list.innerHTML = `<div class="no-words">${f ? 'No matches found.' : 'No words yet — add some!'}</div>`;
+    list.innerHTML = `<div class="no-words">${f ? 'No matches found.' : 'No words yet — add one below!'}</div>`;
     return;
   }
 
-  list.innerHTML = filtered.map((w, i) => {
+  list.innerHTML = filtered.map((w) => {
     const realIndex = words.indexOf(w);
     return `
       <div class="word-row" data-index="${realIndex}">
@@ -606,7 +699,7 @@ function escHtml(s) {
 
 document.getElementById('search-input').addEventListener('input', e => renderList(e.target.value));
 
-// ── Add word ───────────────────────────────────────────────────
+// ── Add word (inline at end of list) ───────────────────────────
 document.getElementById('add-btn').addEventListener('click', async () => {
   const en = document.getElementById('add-en').value.trim();
   const fa = document.getElementById('add-fa').value.trim();
@@ -624,13 +717,23 @@ document.getElementById('add-btn').addEventListener('click', async () => {
   words.push(data.word);
   document.getElementById('add-en').value = '';
   document.getElementById('add-fa').value = '';
-  renderList();
+  renderList(document.getElementById('search-input').value);
   updateHeaderCount();
   showAlert('add-alert', `"${data.word.english}" added!`, 'success');
+
+  // Scroll to the newly added word
+  const rows = document.querySelectorAll('.word-row');
+  if (rows.length) {
+    rows[rows.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+    // Brief highlight
+    rows[rows.length - 1].style.background = 'var(--accent-lt)';
+    setTimeout(() => { rows[rows.length - 1].style.background = ''; }, 1200);
+  }
+
   document.getElementById('add-en').focus();
 });
 
-// Enter key support
+// Enter key support for inline add
 ['add-en','add-fa'].forEach(id => {
   document.getElementById(id).addEventListener('keydown', e => {
     if (e.key === 'Enter') document.getElementById('add-btn').click();
@@ -708,7 +811,7 @@ document.getElementById('import-btn').addEventListener('click', async () => {
   let type = 'success';
   if (data.duplicates.length) {
     msg += ` ${data.duplicates.length} duplicate${data.duplicates.length>1?'s':''} skipped.`;
-    type = data.added_count ? 'warn' : 'warn';
+    type = 'warn';
   }
   if (data.errors.length) msg += ` ${data.errors.length} line${data.errors.length>1?'s':''} had errors.`;
   showAlert('import-alert', msg, type);
