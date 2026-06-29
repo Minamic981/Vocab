@@ -766,7 +766,6 @@ document.getElementById('add-btn').addEventListener('click', async () => {
 // ── Delete word ────────────────────────────────────────────────
 async function deleteWord(index) {
   const word = words[index];
-  if (!confirm(`Delete "${word.english}"?`)) return;
 
   const res = await fetch(`/api/words/${index}`, {method:'DELETE'});
   if (!res.ok) { alert('Failed to delete.'); return; }

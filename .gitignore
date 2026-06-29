@@ -204,7 +204,7 @@ tempCodeRunnerFile.py
 # PyPI configuration file
 .pypirc
 # Fun Folder
-fun/
+Fun/
 # Marimo
 marimo/_static/
 marimo/_lsp/
