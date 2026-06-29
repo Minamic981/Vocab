@@ -489,12 +489,33 @@
     }
 
     /* ── Responsive ──────────────────────────────────────────── */
-    @media (max-width: 540px) {
-      .word-fa { display: none; }
-      .flip-word { font-size: 24px; }
-      .inline-add-fields .field { min-width: 100%; }
-      .inline-add-fields .btn { width: 100%; }
-    }
+@media (max-width: 540px) {
+  .word-fa {
+    display: none;
+    transition: opacity 0.2s ease;
+  }
+  .word-fa.revealed {
+    display: inline;
+    opacity: 1;
+  }
+  .word-en {
+    cursor: pointer;
+    position: relative;
+  }
+  /* Subtle hint that the English text is tappable */
+  .word-en::after {
+    content: ' 👁';
+    font-size: 11px;
+    opacity: 0.35;
+    font-style: normal;
+  }
+  .word-en.revealed-hint::after {
+    opacity: 0;
+  }
+  .flip-word { font-size: 24px; }
+  .inline-add-fields .field { min-width: 100%; }
+  .inline-add-fields .btn { width: 100%; }
+}
   </style>
 </head>
 <body>
@@ -932,6 +953,40 @@ document.addEventListener('keydown', e => {
 
 // ── Init ───────────────────────────────────────────────────────
 renderList();
+// ── Mobile tap-to-reveal Persian translation ───────────────────
+(function () {
+  // Only activate on touch/mobile devices
+  const isMobile = window.matchMedia('(max-width: 540px)').matches;
+  if (!isMobile) return;
+
+  function attachRevealListeners() {
+    document.querySelectorAll('#word-list .word-row').forEach(function (row) {
+      const enEl = row.querySelector('.word-en');
+      const faEl = row.querySelector('.word-fa');
+      if (!enEl || !faEl) return;
+      // Avoid double-binding
+      if (enEl.dataset.revealBound === '1') return;
+      enEl.dataset.revealBound = '1';
+
+      enEl.addEventListener('click', function () {
+        const isRevealed = faEl.classList.contains('revealed');
+        faEl.classList.toggle('revealed', !isRevealed);
+        enEl.classList.toggle('revealed-hint', !isRevealed);
+      });
+    });
+  }
+
+  // Run after initial render and after any re-render (search/add/delete)
+  const originalRenderList = renderList;
+  renderList = function () {
+    originalRenderList.apply(this, arguments);
+    // Small delay to let DOM update
+    setTimeout(attachRevealListeners, 0);
+  };
+
+  // Also attach to the server-rendered rows on first load
+  attachRevealListeners();
+})();
 </script>
 </body>
 </html>
