@@ -126,31 +126,33 @@ def check_kv_connection() -> bool:
 
 # ── AI helper ────────────────────────────────────────────────────────────────
 
-def generate_sentence(word: str) -> tuple[str, str]:
+def generate_sentence(english: str, persian: str = "") -> tuple[str, str]:
+    user_content = f"English Word: {english}\nPersian meaning: {persian}"
     payload = {
         "model": MODEL_NAME,
         "messages": [
             {
                 "role": "system",
-        "content" : (
-            "You are a vocabulary assistant that creates example sentences and Persian translations.\n\n"
-            "The user will give you a word or a sentence.\n\n"
-            "Your task:\n"
-            "- If the user gives a WORD → Create a short natural sentence using that word\n"
-            "- If the user gives a SENTENCE → Create a different sentence with the same meaning\n\n"
-            "Rules:\n"
-            "- Always create a NEW sentence — never copy or directly translate the input\n"
-            "- Keep sentences simple and natural (under 15 words)\n"
-            "- NEVER use commas (,) anywhere in your English sentence\n"
-            "- The Persian must be a translation of YOUR new English sentence\n\n"
-            "Respond ONLY in this exact JSON format:\n"
-            "{\"english\":\"English sentence\", \"persian\":\"Persian sentence\"}\n\n"
-            "Example:\n"
-            'apple → {\"english\":\"I love eating a fresh apple every morning\", \"persian\":\"من عاشق خوردن یک سیب تازه هر روز صبح هستم\"}\n'
-            "No extra text. No explanation. Nothing else."
-        )
+                "content": (
+                    "You are a vocabulary assistant that creates example English sentences with Persian translations.\n\n"
+                    "The user will give you a English word (or sentence) along with its Persian meaning.\n\n"
+                    "Your task:\n"
+                    "- Create a short natural English sentence using that word\n"
+                    "- The sentence MUST reflect the EXACT meaning indicated by the Persian translation\n"
+                    "- CRITICAL: If the word has multiple meanings, use ONLY the meaning that matches the provided Persian translation\n\n"
+                    "Rules:\n"
+                    "- Always create a NEW sentence — never copy or directly translate the input\n"
+                    "- Keep sentences simple and natural (under 15 words)\n"
+                    "- NEVER use commas (,) anywhere in your English sentence\n"
+                    "- The Persian output must be a translation of YOUR new English sentence\n\n"
+                    "Respond ONLY in this exact JSON format:\n"
+                    "{\"english\":\"English sentence\", \"persian\":\"Persian sentence\"}\n\n"
+                    "Example:\n"
+                    'Word: light / Persian meaning: روشنایی → {\"english\":\"Please turn on the light\", \"persian\":\"لطفا چراغ را روشن کن\"}\n'
+                    "No extra text. No explanation. Nothing else."
+                )
             },
-            {"role": "user", "content": word},
+            {"role": "user", "content": user_content},
         ],
         "temperature": 0.4,
     }
@@ -203,7 +205,7 @@ def add_word():
     words = load_words()
     if aigen:
         try:
-            new_word = generate_sentence(english)
+            new_word = generate_sentence(english, persian)
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     else:
@@ -264,10 +266,11 @@ def ai_gen(index):
     if index < 0 or index >= len(words):
         return jsonify({'error': 'Word not found.'}), 404
 
-    english_word = words[index]['english']
+    english_word = words[index].get('english', '')
+    persian_word = words[index].get('persian', '')
 
     try:
-        ai_sentence = generate_sentence(word=english_word)
+        ai_sentence = generate_sentence(english=english_word, persian=persian_word)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
