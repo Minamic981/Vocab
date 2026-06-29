@@ -271,6 +271,15 @@
     }
     .btn-danger { background: var(--danger); color: #fff; }
     .btn-sm { padding: 5px 12px; font-size: 12px; }
+    .btn-ai {
+      background: var(--warn-lt);
+      color: var(--warn);
+      border: 1px solid #e6c96a;
+    }
+    .btn-ai:disabled {
+      opacity: .6;
+      cursor: not-allowed;
+    }
 
     /* ── Alerts ──────────────────────────────────────────────── */
     .alert {
@@ -303,7 +312,7 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      gap: 24px;
+      gap: 16px;
       padding: 12px 16px;
       background: #fff;
       border: 1px solid var(--rule);
@@ -312,16 +321,27 @@
     }
     .word-row:hover { background: var(--paper-2); }
 
+    .word-index {
+      font-family: 'Inter', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink-faint);
+      min-width: 28px;
+      text-align: right;
+      flex-shrink: 0;
+      letter-spacing: .03em;
+    }
+
     .word-en {
       font-family: 'Lora', serif;
       font-size: 15px;
       font-weight: 600;
       color: var(--ink);
-      text-align: right;
+      flex: 1;
     }
     .word-fa {
       font-family: Vazirmatn, sans-serif;
-      font-size: 14px;
+      font-size: 16px;
       color: var(--ink-light);
       text-align: left;
       direction: rtl;
@@ -503,6 +523,7 @@
       {% if words %}
         {% for word in words %}
         <div class="word-row" data-index="{{ loop.index0 }}" data-en="{{ word.english }}" data-fa="{{ word.persian }}">
+          <span class="word-index">{{ loop.index }}</span>
           <span class="word-en">{{ word.english }}</span>
           <span class="word-fa">{{ word.persian }}</span>
           <div class="word-actions">
@@ -615,6 +636,7 @@
     <div class="alert" id="edit-alert"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" id="modal-cancel">Cancel</button>
+      <button class="btn btn-ai" id="modal-aigen" title="Generate a sentence using AI and replace both fields">✨ Generate Sentence</button>
       <button class="btn btn-primary" id="modal-save">Save</button>
     </div>
   </div>
@@ -676,10 +698,11 @@ function renderList(filter = '') {
     return;
   }
 
-  list.innerHTML = filtered.map((w) => {
+  list.innerHTML = filtered.map((w, i) => {
     const realIndex = words.indexOf(w);
     return `
       <div class="word-row" data-index="${realIndex}">
+        <span class="word-index">${realIndex + 1}</span>
         <span class="word-en">${escHtml(w.english)}</span>
         <span class="word-fa">${escHtml(w.persian)}</span>
         <div class="word-actions">
@@ -788,7 +811,42 @@ document.getElementById('modal-save').addEventListener('click', async () => {
   renderList(document.getElementById('search-input').value);
 });
 
-// ── Batch import ───────────────────────────────────────────────
+document.getElementById('modal-aigen').addEventListener('click', async () => {
+  const btn = document.getElementById('modal-aigen');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating…';
+
+  try {
+    const res = await fetch(`/api/aigen/${editingIndex}`, { method: 'PUT' });
+    const data = await res.json();
+
+    if (!res.ok) {
+      showAlert('edit-alert', data.error || 'Generation failed.', 'error');
+      return;
+    }
+
+    // Reload the updated word from server state
+    const wordsRes = await fetch('/api/words');
+    if (wordsRes.ok) {
+      const wordsData = await wordsRes.json();
+      words = wordsData.words ?? wordsData;
+    }
+
+    // Refresh modal fields with new values
+    document.getElementById('edit-en').value = words[editingIndex].english;
+    document.getElementById('edit-fa').value = words[editingIndex].persian;
+
+    // Refresh the word list in the background
+    renderList(document.getElementById('search-input').value);
+
+    showAlert('edit-alert', '✨ Sentence generated!', 'success');
+  } catch (e) {
+    showAlert('edit-alert', 'Network error: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ Generate Sentence';
+  }
+});
 document.getElementById('import-btn').addEventListener('click', async () => {
   const text = document.getElementById('import-text').value;
   if (!text.trim()) { showAlert('import-alert', 'Paste some words first.'); return; }

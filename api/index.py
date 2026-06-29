@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, redirect, url_for
+from flask import Flask, render_template, request, jsonify
 import os
 import json
 import requests
@@ -15,6 +15,11 @@ load_dotenv()
 ACCOUNT_ID = os.environ.get('CLOUDFLARE_ACCOUNT_ID')
 NAMESPACE_ID = os.environ.get('CLOUDFLARE_NAMESPACE_ID')
 API_TOKEN = os.environ.get('CLOUDFLARE_API_TOKEN')
+
+# OpenRouter Config
+MODEL_NAME = os.environ.get("MODEL_NAME")
+OPENROUTER_URL = os.environ.get("OPENROUTER_URL")
+OPEN_TOKEN = os.environ.get("OPEN_TOKEN")
 
 # Base URL for Cloudflare KV API
 BASE_URL = f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/storage/kv/namespaces/{NAMESPACE_ID}"
@@ -116,6 +121,59 @@ def check_kv_connection():
     except:
         return False
 
+def GenerateSentence(word: str) -> str:
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [
+            {
+                "role": "system",
+                "content": """You are a creative sentence generator and translator.
+
+The user will give you a word or a sentence.
+
+Your task:
+- If the user gives a WORD → Create a NEW sentence using that word
+- If the user gives a SENTENCE → Create a DIFFERENT sentence with the SAME meaning
+
+Then translate your NEW sentence to Persian.
+
+Response format: Your NEW English sentence, Your Persian translation
+
+Examples:
+User: "apple" → "I eat an apple, من هر روز سیب می‌خورم"
+User: "I ate an apple" → "I have apple,  من یک سیب دارم "
+
+Rules:
+- ALWAYS create a NEW sentence
+- NEVER just translate the user's input
+- The Persian must translate YOUR new sentence
+- Only return: English sentence, Persian translation
+- No extra text or explanation"""},
+            {
+                "role": "user",
+                "content": word
+            }
+        ],
+        "temperature": 0.4,
+    }
+    headers = {
+        "Authorization": f"Bearer {OPEN_TOKEN}",
+        "Content-Type": "application/json",
+        "X-Title": "Vocab Site"
+    }
+    try:
+        r = requests.post(OPENROUTER_URL, json=payload, timeout=180, headers=headers)
+        r.raise_for_status()
+        data = r.json()
+        return data["choices"][0]["message"]["content"].strip().split(',')
+    except requests.exceptions.HTTPError as e:
+        # Handle specific HTTP errors (4xx, 5xx)
+        raise Exception(f"HTTP error: {e.response.status_code}")
+    except requests.exceptions.ConnectionError:
+        raise Exception("Connection failed")
+    except requests.exceptions.Timeout:
+        raise Exception("Request timed out")
+
 @app.route('/')
 def index():
     words = load_words()
@@ -197,6 +255,23 @@ def delete_word(index):
         return jsonify({'error': 'Failed to save changes to Cloudflare KV.'}), 500
 
     return jsonify({'message': f'"{removed["english"]}" deleted.'})
+
+# ── API: Ai Generate Sentence ────────────────────────────────────────────────────────
+@app.route('/api/aigen/<int:index>', methods=['PUT'])
+def AiGen(index):
+    words = load_words()
+    english_word = words[index]['english']
+    if index < 0 or index >= len(words):
+        return jsonify({'error': 'Word not found.'}), 404
+    try:
+        english, persian = GenerateSentence(word=english_word)
+        words[index] = {'english': english, 'persian': persian}
+        if not save_words(words):
+            return jsonify({'error': 'Failed to save changes to Cloudflare KV.'}), 500
+    except Exception as e:
+        return jsonify({'error': f'{e}'}), 500
+
+    return jsonify({'message': f'Sentence Generated'})
 
 
 # ── API: batch import ───────────────────────────────────────────────────────
