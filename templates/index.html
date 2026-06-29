@@ -1,993 +1,1179 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>My Word Book</title>
-  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
-  <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
-  <style>
-    /* ── Reset & tokens ──────────────────────────────────────── */
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>My Word Book</title>
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📚</text></svg>"
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Inter:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css"
+      rel="stylesheet"
+      type="text/css"
+    />
+    <style>
+      /* ── Reset & tokens ──────────────────────────────────────── */
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-    :root {
-      --ink:       #1a1a1a;
-      --ink-light: #555;
-      --ink-faint: #999;
-      --paper:     #faf9f6;
-      --paper-2:   #f1efe9;
-      --rule:      #e0ddd5;
-      --accent:    #2d6a4f;
-      --accent-lt: #d8f3dc;
-      --danger:    #c0392b;
-      --danger-lt: #fdecea;
-      --warn:      #b8850a;
-      --warn-lt:   #fff8e1;
-      --radius:    8px;
-      --shadow:    0 2px 12px rgba(0,0,0,.08);
-    }
+      :root {
+        --ink: #1a1a1a;
+        --ink-light: #555;
+        --ink-faint: #999;
+        --paper: #faf9f6;
+        --paper-2: #f1efe9;
+        --rule: #e0ddd5;
+        --accent: #2d6a4f;
+        --accent-lt: #d8f3dc;
+        --danger: #c0392b;
+        --danger-lt: #fdecea;
+        --warn: #b8850a;
+        --warn-lt: #fff8e1;
+        --radius: 8px;
+        --shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+      }
 
-    body {
-      font-family: 'Inter', sans-serif;
-      background: var(--paper);
-      color: var(--ink);
-      min-height: 100vh;
-      line-height: 1.6;
-    }
+      body {
+        font-family: "Inter", sans-serif;
+        background: var(--paper);
+        color: var(--ink);
+        min-height: 100vh;
+        line-height: 1.6;
+      }
 
-    /* ── Layout ──────────────────────────────────────────────── */
-    .shell {
-      max-width: 860px;
-      margin: 0 auto;
-      padding: 0 20px 80px;
-    }
+      /* ── Layout ──────────────────────────────────────────────── */
+      .shell {
+        max-width: 860px;
+        margin: 0 auto;
+        padding: 0 20px 80px;
+      }
 
-    /* ── Header ──────────────────────────────────────────────── */
-    header {
-      padding: 36px 0 24px;
-      border-bottom: 2px solid var(--ink);
-      margin-bottom: 36px;
-      display: flex;
-      align-items: flex-end;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
-    }
+      /* ── Header ──────────────────────────────────────────────── */
+      header {
+        padding: 36px 0 24px;
+        border-bottom: 2px solid var(--ink);
+        margin-bottom: 36px;
+        display: flex;
+        align-items: flex-end;
+        justify-content: space-between;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
 
-    .wordmark {
-      font-family: 'Lora', serif;
-      font-size: 28px;
-      font-weight: 600;
-      letter-spacing: -.5px;
-      line-height: 1;
-    }
-    .wordmark span {
-      color: var(--accent);
-    }
+      .wordmark {
+        font-family: "Lora", serif;
+        font-size: 28px;
+        font-weight: 600;
+        letter-spacing: -0.5px;
+        line-height: 1;
+      }
+      .wordmark span {
+        color: var(--accent);
+      }
 
-    .word-count {
-      font-size: 13px;
-      color: var(--ink-faint);
-      font-style: italic;
-    }
+      .word-count {
+        font-size: 13px;
+        color: var(--ink-faint);
+        font-style: italic;
+      }
 
-    /* ── Tab nav ─────────────────────────────────────────────── */
-    .tabs {
-      display: flex;
-      gap: 4px;
-      margin-bottom: 28px;
-      border-bottom: 1px solid var(--rule);
-      padding-bottom: 0;
-    }
+      /* ── Tab nav ─────────────────────────────────────────────── */
+      .tabs {
+        display: flex;
+        gap: 4px;
+        margin-bottom: 28px;
+        border-bottom: 1px solid var(--rule);
+        padding-bottom: 0;
+      }
 
-    .tab-btn {
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      padding: 10px 20px;
-      background: none;
-      border: none;
-      border-bottom: 2px solid transparent;
-      cursor: pointer;
-      color: var(--ink-light);
-      transition: color .15s, border-color .15s;
-      margin-bottom: -1px;
-    }
-    .tab-btn:hover { color: var(--ink); }
-    .tab-btn.active {
-      color: var(--accent);
-      border-bottom-color: var(--accent);
-    }
+      .tab-btn {
+        font-family: "Inter", sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        padding: 10px 20px;
+        background: none;
+        border: none;
+        border-bottom: 2px solid transparent;
+        cursor: pointer;
+        color: var(--ink-light);
+        transition:
+          color 0.15s,
+          border-color 0.15s;
+        margin-bottom: -1px;
+      }
+      .tab-btn:hover {
+        color: var(--ink);
+      }
+      .tab-btn.active {
+        color: var(--accent);
+        border-bottom-color: var(--accent);
+      }
 
-    .tab-panel { display: none; }
-    .tab-panel.active { display: block; }
+      .tab-panel {
+        display: none;
+      }
+      .tab-panel.active {
+        display: block;
+      }
 
-    /* ── Cards ───────────────────────────────────────────────── */
-    .card {
-      background: #fff;
-      border: 1px solid var(--rule);
-      border-radius: var(--radius);
-      padding: 24px;
-      margin-bottom: 20px;
-      box-shadow: var(--shadow);
-    }
+      /* ── Cards ───────────────────────────────────────────────── */
+      .card {
+        background: #fff;
+        border: 1px solid var(--rule);
+        border-radius: var(--radius);
+        padding: 24px;
+        margin-bottom: 20px;
+        box-shadow: var(--shadow);
+      }
 
-    .card-title {
-      font-family: 'Lora', serif;
-      font-size: 17px;
-      font-weight: 600;
-      margin-bottom: 16px;
-      color: var(--ink);
-    }
+      .card-title {
+        font-family: "Lora", serif;
+        font-size: 17px;
+        font-weight: 600;
+        margin-bottom: 16px;
+        color: var(--ink);
+      }
 
-    /* ── Inline add form at end of list ──────────────────────── */
-    .inline-add-card {
-      background: var(--paper-2);
-      border: 2px dashed var(--rule);
-      border-radius: var(--radius);
-      padding: 20px 24px;
-      margin-top: 8px;
-      transition: border-color .2s, background .2s;
-    }
-    .inline-add-card:focus-within {
-      border-color: var(--accent);
-      background: #fff;
-    }
+      /* ── Inline add form at end of list ──────────────────────── */
+      .inline-add-card {
+        background: var(--paper-2);
+        border: 2px dashed var(--rule);
+        border-radius: var(--radius);
+        padding: 20px 24px;
+        margin-top: 8px;
+        transition:
+          border-color 0.2s,
+          background 0.2s;
+      }
+      .inline-add-card:focus-within {
+        border-color: var(--accent);
+        background: #fff;
+      }
 
-    .inline-add-header {
-      font-family: 'Lora', serif;
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--ink-faint);
-      margin-bottom: 14px;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-    .inline-add-header .plus-icon {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: var(--accent);
-      color: #fff;
-      font-size: 14px;
-      line-height: 1;
-      flex-shrink: 0;
-    }
+      .inline-add-header {
+        font-family: "Lora", serif;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--ink-faint);
+        margin-bottom: 14px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .inline-add-header .plus-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 22px;
+        height: 22px;
+        border-radius: 50%;
+        background: var(--accent);
+        color: #fff;
+        font-size: 14px;
+        line-height: 1;
+        flex-shrink: 0;
+      }
 
-    .inline-add-fields {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      align-items: flex-end;
-    }
+      .inline-add-fields {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+      }
 
-    .inline-add-fields .field {
-      flex: 1;
-      min-width: 140px;
-    }
+      .inline-add-fields .field {
+        flex: 1;
+        min-width: 140px;
+      }
 
-    .inline-add-fields input {
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      padding: 9px 12px;
-      border: 1px solid var(--rule);
-      border-radius: var(--radius);
-      background: #fff;
-      color: var(--ink);
-      outline: none;
-      transition: border-color .15s;
-      width: 100%;
-    }
-    .inline-add-fields input:focus {
-      border-color: var(--accent);
-    }
+      .inline-add-fields input {
+        font-family: "Inter", sans-serif;
+        font-size: 14px;
+        padding: 9px 12px;
+        border: 1px solid var(--rule);
+        border-radius: var(--radius);
+        background: #fff;
+        color: var(--ink);
+        outline: none;
+        transition: border-color 0.15s;
+        width: 100%;
+      }
+      .inline-add-fields input:focus {
+        border-color: var(--accent);
+      }
 
-    .inline-add-alert {
-      padding: 8px 12px;
-      border-radius: var(--radius);
-      font-size: 13px;
-      margin-top: 10px;
-      display: none;
-    }
-    .inline-add-alert.show { display: block; }
-    .inline-add-alert.alert-success { background: var(--accent-lt); color: #1b5e38; }
-    .inline-add-alert.alert-error   { background: var(--danger-lt); color: var(--danger); }
+      .inline-add-alert {
+        padding: 8px 12px;
+        border-radius: var(--radius);
+        font-size: 13px;
+        margin-top: 10px;
+        display: none;
+      }
+      .inline-add-alert.show {
+        display: block;
+      }
+      .inline-add-alert.alert-success {
+        background: var(--accent-lt);
+        color: #1b5e38;
+      }
+      .inline-add-alert.alert-error {
+        background: var(--danger-lt);
+        color: var(--danger);
+      }
 
-    /* ── Form elements ───────────────────────────────────────── */
-    .field-group {
-      display: flex;
-      gap: 12px;
-      flex-wrap: wrap;
-      align-items: flex-end;
-    }
+      /* ── Form elements ───────────────────────────────────────── */
+      .field-group {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        align-items: flex-end;
+      }
 
-    .field {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-      flex: 1;
-      min-width: 160px;
-    }
+      .field {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        flex: 1;
+        min-width: 160px;
+      }
 
-    label {
-      font-size: 12px;
-      font-weight: 600;
-      letter-spacing: .04em;
-      text-transform: uppercase;
-      color: var(--ink-light);
-    }
+      label {
+        font-size: 12px;
+        font-weight: 600;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--ink-light);
+      }
 
-    input[type="text"], textarea {
-      font-family: Vazirmatn, sans-serif;
-      font-size: 14px;
-      padding: 9px 12px;
-      border: 1px solid var(--rule);
-      border-radius: var(--radius);
-      background: var(--paper);
-      color: var(--ink);
-      outline: none;
-      transition: border-color .15s;
-      width: 100%;
-    }
-    input[type="text"]:focus, textarea:focus {
-      border-color: var(--accent);
-      background: #fff;
-    }
-    code {
-      font-family: Vazirmatn, sans-serif;
-    }
-    textarea {
-      resize: vertical;
-      min-height: 130px;
-      line-height: 1.7;
-      direction: ltr;
-    }
+      input[type="text"],
+      textarea {
+        font-family: Vazirmatn, sans-serif;
+        font-size: 14px;
+        padding: 9px 12px;
+        border: 1px solid var(--rule);
+        border-radius: var(--radius);
+        background: var(--paper);
+        color: var(--ink);
+        outline: none;
+        transition: border-color 0.15s;
+        width: 100%;
+      }
+      input[type="text"]:focus,
+      textarea:focus {
+        border-color: var(--accent);
+        background: #fff;
+      }
+      code {
+        font-family: Vazirmatn, sans-serif;
+      }
+      textarea {
+        resize: vertical;
+        min-height: 130px;
+        line-height: 1.7;
+        direction: ltr;
+      }
+      #add-fa:disabled {
+        background: var(--paper-2);
+        color: var(--ink-faint);
+        cursor: not-allowed;
+        border-style: dashed;
+      }
 
-    /* ── Buttons ─────────────────────────────────────────────── */
-    .btn {
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      font-weight: 500;
-      padding: 9px 20px;
-      border: none;
-      border-radius: var(--radius);
-      cursor: pointer;
-      transition: opacity .15s, transform .1s;
-      white-space: nowrap;
-    }
-    .btn:active { transform: scale(.98); }
-    .btn:hover { opacity: .88; }
+      /* ── Buttons ─────────────────────────────────────────────── */
+      .btn {
+        font-family: "Inter", sans-serif;
+        font-size: 14px;
+        font-weight: 500;
+        padding: 9px 20px;
+        border: none;
+        border-radius: var(--radius);
+        cursor: pointer;
+        transition:
+          opacity 0.15s,
+          transform 0.1s;
+        white-space: nowrap;
+      }
+      .btn:active {
+        transform: scale(0.98);
+      }
+      .btn:hover {
+        opacity: 0.88;
+      }
 
-    .btn-primary { background: var(--accent); color: #fff; }
-    .btn-ghost {
-      background: transparent;
-      border: 1px solid var(--rule);
-      color: var(--ink-light);
-    }
-    .btn-danger { background: var(--danger); color: #fff; }
-    .btn-sm { padding: 5px 12px; font-size: 12px; }
-    .btn-ai {
-      background: var(--warn-lt);
-      color: var(--warn);
-      border: 1px solid #e6c96a;
-    }
-    .btn-ai:disabled {
-      opacity: .6;
-      cursor: not-allowed;
-    }
+      .btn-primary {
+        background: var(--accent);
+        color: #fff;
+      }
+      .btn-ghost {
+        background: transparent;
+        border: 1px solid var(--rule);
+        color: var(--ink-light);
+      }
+      .btn-danger {
+        background: var(--danger);
+        color: #fff;
+      }
+      .btn-sm {
+        padding: 5px 12px;
+        font-size: 12px;
+      }
+      .btn-ai {
+        background: var(--warn-lt);
+        color: var(--warn);
+        border: 1px solid #e6c96a;
+      }
+      .btn-ai:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+      }
+      /* ── Labels ──────────────────────────────────────────────── */
+      .aigen-label {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        margin-top: 12px;
+        font-size: 13px;
+        color: var(--ink-light);
+        cursor: pointer;
+        user-select: none;
+      }
+      .aigen-label input[type="checkbox"] {
+        accent-color: var(--accent);
+        width: 15px;
+        height: 15px;
+        cursor: pointer;
+      }
+      /* ── Alerts ──────────────────────────────────────────────── */
+      .alert {
+        padding: 10px 14px;
+        border-radius: var(--radius);
+        font-size: 13px;
+        margin-top: 12px;
+        display: none;
+      }
+      .alert.show {
+        display: block;
+      }
+      .alert-success {
+        background: var(--accent-lt);
+        color: #1b5e38;
+      }
+      .alert-error {
+        background: var(--danger-lt);
+        color: var(--danger);
+      }
+      .alert-warn {
+        background: var(--warn-lt);
+        color: var(--warn);
+      }
 
-    /* ── Alerts ──────────────────────────────────────────────── */
-    .alert {
-      padding: 10px 14px;
-      border-radius: var(--radius);
-      font-size: 13px;
-      margin-top: 12px;
-      display: none;
-    }
-    .alert.show { display: block; }
-    .alert-success { background: var(--accent-lt); color: #1b5e38; }
-    .alert-error   { background: var(--danger-lt); color: var(--danger); }
-    .alert-warn    { background: var(--warn-lt);   color: var(--warn); }
+      /* ── Word list ───────────────────────────────────────────── */
+      .search-bar {
+        display: flex;
+        gap: 10px;
+        margin-bottom: 20px;
+      }
+      .search-bar input {
+        flex: 1;
+      }
 
-    /* ── Word list ───────────────────────────────────────────── */
-    .search-bar {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 20px;
-    }
-    .search-bar input { flex: 1; }
+      #word-list {
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+      }
 
-    #word-list {
-      display: flex;
-      flex-direction: column;
-      gap: 1px;
-    }
+      .word-row {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        padding: 12px 16px;
+        background: #fff;
+        border: 1px solid var(--rule);
+        border-radius: var(--radius);
+        transition: background 0.1s;
+      }
+      .word-row:hover {
+        background: var(--paper-2);
+      }
 
-    .word-row {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 16px;
-      padding: 12px 16px;
-      background: #fff;
-      border: 1px solid var(--rule);
-      border-radius: var(--radius);
-      transition: background .1s;
-    }
-    .word-row:hover { background: var(--paper-2); }
+      .word-index {
+        font-family: "Inter", sans-serif;
+        font-size: 14px;
+        font-weight: 600;
+        color: var(--ink-faint);
+        min-width: 28px;
+        text-align: right;
+        flex-shrink: 0;
+        letter-spacing: 0.03em;
+      }
 
-    .word-index {
-      font-family: 'Inter', sans-serif;
-      font-size: 14px;
-      font-weight: 600;
-      color: var(--ink-faint);
-      min-width: 28px;
-      text-align: right;
-      flex-shrink: 0;
-      letter-spacing: .03em;
-    }
+      .word-en {
+        font-family: "Lora", serif;
+        font-size: 15px;
+        font-weight: 600;
+        color: var(--ink);
+        flex: 1;
+        min-width: 0;
+      }
+      .word-fa {
+        font-family: Vazirmatn, sans-serif;
+        font-size: 16px;
+        color: var(--ink-light);
+        text-align: right;
+        direction: rtl;
+        flex: 1;
+        min-width: 0;
+      }
+      .word-actions {
+        display: flex;
+        gap: 6px;
+        flex-shrink: 0;
+      }
 
-    .word-en {
-      font-family: 'Lora', serif;
-      font-size: 15px;
-      font-weight: 600;
-      color: var(--ink);
-      flex: 1;
-    }
-    .word-fa {
-      font-family: Vazirmatn, sans-serif;
-      font-size: 16px;
-      color: var(--ink-light);
-      text-align: left;
-      direction: rtl;
-    }
-    .word-actions {
-      display: flex;
-      gap: 6px;
-      flex-shrink: 0;
-    }
+      .no-words {
+        text-align: center;
+        padding: 48px 20px;
+        color: var(--ink-faint);
+        font-style: italic;
+      }
+      /* ── Practice mode ───────────────────────────────────────── */
+      .practice-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin-bottom: 24px;
+        flex-wrap: wrap;
+        gap: 12px;
+      }
 
-    .no-words {
-      text-align: center;
-      padding: 48px 20px;
-      color: var(--ink-faint);
-      font-style: italic;
-    }
-    /* ── Practice mode ───────────────────────────────────────── */
-    .practice-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 24px;
-      flex-wrap: wrap;
-      gap: 12px;
-    }
+      .progress-bar-wrap {
+        height: 4px;
+        background: var(--rule);
+        border-radius: 99px;
+        margin-bottom: 28px;
+        overflow: hidden;
+      }
+      .progress-bar-fill {
+        height: 100%;
+        background: var(--accent);
+        border-radius: 99px;
+        transition: width 0.3s ease;
+      }
 
-    .progress-bar-wrap {
-      height: 4px;
-      background: var(--rule);
-      border-radius: 99px;
-      margin-bottom: 28px;
-      overflow: hidden;
-    }
-    .progress-bar-fill {
-      height: 100%;
-      background: var(--accent);
-      border-radius: 99px;
-      transition: width .3s ease;
-    }
+      /* Flip card */
+      .flip-wrap {
+        perspective: 900px;
+        margin: 0 auto 28px;
+        max-width: 480px;
+        height: 220px;
+      }
+      .flip-inner {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        transform-style: preserve-3d;
+        cursor: pointer;
+      }
+      .flip-inner.flipped {
+        transform: rotateY(180deg);
+      }
 
-    /* Flip card */
-    .flip-wrap {
-      perspective: 900px;
-      margin: 0 auto 28px;
-      max-width: 480px;
-      height: 220px;
-    }
-    .flip-inner {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      transition: transform .5s cubic-bezier(.4,0,.2,1);
-      transform-style: preserve-3d;
-      cursor: pointer;
-    }
-    .flip-inner.flipped { transform: rotateY(180deg); }
+      .flip-front,
+      .flip-back {
+        position: absolute;
+        inset: 0;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        padding: 28px;
+        backface-visibility: hidden;
+        -webkit-backface-visibility: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+      }
+      .flip-front {
+        background: var(--ink);
+        color: #fff;
+      }
+      .flip-back {
+        background: var(--accent);
+        color: #fff;
+        transform: rotateY(180deg);
+      }
+      .flip-hint {
+        font-size: 11px;
+        opacity: 0.5;
+        margin-bottom: 12px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+      .flip-word {
+        font-family: "Lora", serif;
+        font-size: 30px;
+        font-weight: 600;
+        text-align: center;
+        line-height: 1.25;
+      }
+      .flip-fa {
+        font-family: Vazirmatn, sans-serif;
+        font-size: 22px;
+        direction: rtl;
+      }
 
-    .flip-front, .flip-back {
-      position: absolute;
-      inset: 0;
-      border-radius: 12px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      padding: 28px;
-      backface-visibility: hidden;
-      -webkit-backface-visibility: hidden;
-      box-shadow: 0 4px 20px rgba(0,0,0,.1);
-    }
-    .flip-front {
-      background: var(--ink);
-      color: #fff;
-    }
-    .flip-back {
-      background: var(--accent);
-      color: #fff;
-      transform: rotateY(180deg);
-    }
-    .flip-hint {
-      font-size: 11px;
-      opacity: .5;
-      margin-bottom: 12px;
-      letter-spacing: .08em;
-      text-transform: uppercase;
-    }
-    .flip-word {
-      font-family: 'Lora', serif;
-      font-size: 30px;
-      font-weight: 600;
-      text-align: center;
-      line-height: 1.25;
-    }
-    .flip-fa {
-      font-family: Vazirmatn, sans-serif;
-      font-size: 22px;
-      direction: rtl;
-    }
+      .practice-controls {
+        display: flex;
+        justify-content: center;
+        gap: 12px;
+        flex-wrap: wrap;
+      }
 
-    .practice-controls {
-      display: flex;
-      justify-content: center;
-      gap: 12px;
-      flex-wrap: wrap;
-    }
+      .practice-stat {
+        font-size: 13px;
+        color: var(--ink-faint);
+        text-align: center;
+        margin-top: 16px;
+      }
+      #add-btn {
+        height: 41px;
+      }
 
-    .practice-stat {
-      font-size: 13px;
-      color: var(--ink-faint);
-      text-align: center;
-      margin-top: 16px;
-    }
+      /* ── Edit modal ──────────────────────────────────────────── */
+      .modal-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0, 0, 0, 0.4);
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 100;
+        padding: 20px;
+      }
+      .modal-overlay.open {
+        display: flex;
+      }
+      .modal {
+        background: #fff;
+        border-radius: 12px;
+        padding: 28px;
+        width: 100%;
+        max-width: 440px;
+        box-shadow: 0 8px 40px rgba(0, 0, 0, 0.2);
+      }
+      .modal-title {
+        font-family: "Lora", serif;
+        font-size: 18px;
+        font-weight: 600;
+        margin-bottom: 20px;
+      }
+      .modal-actions {
+        display: flex;
+        gap: 10px;
+        margin-top: 20px;
+        justify-content: flex-end;
+      }
 
-    /* ── Edit modal ──────────────────────────────────────────── */
-    .modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.4);
-      display: none;
-      align-items: center;
-      justify-content: center;
-      z-index: 100;
-      padding: 20px;
-    }
-    .modal-overlay.open { display: flex; }
-    .modal {
-      background: #fff;
-      border-radius: 12px;
-      padding: 28px;
-      width: 100%;
-      max-width: 440px;
-      box-shadow: 0 8px 40px rgba(0,0,0,.2);
-    }
-    .modal-title {
-      font-family: 'Lora', serif;
-      font-size: 18px;
-      font-weight: 600;
-      margin-bottom: 20px;
-    }
-    .modal-actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 20px;
-      justify-content: flex-end;
-    }
-
-    /* ── Responsive ──────────────────────────────────────────── */
-@media (max-width: 540px) {
-  .word-fa {
-    display: none;
-    transition: opacity 0.2s ease;
-  }
-  .word-fa.revealed {
-    display: inline;
-    opacity: 1;
-  }
-  .word-en {
-    cursor: pointer;
-    position: relative;
-  }
-  /* Subtle hint that the English text is tappable */
-  .word-en::after {
-    content: ' 👁';
-    font-size: 11px;
-    opacity: 0.35;
-    font-style: normal;
-  }
-  .word-en.revealed-hint::after {
-    opacity: 0;
-  }
-  .flip-word { font-size: 24px; }
-  .inline-add-fields .field { min-width: 100%; }
-  .inline-add-fields .btn { width: 100%; }
-}
-  </style>
-</head>
-<body>
-<div class="shell">
-
-  <header>
-    <div>
-      <div class="wordmark">My Word<span>Book</span></div>
-      <div class="word-count" id="header-count">{{ count }} word{% if count != 1 %}s{% endif %} saved</div>
-    </div>
-  </header>
-
-  <!-- Tabs — no more "Add Word" tab -->
-  <nav class="tabs">
-    <button class="tab-btn active" data-tab="library">📚 Library</button>
-    <button class="tab-btn" data-tab="import">📋 Batch Import</button>
-    <button class="tab-btn" data-tab="practice">🎯 Practice</button>
-  </nav>
-
-  <!-- ── Library (with inline add at bottom) ───────────────── -->
-  <div class="tab-panel active" id="tab-library">
-    <div class="search-bar">
-      <input type="text" id="search-input" placeholder="Search words…" />
-    </div>
-    <div id="word-list">
-      {% if words %}
-        {% for word in words %}
-        <div class="word-row" data-index="{{ loop.index0 }}" data-en="{{ word.english }}" data-fa="{{ word.persian }}">
-          <span class="word-index">{{ loop.index }}</span>
-          <span class="word-en">{{ word.english }}</span>
-          <span class="word-fa">{{ word.persian }}</span>
-          <div class="word-actions">
-            <button class="btn btn-ghost btn-sm edit-btn" data-index="{{ loop.index0 }}">Edit</button>
-            <button class="btn btn-danger btn-sm delete-btn" data-index="{{ loop.index0 }}">✕</button>
+      /* ── Responsive ──────────────────────────────────────────── */
+      @media (max-width: 540px) {
+        .word-fa {
+          display: none;
+          transition: opacity 0.2s ease;
+        }
+        .word-fa.revealed {
+          display: inline;
+          opacity: 1;
+        }
+        .word-en {
+          cursor: pointer;
+          position: relative;
+        }
+        /* Subtle hint that the English text is tappable */
+        .word-en::after {
+          content: " 👁";
+          font-size: 11px;
+          opacity: 0.35;
+          font-style: normal;
+        }
+        .word-en.revealed-hint::after {
+          opacity: 0;
+        }
+        .flip-word {
+          font-size: 24px;
+        }
+        .inline-add-fields .field {
+          min-width: 100%;
+        }
+        .inline-add-fields .btn {
+          width: 100%;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="shell">
+      <header>
+        <div>
+          <div class="wordmark">My Word<span>Book</span></div>
+          <div class="word-count" id="header-count">
+            {{ count }} word{% if count != 1 %}s{% endif %} saved
           </div>
         </div>
-        {% endfor %}
-      {% else %}
-        <div class="no-words" id="no-words-msg">No words yet — add one below!</div>
-      {% endif %}
-    </div>
+      </header>
 
-    <!-- Inline add form — always at the end of the word list -->
-    <div class="inline-add-card" id="inline-add">
-      <div class="inline-add-header">
-        <span class="plus-icon">+</span>
-        Add a new word
-      </div>
-      <div class="inline-add-fields">
-        <div class="field">
-          <label for="add-en">English</label>
-          <input type="text" id="add-en" placeholder="e.g. tough" />
+      <!-- Tabs — no more "Add Word" tab -->
+      <nav class="tabs">
+        <button class="tab-btn active" data-tab="library">📚 Library</button>
+        <button class="tab-btn" data-tab="import">📋 Batch Import</button>
+        <button class="tab-btn" data-tab="practice">🎯 Practice</button>
+      </nav>
+
+      <!-- ── Library (with inline add at bottom) ───────────────── -->
+      <div class="tab-panel active" id="tab-library">
+        <div class="search-bar">
+          <input type="text" id="search-input" placeholder="Search words…" />
         </div>
-        <div class="field">
-          <label for="add-fa">Persian (فارسی)</label>
-          <input type="text" class="add-fa" id="add-fa" placeholder="e.g. سخت" dir="rtl" />
-        </div>
-        <button class="btn btn-primary" id="add-btn" style="align-self:flex-end">Add</button>
-      </div>
-      <div class="inline-add-alert" id="add-alert"></div>
-    </div>
-  </div>
-
-  <!-- ── Batch Import ─────────────────────────────────────── -->
-  <div class="tab-panel" id="tab-import">
-    <div class="card">
-      <div class="card-title">Paste Words from Clipboard</div>
-      <p style="font-size:13px;color:var(--ink-light);margin-bottom:14px;">
-        One word per line in the format: <code style="background:var(--paper-2);padding:2px 6px;border-radius:4px">English = فارسی</code>
-      </p>
-      <div class="field">
-        <label for="import-text">Paste here</label>
-        <textarea id="import-text" placeholder="tough = سخت&#10;depiction = تصویر سازی&#10;amused = خوشش نیامد"></textarea>
-      </div>
-      <div style="margin-top:14px;">
-        <button class="btn btn-primary" id="import-btn">Import All</button>
-      </div>
-      <div class="alert" id="import-alert"></div>
-    </div>
-  </div>
-
-  <!-- ── Practice ─────────────────────────────────────────── -->
-  <div class="tab-panel" id="tab-practice">
-    <div class="practice-header">
-      <div>
-        <div style="font-family:'Lora',serif;font-size:18px;font-weight:600">Practice Mode</div>
-        <div style="font-size:13px;color:var(--ink-faint);margin-top:2px">Tap the card to reveal the Persian meaning</div>
-      </div>
-      <button class="btn btn-ghost" id="shuffle-btn">🔀 Shuffle</button>
-    </div>
-
-    <div class="progress-bar-wrap">
-      <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
-    </div>
-
-    <div id="practice-area">
-      <div class="no-words" id="practice-empty" style="display:none">
-        Add some words first to start practicing!
-      </div>
-
-      <div id="practice-card-wrap">
-        <div class="flip-wrap" id="flip-wrap" onclick="flipCard()">
-          <div class="flip-inner" id="flip-inner">
-            <div class="flip-front">
-              <div class="flip-hint">English</div>
-              <div class="flip-word" id="card-en">—</div>
-            </div>
-            <div class="flip-back">
-              <div class="flip-hint">Persian</div>
-              <div class="flip-word flip-fa" id="card-fa">—</div>
+        <div id="word-list">
+          {% if words %} {% for word in words %}
+          <div
+            class="word-row"
+            data-index="{{ loop.index0 }}"
+            data-en="{{ word.english }}"
+            data-fa="{{ word.persian }}"
+          >
+            <span class="word-index">{{ loop.index }}</span>
+            <span class="word-en">{{ word.english }}</span>
+            <span class="word-fa">{{ word.persian }}</span>
+            <div class="word-actions">
+              <button
+                class="btn btn-ghost btn-sm edit-btn"
+                data-index="{{ loop.index0 }}"
+              >
+                Edit
+              </button>
+              <button
+                class="btn btn-danger btn-sm delete-btn"
+                data-index="{{ loop.index0 }}"
+              >
+                ✕
+              </button>
             </div>
           </div>
+          {% endfor %} {% else %}
+          <div class="no-words" id="no-words-msg">
+            No words yet — add one below!
+          </div>
+          {% endif %}
         </div>
 
-        <div class="practice-controls">
-          <button class="btn btn-ghost" id="prev-btn">← Previous</button>
-          <button class="btn btn-primary" id="next-btn">Next →</button>
+        <!-- Inline add form — always at the end of the word list -->
+        <div class="inline-add-card" id="inline-add">
+          <div class="inline-add-header">
+            <span class="plus-icon">+</span>
+            Add a new word
+          </div>
+          <div class="inline-add-fields">
+            <div class="field">
+              <label for="add-en">English</label>
+              <input type="text" id="add-en" placeholder="e.g. tough" />
+            </div>
+            <div class="field">
+              <label for="add-fa">Persian (فارسی)</label>
+              <input
+                type="text"
+                class="add-fa"
+                id="add-fa"
+                placeholder="e.g. سخت"
+                dir="rtl"
+              />
+            </div>
+            <button class="btn btn-primary" id="add-btn">Add</button>
+          </div>
+          <label class="aigen-label">
+            <input type="checkbox" id="add-aigen" />
+            ✨ Ai Generate Sentence
+          </label>
+          <div class="inline-add-alert" id="add-alert"></div>
+        </div>
+      </div>
+
+      <!-- ── Batch Import ─────────────────────────────────────── -->
+      <div class="tab-panel" id="tab-import">
+        <div class="card">
+          <div class="card-title">Paste Words from Clipboard</div>
+          <p
+            style="
+              font-size: 13px;
+              color: var(--ink-light);
+              margin-bottom: 14px;
+            "
+          >
+            One word per line in the format:
+            <code
+              style="
+                background: var(--paper-2);
+                padding: 2px 6px;
+                border-radius: 4px;
+              "
+              >English = فارسی</code
+            >
+          </p>
+          <div class="field">
+            <label for="import-text">Paste here</label>
+            <textarea
+              id="import-text"
+              placeholder="tough = سخت&#10;depiction = تصویر سازی&#10;amused = خوشش نیامد"
+            ></textarea>
+          </div>
+          <div style="margin-top: 14px">
+            <button class="btn btn-primary" id="import-btn">Import All</button>
+          </div>
+          <div class="alert" id="import-alert"></div>
+        </div>
+      </div>
+
+      <!-- ── Practice ─────────────────────────────────────────── -->
+      <div class="tab-panel" id="tab-practice">
+        <div class="practice-header">
+          <div>
+            <div
+              style="
+                font-family: &quot;Lora&quot;, serif;
+                font-size: 18px;
+                font-weight: 600;
+              "
+            >
+              Practice Mode
+            </div>
+            <div
+              style="font-size: 13px; color: var(--ink-faint); margin-top: 2px"
+            >
+              Tap the card to reveal the Persian meaning
+            </div>
+          </div>
+          <button class="btn btn-ghost" id="shuffle-btn">🔀 Shuffle</button>
         </div>
 
-        <div class="practice-stat" id="practice-stat"></div>
+        <div class="progress-bar-wrap">
+          <div
+            class="progress-bar-fill"
+            id="progress-fill"
+            style="width: 0%"
+          ></div>
+        </div>
+
+        <div id="practice-area">
+          <div class="no-words" id="practice-empty" style="display: none">
+            Add some words first to start practicing!
+          </div>
+
+          <div id="practice-card-wrap">
+            <div class="flip-wrap" id="flip-wrap" onclick="flipCard()">
+              <div class="flip-inner" id="flip-inner">
+                <div class="flip-front">
+                  <div class="flip-hint">English</div>
+                  <div class="flip-word" id="card-en">—</div>
+                </div>
+                <div class="flip-back">
+                  <div class="flip-hint">Persian</div>
+                  <div class="flip-word flip-fa" id="card-fa">—</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="practice-controls">
+              <button class="btn btn-ghost" id="prev-btn">← Previous</button>
+              <button class="btn btn-primary" id="next-btn">Next →</button>
+            </div>
+
+            <div class="practice-stat" id="practice-stat"></div>
+          </div>
+        </div>
       </div>
     </div>
-  </div>
 
-</div>
-
-<!-- ── Edit Modal ─────────────────────────────────────────── -->
-<div class="modal-overlay" id="edit-modal">
-  <div class="modal">
-    <div class="modal-title">Edit Word</div>
-    <div class="field" style="margin-bottom:12px">
-      <label for="edit-en">English</label>
-      <input type="text" id="edit-en" />
-    </div>
-    <div class="field">
-      <label for="edit-fa">Persian (فارسی)</label>
-      <input type="text" id="edit-fa" dir="rtl" />
-    </div>
-    <div class="alert" id="edit-alert"></div>
-    <div class="modal-actions">
-      <button class="btn btn-ghost" id="modal-cancel">Cancel</button>
-      <button class="btn btn-ai" id="modal-aigen" title="Generate a sentence using AI and replace both fields">✨ Generate Sentence</button>
-      <button class="btn btn-primary" id="modal-save">Save</button>
-    </div>
-  </div>
-</div>
-
-<script>
-// ── State ──────────────────────────────────────────────────────
-let words = {{ words | tojson }};
-let practiceQueue = [];
-let practiceIndex = 0;
-let editingIndex = null;
-
-// ── Helpers ────────────────────────────────────────────────────
-function showAlert(id, msg, type = 'error') {
-  const el = document.getElementById(id);
-  el.textContent = msg;
-  el.className = `show alert-${type === 'success' ? 'alert-success' : type === 'warn' ? 'alert-warn' : 'alert-error'}`;
-  // For inline add alert, it uses a different base class
-  if (id === 'add-alert') {
-    el.className = `inline-add-alert show alert-${type === 'success' ? 'success' : type === 'warn' ? 'warn' : 'error'}`;
-  } else {
-    el.className = `alert show alert-${type === 'success' ? 'success' : type === 'warn' ? 'warn' : 'error'}`;
-  }
-  setTimeout(() => {
-    if (id === 'add-alert') {
-      el.className = 'inline-add-alert';
-    } else {
-      el.className = 'alert';
-    }
-  }, 4000);
-}
-
-function updateHeaderCount() {
-  const c = words.length;
-  document.getElementById('header-count').textContent = `${c} word${c !== 1 ? 's' : ''} saved`;
-}
-
-// ── Tabs ───────────────────────────────────────────────────────
-document.querySelectorAll('.tab-btn').forEach(btn => {
-  btn.addEventListener('click', () => {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
-    btn.classList.add('active');
-    document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
-    if (btn.dataset.tab === 'practice') initPractice();
-  });
-});
-
-// ── Render word list ───────────────────────────────────────────
-function renderList(filter = '') {
-  const list = document.getElementById('word-list');
-  const f = filter.toLowerCase().trim();
-  const filtered = f
-    ? words.filter(w => w.english.toLowerCase().includes(f) || w.persian.includes(f))
-    : words;
-
-  if (!filtered.length) {
-    list.innerHTML = `<div class="no-words">${f ? 'No matches found.' : 'No words yet — add one below!'}</div>`;
-    return;
-  }
-
-  list.innerHTML = filtered.map((w, i) => {
-    const realIndex = words.indexOf(w);
-    return `
-      <div class="word-row" data-index="${realIndex}">
-        <span class="word-index">${realIndex + 1}</span>
-        <span class="word-en">${escHtml(w.english)}</span>
-        <span class="word-fa">${escHtml(w.persian)}</span>
-        <div class="word-actions">
-          <button class="btn btn-ghost btn-sm edit-btn" data-index="${realIndex}">Edit</button>
-          <button class="btn btn-danger btn-sm delete-btn" data-index="${realIndex}">✕</button>
+    <!-- ── Edit Modal ─────────────────────────────────────────── -->
+    <div class="modal-overlay" id="edit-modal">
+      <div class="modal">
+        <div class="modal-title">Edit Word</div>
+        <div class="field" style="margin-bottom: 12px">
+          <label for="edit-en">English</label>
+          <input type="text" id="edit-en" />
         </div>
-      </div>`;
-  }).join('');
+        <div class="field">
+          <label for="edit-fa">Persian (فارسی)</label>
+          <input type="text" id="edit-fa" dir="rtl" />
+        </div>
+        <div class="alert" id="edit-alert"></div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" id="modal-cancel">Cancel</button>
+          <button
+            class="btn btn-ai"
+            id="modal-aigen"
+            title="Generate a sentence using AI and replace both fields"
+          >
+            ✨ Generate Sentence
+          </button>
+          <button class="btn btn-primary" id="modal-save">Save</button>
+        </div>
+      </div>
+    </div>
 
-  list.querySelectorAll('.edit-btn').forEach(b => b.addEventListener('click', () => openEdit(+b.dataset.index)));
-  list.querySelectorAll('.delete-btn').forEach(b => b.addEventListener('click', () => deleteWord(+b.dataset.index)));
-}
+    <script>
+            // ── State ──────────────────────────────────────────────────────
+            let words = {{ words | tojson }};
+            let practiceQueue = [];
+            let practiceIndex = 0;
+            let editingIndex = null;
 
-function escHtml(s) {
-  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
-}
+            // ── Helpers ────────────────────────────────────────────────────
+            function showAlert(id, msg, type = 'error') {
+              const el = document.getElementById(id);
+              el.textContent = msg;
+              el.className = `show alert-${type === 'success' ? 'alert-success' : type === 'warn' ? 'alert-warn' : 'alert-error'}`;
+              // For inline add alert, it uses a different base class
+              if (id === 'add-alert') {
+                el.className = `inline-add-alert show alert-${type === 'success' ? 'success' : type === 'warn' ? 'warn' : 'error'}`;
+              } else {
+                el.className = `alert show alert-${type === 'success' ? 'success' : type === 'warn' ? 'warn' : 'error'}`;
+              }
+              setTimeout(() => {
+                if (id === 'add-alert') {
+                  el.className = 'inline-add-alert';
+                } else {
+                  el.className = 'alert';
+                }
+              }, 4000);
+            }
 
-document.getElementById('search-input').addEventListener('input', e => renderList(e.target.value));
+            function updateHeaderCount() {
+              const c = words.length;
+              document.getElementById('header-count').textContent = `${c} word${c !== 1 ? 's' : ''} saved`;
+            }
 
-// ── Add word (inline at end of list) ───────────────────────────
-document.getElementById('add-btn').addEventListener('click', async () => {
-  const en = document.getElementById('add-en').value.trim();
-  const fa = document.getElementById('add-fa').value.trim();
-  if (!en || !fa) { showAlert('add-alert', 'Fill in both fields.'); return; }
+            // ── Tabs ───────────────────────────────────────────────────────
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+              btn.addEventListener('click', () => {
+                document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+                btn.classList.add('active');
+                document.getElementById('tab-' + btn.dataset.tab).classList.add('active');
+                if (btn.dataset.tab === 'practice') initPractice();
+              });
+            });
 
-  const res = await fetch('/api/words', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({english: en, persian: fa})
-  });
-  const data = await res.json();
+            // ── Render word list ───────────────────────────────────────────
+            function renderList(filter = '') {
+              const list = document.getElementById('word-list');
+              const f = filter.toLowerCase().trim();
+              const filtered = f
+                ? words.filter(w => w.english.toLowerCase().includes(f) || w.persian.includes(f))
+                : words;
 
-  if (!res.ok) { showAlert('add-alert', data.error); return; }
+              if (!filtered.length) {
+                list.innerHTML = `<div class="no-words">${f ? 'No matches found.' : 'No words yet — add one below!'}</div>`;
+                return;
+              }
 
-  words.push(data.word);
-  document.getElementById('add-en').value = '';
-  document.getElementById('add-fa').value = '';
-  renderList(document.getElementById('search-input').value);
-  updateHeaderCount();
-  showAlert('add-alert', `"${data.word.english}" added!`, 'success');
+              list.innerHTML = filtered.map((w, i) => {
+                const realIndex = words.indexOf(w);
+                return `
+                  <div class="word-row" data-index="${realIndex}">
+                    <span class="word-index">${realIndex + 1}</span>
+                    <span class="word-en">${escHtml(w.english)}</span>
+                    <span class="word-fa">${escHtml(w.persian)}</span>
+                    <div class="word-actions">
+                      <button class="btn btn-ghost btn-sm edit-btn" data-index="${realIndex}">Edit</button>
+                      <button class="btn btn-danger btn-sm delete-btn" data-index="${realIndex}">✕</button>
+                    </div>
+                  </div>`;
+              }).join('');
 
-  // Scroll to the newly added word
-  const rows = document.querySelectorAll('.word-row');
-  if (rows.length) {
-    rows[rows.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
-    // Brief highlight
-    rows[rows.length - 1].style.background = 'var(--accent-lt)';
-    setTimeout(() => { rows[rows.length - 1].style.background = ''; }, 1200);
-  }
+              list.querySelectorAll('.edit-btn').forEach(b => b.addEventListener('click', () => openEdit(+b.dataset.index)));
+              list.querySelectorAll('.delete-btn').forEach(b => b.addEventListener('click', () => deleteWord(+b.dataset.index)));
+            }
 
-  document.getElementById('add-en').focus();
-});
+            function escHtml(s) {
+              return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+            }
 
-// Enter key support for inline add
-['add-en','add-fa'].forEach(id => {
-  document.getElementById(id).addEventListener('keydown', e => {
-    if (e.key === 'Enter') document.getElementById('add-btn').click();
-  });
-});
+            document.getElementById('search-input').addEventListener('input', e => renderList(e.target.value));
 
-// ── Delete word ────────────────────────────────────────────────
-async function deleteWord(index) {
-  const word = words[index];
+            // ── Add word (inline at end of list) ───────────────────────────
+            document.getElementById('add-btn').addEventListener('click', async () => {
+        const en = document.getElementById('add-en').value.trim();
+        const fa = document.getElementById('add-fa').value.trim();
+        const aiGen = document.getElementById('add-aigen').checked;
+        if (!en) { showAlert('add-alert', 'English field is required.'); return; }
+        if (!aiGen && !fa) { showAlert('add-alert', 'Persian field is required.'); return; }
+        const btn = document.getElementById('add-btn');
+        btn.disabled = true;
+        btn.textContent = aiGen ? '⏳ Generating…' : 'Adding…';
 
-  const res = await fetch(`/api/words/${index}`, {method:'DELETE'});
-  if (!res.ok) { alert('Failed to delete.'); return; }
+        const res = await fetch('/api/words', {
+          method: 'POST',
+          headers: {'Content-Type':'application/json'},
+          body: JSON.stringify({ english: en, persian: fa, aigen: aiGen })
+        });
+        const data = await res.json();
 
-  words.splice(index, 1);
-  renderList(document.getElementById('search-input').value);
-  updateHeaderCount();
-}
+        btn.disabled = false;
+        btn.textContent = 'Add';
 
-// ── Edit modal ─────────────────────────────────────────────────
-function openEdit(index) {
-  editingIndex = index;
-  document.getElementById('edit-en').value = words[index].english;
-  document.getElementById('edit-fa').value = words[index].persian;
-  document.getElementById('edit-modal').classList.add('open');
-  document.getElementById('edit-en').focus();
-}
+        if (!res.ok) { showAlert('add-alert', data.error); return; }
 
-document.getElementById('modal-cancel').addEventListener('click', () => {
-  document.getElementById('edit-modal').classList.remove('open');
-});
-document.getElementById('edit-modal').addEventListener('click', e => {
-  if (e.target === document.getElementById('edit-modal'))
-    document.getElementById('edit-modal').classList.remove('open');
-});
+        words.push(data.word);
+        document.getElementById('add-en').value = '';
+        document.getElementById('add-fa').value = '';
+        renderList(document.getElementById('search-input').value);
+        updateHeaderCount();
+        showAlert('add-alert', `"${data.word.english}" added!`, 'success');
 
-document.getElementById('modal-save').addEventListener('click', async () => {
-  const en = document.getElementById('edit-en').value.trim();
-  const fa = document.getElementById('edit-fa').value.trim();
-  if (!en || !fa) { showAlert('edit-alert', 'Fill in both fields.'); return; }
+        const rows = document.querySelectorAll('.word-row');
+        if (rows.length) {
+          rows[rows.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
+          rows[rows.length - 1].style.background = 'var(--accent-lt)';
+          setTimeout(() => { rows[rows.length - 1].style.background = ''; }, 1200);
+        }
 
-  const res = await fetch(`/api/words/${editingIndex}`, {
-    method: 'PUT',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({english: en, persian: fa})
-  });
-  const data = await res.json();
-  if (!res.ok) { showAlert('edit-alert', data.error); return; }
-
-  words[editingIndex] = data.word;
-  document.getElementById('edit-modal').classList.remove('open');
-  renderList(document.getElementById('search-input').value);
-});
-
-document.getElementById('modal-aigen').addEventListener('click', async () => {
-  const btn = document.getElementById('modal-aigen');
-  btn.disabled = true;
-  btn.textContent = '⏳ Generating…';
-
-  try {
-    const res = await fetch(`/api/aigen/${editingIndex}`, { method: 'PUT' });
-    const data = await res.json();
-
-    if (!res.ok) {
-      showAlert('edit-alert', data.error || 'Generation failed.', 'error');
-      return;
-    }
-
-    // Reload the updated word from server state
-    const wordsRes = await fetch('/api/words');
-    if (wordsRes.ok) {
-      const wordsData = await wordsRes.json();
-      words = wordsData.words ?? wordsData;
-    }
-
-    // Refresh modal fields with new values
-    document.getElementById('edit-en').value = words[editingIndex].english;
-    document.getElementById('edit-fa').value = words[editingIndex].persian;
-
-    // Refresh the word list in the background
-    renderList(document.getElementById('search-input').value);
-
-    showAlert('edit-alert', '✨ Sentence generated!', 'success');
-  } catch (e) {
-    showAlert('edit-alert', 'Network error: ' + e.message, 'error');
-  } finally {
-    btn.disabled = false;
-    btn.textContent = '✨ Generate Sentence';
-  }
-});
-document.getElementById('import-btn').addEventListener('click', async () => {
-  const text = document.getElementById('import-text').value;
-  if (!text.trim()) { showAlert('import-alert', 'Paste some words first.'); return; }
-
-  const res = await fetch('/api/words/batch', {
-    method: 'POST',
-    headers: {'Content-Type':'application/json'},
-    body: JSON.stringify({text})
-  });
-  const data = await res.json();
-
-  if (!res.ok) { showAlert('import-alert', data.error); return; }
-
-  words.push(...data.added);
-  renderList();
-  updateHeaderCount();
-  document.getElementById('import-text').value = '';
-
-  let msg = `✓ Added ${data.added_count} word${data.added_count !== 1 ? 's' : ''}.`;
-  let type = 'success';
-  if (data.duplicates.length) {
-    msg += ` ${data.duplicates.length} duplicate${data.duplicates.length>1?'s':''} skipped.`;
-    type = 'warn';
-  }
-  if (data.errors.length) msg += ` ${data.errors.length} line${data.errors.length>1?'s':''} had errors.`;
-  showAlert('import-alert', msg, type);
-});
-
-// ── Practice mode ──────────────────────────────────────────────
-function initPractice() {
-  if (!words.length) {
-    document.getElementById('practice-card-wrap').style.display = 'none';
-    document.getElementById('practice-empty').style.display = 'block';
-    return;
-  }
-  document.getElementById('practice-card-wrap').style.display = 'block';
-  document.getElementById('practice-empty').style.display = 'none';
-  if (!practiceQueue.length) shuffleQueue();
-  showCard();
-}
-
-function shuffleQueue() {
-  practiceQueue = [...words].sort(() => Math.random() - .5);
-  practiceIndex = 0;
-}
-
-document.getElementById('shuffle-btn').addEventListener('click', () => {
-  shuffleQueue();
-  showCard();
-});
-
-function showCard() {
-  if (!practiceQueue.length) return;
-  const idx = practiceIndex % practiceQueue.length;
-  const w = practiceQueue[idx];
-  document.getElementById('card-en').textContent = w.english;
-  document.getElementById('card-fa').textContent = w.persian;
-  document.getElementById('flip-inner').classList.remove('flipped');
-  const pct = Math.round(((idx + 1) / practiceQueue.length) * 100);
-  document.getElementById('progress-fill').style.width = pct + '%';
-  document.getElementById('practice-stat').textContent = `${idx + 1} / ${practiceQueue.length}`;
-}
-
-function flipCard() {
-  document.getElementById('flip-inner').classList.toggle('flipped');
-}
-
-document.getElementById('next-btn').addEventListener('click', () => {
-  practiceIndex = (practiceIndex + 1) % practiceQueue.length;
-  showCard();
-});
-document.getElementById('prev-btn').addEventListener('click', () => {
-  practiceIndex = (practiceIndex - 1 + practiceQueue.length) % practiceQueue.length;
-  showCard();
-});
-
-// Keyboard shortcuts in practice
-document.addEventListener('keydown', e => {
-  if (!document.getElementById('tab-practice').classList.contains('active')) return;
-  if (e.key === ' ') { e.preventDefault(); flipCard(); }
-  if (e.key === 'ArrowRight') document.getElementById('next-btn').click();
-  if (e.key === 'ArrowLeft') document.getElementById('prev-btn').click();
-});
-
-// ── Init ───────────────────────────────────────────────────────
-renderList();
-// ── Mobile tap-to-reveal Persian translation ───────────────────
-(function () {
-  // Only activate on touch/mobile devices
-  const isMobile = window.matchMedia('(max-width: 540px)').matches;
-  if (!isMobile) return;
-
-  function attachRevealListeners() {
-    document.querySelectorAll('#word-list .word-row').forEach(function (row) {
-      const enEl = row.querySelector('.word-en');
-      const faEl = row.querySelector('.word-fa');
-      if (!enEl || !faEl) return;
-      // Avoid double-binding
-      if (enEl.dataset.revealBound === '1') return;
-      enEl.dataset.revealBound = '1';
-
-      enEl.addEventListener('click', function () {
-        const isRevealed = faEl.classList.contains('revealed');
-        faEl.classList.toggle('revealed', !isRevealed);
-        enEl.classList.toggle('revealed-hint', !isRevealed);
+        document.getElementById('add-en').focus();
       });
-    });
-  }
+            // Enter key support for inline add
+            ['add-en','add-fa'].forEach(id => {
+              document.getElementById(id).addEventListener('keydown', e => {
+                if (e.key === 'Enter') document.getElementById('add-btn').click();
+              });
+            });
 
-  // Run after initial render and after any re-render (search/add/delete)
-  const originalRenderList = renderList;
-  renderList = function () {
-    originalRenderList.apply(this, arguments);
-    // Small delay to let DOM update
-    setTimeout(attachRevealListeners, 0);
-  };
+            // Lock Persian field when Ai Generate is checked
+            document.getElementById('add-aigen').addEventListener('change', function () {
+              const faInput = document.getElementById('add-fa');
+              if (this.checked) {
+                faInput.value = '';
+                faInput.disabled = true;
+                faInput.placeholder = 'Ai-generated Sentence';
+              } else {
+                faInput.disabled = false;
+                faInput.placeholder = 'e.g. سخت';
+              }
+            });
+            // ── Delete word ────────────────────────────────────────────────
+            async function deleteWord(index) {
+              const word = words[index];
 
-  // Also attach to the server-rendered rows on first load
-  attachRevealListeners();
-})();
-</script>
-</body>
+              const res = await fetch(`/api/words/${index}`, {method:'DELETE'});
+              if (!res.ok) { alert('Failed to delete.'); return; }
+
+              words.splice(index, 1);
+              renderList(document.getElementById('search-input').value);
+              updateHeaderCount();
+            }
+
+            // ── Edit modal ─────────────────────────────────────────────────
+            function openEdit(index) {
+              editingIndex = index;
+              document.getElementById('edit-en').value = words[index].english;
+              document.getElementById('edit-fa').value = words[index].persian;
+              document.getElementById('edit-modal').classList.add('open');
+              document.getElementById('edit-en').focus();
+            }
+
+            document.getElementById('modal-cancel').addEventListener('click', () => {
+              document.getElementById('edit-modal').classList.remove('open');
+            });
+            document.getElementById('edit-modal').addEventListener('click', e => {
+              if (e.target === document.getElementById('edit-modal'))
+                document.getElementById('edit-modal').classList.remove('open');
+            });
+
+            document.getElementById('modal-save').addEventListener('click', async () => {
+              const en = document.getElementById('edit-en').value.trim();
+              const fa = document.getElementById('edit-fa').value.trim();
+              if (!en || !fa) { showAlert('edit-alert', 'Fill in both fields.'); return; }
+
+              const res = await fetch(`/api/words/${editingIndex}`, {
+                method: 'PUT',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({english: en, persian: fa})
+              });
+              const data = await res.json();
+              if (!res.ok) { showAlert('edit-alert', data.error); return; }
+
+              words[editingIndex] = data.word;
+              document.getElementById('edit-modal').classList.remove('open');
+              renderList(document.getElementById('search-input').value);
+            });
+
+            document.getElementById('modal-aigen').addEventListener('click', async () => {
+              const btn = document.getElementById('modal-aigen');
+              btn.disabled = true;
+              btn.textContent = '⏳ Generating…';
+
+              try {
+                const res = await fetch(`/api/aigen/${editingIndex}`, { method: 'PUT' });
+                const data = await res.json();
+
+                if (!res.ok) {
+                  showAlert('edit-alert', data.error || 'Generation failed.', 'error');
+                  return;
+                }
+
+                // Reload the updated word from server state
+                const wordsRes = await fetch('/api/words');
+                if (wordsRes.ok) {
+                  const wordsData = await wordsRes.json();
+                  words = wordsData.words ?? wordsData;
+                }
+
+                // Refresh modal fields with new values
+                document.getElementById('edit-en').value = words[editingIndex].english;
+                document.getElementById('edit-fa').value = words[editingIndex].persian;
+
+                // Refresh the word list in the background
+                renderList(document.getElementById('search-input').value);
+
+                showAlert('edit-alert', '✨ Sentence generated!', 'success');
+              } catch (e) {
+                showAlert('edit-alert', 'Network error: ' + e.message, 'error');
+              } finally {
+                btn.disabled = false;
+                btn.textContent = '✨ Generate Sentence';
+              }
+            });
+            document.getElementById('import-btn').addEventListener('click', async () => {
+              const text = document.getElementById('import-text').value;
+              if (!text.trim()) { showAlert('import-alert', 'Paste some words first.'); return; }
+
+              const res = await fetch('/api/words/batch', {
+                method: 'POST',
+                headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({text})
+              });
+              const data = await res.json();
+
+              if (!res.ok) { showAlert('import-alert', data.error); return; }
+
+              words.push(...data.added);
+              renderList();
+              updateHeaderCount();
+              document.getElementById('import-text').value = '';
+
+              let msg = `✓ Added ${data.added_count} word${data.added_count !== 1 ? 's' : ''}.`;
+              let type = 'success';
+              if (data.duplicates.length) {
+                msg += ` ${data.duplicates.length} duplicate${data.duplicates.length>1?'s':''} skipped.`;
+                type = 'warn';
+              }
+              if (data.errors.length) msg += ` ${data.errors.length} line${data.errors.length>1?'s':''} had errors.`;
+              showAlert('import-alert', msg, type);
+            });
+
+            // ── Practice mode ──────────────────────────────────────────────
+            function initPractice() {
+              if (!words.length) {
+                document.getElementById('practice-card-wrap').style.display = 'none';
+                document.getElementById('practice-empty').style.display = 'block';
+                return;
+              }
+              document.getElementById('practice-card-wrap').style.display = 'block';
+              document.getElementById('practice-empty').style.display = 'none';
+              if (!practiceQueue.length) shuffleQueue();
+              showCard();
+            }
+
+            function shuffleQueue() {
+              practiceQueue = [...words].sort(() => Math.random() - .5);
+              practiceIndex = 0;
+            }
+
+            document.getElementById('shuffle-btn').addEventListener('click', () => {
+              shuffleQueue();
+              showCard();
+            });
+
+            function showCard() {
+              if (!practiceQueue.length) return;
+              const idx = practiceIndex % practiceQueue.length;
+              const w = practiceQueue[idx];
+              document.getElementById('card-en').textContent = w.english;
+              document.getElementById('card-fa').textContent = w.persian;
+              document.getElementById('flip-inner').classList.remove('flipped');
+              const pct = Math.round(((idx + 1) / practiceQueue.length) * 100);
+              document.getElementById('progress-fill').style.width = pct + '%';
+              document.getElementById('practice-stat').textContent = `${idx + 1} / ${practiceQueue.length}`;
+            }
+
+            function flipCard() {
+              document.getElementById('flip-inner').classList.toggle('flipped');
+            }
+
+            document.getElementById('next-btn').addEventListener('click', () => {
+              practiceIndex = (practiceIndex + 1) % practiceQueue.length;
+              showCard();
+            });
+            document.getElementById('prev-btn').addEventListener('click', () => {
+              practiceIndex = (practiceIndex - 1 + practiceQueue.length) % practiceQueue.length;
+              showCard();
+            });
+
+            // Keyboard shortcuts in practice
+            document.addEventListener('keydown', e => {
+              if (!document.getElementById('tab-practice').classList.contains('active')) return;
+              if (e.key === ' ') { e.preventDefault(); flipCard(); }
+              if (e.key === 'ArrowRight') document.getElementById('next-btn').click();
+              if (e.key === 'ArrowLeft') document.getElementById('prev-btn').click();
+            });
+
+            // ── Init ───────────────────────────────────────────────────────
+            renderList();
+            // ── Mobile tap-to-reveal Persian translation ───────────────────
+            (function () {
+              // Only activate on touch/mobile devices
+              const isMobile = window.matchMedia('(max-width: 540px)').matches;
+              if (!isMobile) return;
+
+              function attachRevealListeners() {
+                document.querySelectorAll('#word-list .word-row').forEach(function (row) {
+                  const enEl = row.querySelector('.word-en');
+                  const faEl = row.querySelector('.word-fa');
+                  if (!enEl || !faEl) return;
+                  // Avoid double-binding
+                  if (enEl.dataset.revealBound === '1') return;
+                  enEl.dataset.revealBound = '1';
+
+                  enEl.addEventListener('click', function () {
+                    const isRevealed = faEl.classList.contains('revealed');
+                    faEl.classList.toggle('revealed', !isRevealed);
+                    enEl.classList.toggle('revealed-hint', !isRevealed);
+                  });
+                });
+              }
+
+              // Run after initial render and after any re-render (search/add/delete)
+              const originalRenderList = renderList;
+              renderList = function () {
+                originalRenderList.apply(this, arguments);
+                // Small delay to let DOM update
+                setTimeout(attachRevealListeners, 0);
+              };
+
+              // Also attach to the server-rendered rows on first load
+              attachRevealListeners();
+            })();
+    </script>
+  </body>
 </html>

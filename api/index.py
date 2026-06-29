@@ -132,24 +132,23 @@ def generate_sentence(word: str) -> tuple[str, str]:
         "messages": [
             {
                 "role": "system",
-                "content": (
-                    "You are a creative sentence generator and translator.\n\n"
-                    "The user will give you a word or a sentence.\n\n"
-                    "Your task:\n"
-                    "- If the user gives a WORD → Create a NEW sentence using that word\n"
-                    "- If the user gives a SENTENCE → Create a DIFFERENT sentence with the SAME meaning\n\n"
-                    "Then translate your NEW sentence to Persian.\n\n"
-                    "Response format: Your NEW English sentence, Your Persian translation\n\n"
-                    "Examples:\n"
-                    'User: "apple" → "I eat an apple, من هر روز سیب می‌خورم"\n'
-                    'User: "I ate an apple" → "I have apple, من یک سیب دارم"\n\n'
-                    "Rules:\n"
-                    "- ALWAYS create a NEW sentence\n"
-                    "- NEVER just translate the user's input\n"
-                    "- The Persian must translate YOUR new sentence\n"
-                    "- Only return: English sentence, Persian translation\n"
-                    "- No extra text or explanation"
-                ),
+        "content" : (
+            "You are a vocabulary assistant that creates example sentences and Persian translations.\n\n"
+            "The user will give you a word or a sentence.\n\n"
+            "Your task:\n"
+            "- If the user gives a WORD → Create a short natural sentence using that word\n"
+            "- If the user gives a SENTENCE → Create a different sentence with the same meaning\n\n"
+            "Rules:\n"
+            "- Always create a NEW sentence — never copy or directly translate the input\n"
+            "- Keep sentences simple and natural (under 15 words)\n"
+            "- NEVER use commas (,) anywhere in your English sentence\n"
+            "- The Persian must be a translation of YOUR new English sentence\n\n"
+            "Respond ONLY in this exact JSON format:\n"
+            "{\"english\":\"English sentence\", \"persian\":\"Persian sentence\"}\n\n"
+            "Example:\n"
+            'apple → {\"english\":\"I love eating a fresh apple every morning\", \"persian\":\"من عاشق خوردن یک سیب تازه هر روز صبح هستم\"}\n'
+            "No extra text. No explanation. Nothing else."
+        )
             },
             {"role": "user", "content": word},
         ],
@@ -163,16 +162,16 @@ def generate_sentence(word: str) -> tuple[str, str]:
     try:
         r = requests.post(OPENROUTER_URL, json=payload, headers=ai_headers, timeout=180)
         r.raise_for_status()
-        parts = r.json()["choices"][0]["message"]["content"].strip().split(",", 1)
-        if len(parts) != 2:
-            raise ValueError("Unexpected AI response format")
-        return parts[0].strip(), parts[1].strip()
+        parts = json.loads(r.json()["choices"][0]["message"]["content"].strip())
+        return parts
     except requests.HTTPError as e:
         raise Exception(f"HTTP error: {e.response.status_code}")
     except requests.ConnectionError:
         raise Exception("Connection failed")
     except requests.Timeout:
         raise Exception("Request timed out")
+    except json.decoder.JSONDecodeError:
+        raise Exception("Unexpected AI response format")
 
 
 # ── Routes ───────────────────────────────────────────────────────────────────
@@ -194,16 +193,21 @@ def add_word():
     data    = request.get_json()
     english = data.get('english', '').strip().lower()
     persian = data.get('persian', '').strip()
-
-    if not english or not persian:
-        return jsonify({'error': 'Both English and Persian fields are required.'}), 400
+    aigen = data.get('aigen', False)
+    print(aigen)
+    if not english:
+        return jsonify({'error': 'English field is required.'}), 400
+    if not aigen and not persian:
+        return jsonify({'error': 'Persian field is required.'}), 400
 
     words = load_words()
-
-    if any(w['english'].lower() == english for w in words):
-        return jsonify({'error': f'"{english}" already exists in your list.'}), 409
-
-    new_word = {'english': english, 'persian': persian}
+    if aigen:
+        try:
+            new_word = generate_sentence(english)
+        except Exception as e:
+            return jsonify({'error': str(e)}), 500
+    else:
+        new_word = {'english': english, 'persian': persian}
     words.append(new_word)
 
     if not save_words(words):
@@ -263,11 +267,11 @@ def ai_gen(index):
     english_word = words[index]['english']
 
     try:
-        english, persian = generate_sentence(word=english_word)
+        ai_sentence = generate_sentence(word=english_word)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-    words[index] = {'english': english, 'persian': persian}
+    words[index] = ai_sentence
 
     if not save_words(words):
         return jsonify({'error': 'Failed to save changes to Cloudflare KV.'}), 500
