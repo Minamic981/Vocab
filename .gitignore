@@ -151,7 +151,7 @@ activemq-data/
 api/.env
 env/
 venv/
-
+SinaVenv/
 # Spyder project settings
 .spyderproject
 .spyproject

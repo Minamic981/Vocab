@@ -180,8 +180,7 @@ def generate_sentence(english: str, persian: str = "") -> tuple[str, str]:
 
 @app.route('/')
 def index():
-    words = load_words()
-    return render_template('index.html', words=words, count=len(words))
+    return render_template('index.html')
 
 
 @app.route('/api/words', methods=['GET'])
@@ -332,6 +331,65 @@ def batch_import():
         'total':       len(words),
     })
 
+# Multiple Meaning
+@app.route('/defs/<word>', methods=['POST'])
+def get_definitions(word):
+    word = word.strip().lower()
+    if not word:
+        return jsonify({'error': 'Word is required.'}), 400
+
+    prompt = (
+        f'Give me all distinct meanings (Limit 5 meanings) of the English word "{word}".\n'
+        "For each meaning provide a short English sentence and its Persian translation.\n\n"
+        "Respond ONLY with valid JSON in this exact format — no extra text:\n"
+        '{\n'
+        '  "main_word": "<word>",\n'
+        '  "definitions": [\n'
+        '    { "english": "<short sentence>", "persian": "<Persian translation>" },\n'
+        '    ...\n'
+        '  ]\n'
+        '}'
+    )
+
+    payload = {
+        "model": MODEL_NAME,
+        "messages": [
+            {
+                "role": "system",
+                "content": (
+                    "You are a bilingual English–Persian dictionary assistant.\n"
+                    "Return ONLY a JSON object with no markdown, no backticks, and no explanation.\n"
+                    "Each definition must be a distinct meaning (different part of speech or clearly different sense).\n"
+                    "Keep English definitions concise (under 15 words). Persian translations should be natural Farsi."
+                )
+            },
+            {"role": "user", "content": prompt},
+        ],
+        "temperature": 0.4,
+    }
+
+    ai_headers = {
+        "Authorization": f"Bearer {OPEN_TOKEN}",
+        "Content-Type": "application/json",
+        "X-Title": "Vocab Site",
+    }
+
+    try:
+        r = requests.post(OPENROUTER_URL, json=payload, headers=ai_headers, timeout=180)
+        r.raise_for_status()
+        raw = r.json()["choices"][0]["message"]["content"].strip()
+        # Strip accidental markdown fences
+        raw = raw.replace("```json", "").replace("```", "").strip()
+        result = json.loads(raw)
+        return jsonify(result)
+    except requests.HTTPError as e:
+        return jsonify({'error': f'AI error: {e.response.status_code}'}), 500
+    except requests.ConnectionError:
+        return jsonify({'error': 'Connection failed'}), 500
+    except requests.Timeout:
+        return jsonify({'error': 'Request timed out'}), 500
+    except json.JSONDecodeError:
+        return jsonify({'error': 'Unexpected AI response format'}), 500
 
 @app.route('/api/words/clear', methods=['DELETE'])
 def clear_words():

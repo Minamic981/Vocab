@@ -1,0 +1,171 @@
+<!-- ── Library (with inline add at bottom) ───────────────── -->
+<div class="tab-panel active" id="tab-library">
+  <div class="search-bar">
+    <input type="text" id="search-input" placeholder="Search words…" />
+  </div>
+  <div id="word-list"></div>
+
+  <!-- Inline add form — always at the end of the word list -->
+  <div class="inline-add-card" id="inline-add">
+    <div class="inline-add-header">
+      <span class="plus-icon">+</span>
+      Add a new word
+    </div>
+    <div class="inline-add-fields">
+      <div class="field">
+        <label for="add-en">English</label>
+        <input type="text" id="add-en" placeholder="e.g. tough" />
+      </div>
+      <div class="field">
+        <label for="add-fa">Persian (فارسی)</label>
+        <input type="text" class="add-fa" id="add-fa" placeholder="e.g. سخت" dir="rtl" />
+      </div>
+      <button class="btn btn-primary" id="add-btn">Add</button>
+    </div>
+    <label class="aigen-label">
+      <input type="checkbox" id="add-aigen" />
+      ✨ Ai Generate Sentence
+    </label>
+    <div class="inline-add-alert" id="add-alert"></div>
+  </div>
+</div>
+
+<!-- ── Batch Import ─────────────────────────────────────── -->
+<div class="tab-panel" id="tab-import">
+  <div class="card">
+    <div class="card-title">Paste Words from Clipboard</div>
+    <p style="
+          font-size: 13px;
+          color: var(--ink-light);
+          margin-bottom: 14px;
+        ">
+      One word per line in the format:
+      <code style="
+            background: var(--paper-2);
+            padding: 2px 6px;
+            border-radius: 4px;
+          ">English = فارسی</code>
+    </p>
+    <div class="field">
+      <label for="import-text">Paste here</label>
+      <textarea id="import-text"
+        placeholder="tough = سخت&#10;depiction = تصویر سازی&#10;deserve = لیاقت"></textarea>
+    </div>
+    <div style="margin-top: 14px">
+      <button class="btn btn-primary" id="import-btn">Import All</button>
+    </div>
+    <div class="alert" id="import-alert"></div>
+  </div>
+</div>
+
+<!-- ── Practice ─────────────────────────────────────────── -->
+<div class="tab-panel" id="tab-practice">
+  <div class="practice-header">
+    <div>
+      <div style="
+            font-family: &quot;Lora&quot;, serif;
+            font-size: 18px;
+            font-weight: 600;
+          ">
+        Practice Mode
+      </div>
+      <div style="font-size: 13px; color: var(--ink-faint); margin-top: 2px">
+        Tap the card to reveal the Persian meaning
+      </div>
+    </div>
+    <button class="btn btn-ghost" id="shuffle-btn">🔀 Shuffle</button>
+  </div>
+
+  <div class="progress-bar-wrap">
+    <div class="progress-bar-fill" id="progress-fill" style="width: 0%"></div>
+  </div>
+
+  <div id="practice-area">
+    <div class="no-words" id="practice-empty" style="display: none">
+      Add some words first to start practicing!
+    </div>
+
+    <div id="practice-card-wrap">
+      <div class="flip-wrap" id="flip-wrap" onclick="flipCard()">
+        <div class="flip-inner" id="flip-inner">
+          <div class="flip-front">
+            <div class="flip-hint">English</div>
+            <div class="flip-word" id="card-en">—</div>
+          </div>
+          <div class="flip-back">
+            <div class="flip-hint">Persian</div>
+            <div class="flip-word flip-fa" id="card-fa">—</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="practice-controls">
+        <button class="btn btn-ghost" id="prev-btn">← Previous</button>
+        <button class="btn btn-primary" id="next-btn">Next →</button>
+      </div>
+
+      <div class="practice-stat" id="practice-stat"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── Multiple Meanings ────────────────────────────────── -->
+<div class="tab-panel" id="tab-defs">
+  <div class="inline-add-card" id="defs-add-card">
+    <div class="inline-add-header">
+      <span class="plus-icon">🔤</span>
+      Look up a word
+    </div>
+    <div class="inline-add-fields">
+      <div class="field">
+        <label for="defs-en">English word</label>
+        <input type="text" id="defs-en" placeholder="e.g. light" autocomplete="off" />
+      </div>
+      <button class="btn btn-primary" id="defs-btn" style="height:41px">Look up</button>
+    </div>
+    <div class="inline-add-alert" id="defs-alert"></div>
+  </div>
+
+  <div id="defs-result" style="display:none; margin-top:24px;">
+    <div class="defs-word-title" id="defs-word-title"></div>
+    <div class="defs-table-wrap">
+      <table class="defs-table" id="defs-table">
+        <thead>
+          <tr>
+            <th class="defs-th defs-th-num">#</th>
+            <th class="defs-th">English Definition</th>
+            <th class="defs-th defs-th-fa">Persian (فارسی)</th>
+          </tr>
+        </thead>
+        <tbody id="defs-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="no-words" id="defs-empty" style="display:none;">
+    No definitions found for that word.
+  </div>
+</div>
+
+<!-- ── Edit Modal ─────────────────────────────────────────── -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <div class="modal-title">Edit Word</div>
+    <div class="field" style="margin-bottom: 12px">
+      <label for="edit-en">English</label>
+      <input type="text" id="edit-en" />
+    </div>
+    <div class="field">
+      <label for="edit-fa">Persian (فارسی)</label>
+      <input type="text" id="edit-fa" dir="rtl" />
+    </div>
+    <div class="alert" id="edit-alert"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="modal-cancel">Cancel</button>
+      <button class="btn btn-ai" id="modal-aigen" title="Generate a sentence using AI and replace both fields">
+        ✨ Generate Sentence
+      </button>
+      <button class="btn btn-primary" id="modal-save">Save</button>
+    </div>
+  </div>
+</div>
