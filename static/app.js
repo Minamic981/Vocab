@@ -3,6 +3,25 @@ let words = [];
 let practiceQueue = [];
 let practiceIndex = 0;
 let editingIndex = null;
+let bookmarkedWords = JSON.parse(localStorage.getItem('bookmarkedWords') || '[]');
+
+function saveBookmarks() {
+  localStorage.setItem('bookmarkedWords', JSON.stringify(bookmarkedWords));
+}
+
+function isBookmarked(english) {
+  return bookmarkedWords.includes(english);
+}
+
+function toggleBookmark(english) {
+  const i = bookmarkedWords.indexOf(english);
+  if (i === -1) {
+    bookmarkedWords.push(english);
+  } else {
+    bookmarkedWords.splice(i, 1);
+  }
+  saveBookmarks();
+}
 
 // ── Helpers ────────────────────────────────────────────────────
 function showAlert(id, msg, type = 'error') {
@@ -42,12 +61,18 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 function renderList(filter = '') {
   const list = document.getElementById('word-list');
   const f = filter.toLowerCase().trim();
-  const filtered = f
+  const bookmarkOnly = document.getElementById('bookmark-filter').checked;
+  let filtered = f
     ? words.filter(w => w.english.toLowerCase().includes(f) || w.persian.includes(f))
     : words;
 
+  if (bookmarkOnly) {
+    filtered = filtered.filter(w => isBookmarked(w.english));
+  }
+
   if (!filtered.length) {
-    list.innerHTML = `<div class="no-words">${f ? 'No matches found.' : 'No words yet — add one below!'}</div>`;
+    const msg = f ? 'No matches found.' : bookmarkOnly ? 'No bookmarked words yet.' : 'No words yet — add one below!';
+    list.innerHTML = `<div class="no-words">${msg}</div>`;
     return;
   }
 
@@ -70,10 +95,24 @@ function renderList(filter = '') {
 }
 
 function escHtml(s) {
-  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  if (s == null) return '';
+  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
 document.getElementById('search-input').addEventListener('input', e => renderList(e.target.value));
+document.getElementById('bookmark-filter').addEventListener('change', () => renderList(document.getElementById('search-input').value));
+
+document.getElementById('export-btn').addEventListener('click', () => {
+  if (!words.length) return;
+  const text = words.map(w => `${w.english} = ${w.persian}`).join('\n');
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'vocabulary.txt';
+  a.click();
+  URL.revokeObjectURL(url);
+});
 
 // ── Add word (inline at end of list) ───────────────────────────
 document.getElementById('add-btn').addEventListener('click', async () => {
@@ -174,7 +213,11 @@ document.getElementById('modal-aigen').addEventListener('click', async () => {
   btn.textContent = '⏳ Generating…';
 
   try {
-    const res = await fetch(`/api/aigen/${editingIndex}`, { method: 'PUT' });
+    const res = await fetch(`/api/aigen/${editingIndex}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ is_edit: true })
+    });
     const data = await res.json();
 
     if (!res.ok) {
@@ -233,6 +276,62 @@ document.getElementById('import-btn').addEventListener('click', async () => {
   showAlert('import-alert', msg, type);
 });
 
+// ── Speech synthesis ───────────────────────────────────────────
+function speakWord(word) {
+  if (!word || word.trim() === '') return;
+
+  window.speechSynthesis.cancel();
+
+  const utterance = new SpeechSynthesisUtterance(word.trim());
+  utterance.lang = 'en-US';
+  utterance.rate = 0.8;
+
+  const voices = speechSynthesis.getVoices();
+
+  const preferredVoices = [
+    'Google US English',
+    'Google UK English Female',
+    'Samantha',
+    'Alex',
+    'Microsoft Zira'
+  ];
+
+  let selectedVoice = null;
+
+  for (const preferred of preferredVoices) {
+    selectedVoice = voices.find(voice => voice.name.includes(preferred));
+    if (selectedVoice) break;
+  }
+
+  if (!selectedVoice) {
+    selectedVoice = voices.find(voice => voice.lang === 'en-US') ||
+                   voices.find(voice => voice.lang.startsWith('en'));
+  }
+
+  if (selectedVoice) {
+    utterance.voice = selectedVoice;
+  }
+
+  speechSynthesis.speak(utterance);
+}
+
+function speakCurrentWord() {
+  if (!practiceQueue.length) return;
+  const idx = practiceIndex % practiceQueue.length;
+  const word = practiceQueue[idx];
+  if (word && word.english) {
+    speakWord(word.english);
+    const btn = document.getElementById('speak-btn');
+    btn.classList.add('speaking');
+    btn.addEventListener('speechend', () => btn.classList.remove('speaking'), { once: true });
+    setTimeout(() => btn.classList.remove('speaking'), 1500);
+  }
+}
+
+if (window.speechSynthesis.onvoiceschanged !== undefined) {
+  window.speechSynthesis.onvoiceschanged = () => {};
+}
+
 // ── Practice mode ──────────────────────────────────────────────
 function initPractice() {
   if (!words.length) {
@@ -256,6 +355,20 @@ document.getElementById('shuffle-btn').addEventListener('click', () => {
   showCard();
 });
 
+document.getElementById('speak-btn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  speakCurrentWord();
+});
+
+document.getElementById('bookmark-btn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (!practiceQueue.length) return;
+  const idx = practiceIndex % practiceQueue.length;
+  const w = practiceQueue[idx];
+  toggleBookmark(w.english);
+  document.getElementById('bookmark-btn').classList.toggle('active', isBookmarked(w.english));
+});
+
 function showCard() {
   if (!practiceQueue.length) return;
   const idx = practiceIndex % practiceQueue.length;
@@ -266,6 +379,9 @@ function showCard() {
   const pct = Math.round(((idx + 1) / practiceQueue.length) * 100);
   document.getElementById('progress-fill').style.width = pct + '%';
   document.getElementById('practice-stat').textContent = `${idx + 1} / ${practiceQueue.length}`;
+
+  const bookmarkBtn = document.getElementById('bookmark-btn');
+  bookmarkBtn.classList.toggle('active', isBookmarked(w.english));
 }
 
 function flipCard() {
@@ -294,7 +410,9 @@ document.addEventListener('keydown', e => {
   try {
     const res = await fetch('/api/words');
     const data = await res.json();
-    words = data.words ?? data;
+    words = (data.words ?? data).map(w =>
+      Array.isArray(w) ? { english: w[0], persian: w[1] } : w
+    );
     updateHeaderCount();
   } catch (e) {
     console.error('Failed to load words:', e);

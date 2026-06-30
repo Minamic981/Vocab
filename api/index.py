@@ -4,7 +4,7 @@ import json
 import time
 import requests
 from dotenv import load_dotenv
-
+from ai import generate_sentence, gen_definitions
 app = Flask(
     __name__,
     template_folder=os.path.join(os.path.dirname(__file__), '..', 'templates'),
@@ -21,11 +21,6 @@ API_TOKEN    = os.environ.get('CLOUDFLARE_API_TOKEN')
 BASE_URL = f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/storage/kv/namespaces/{NAMESPACE_ID}"
 HEADERS  = {"Authorization": f"Bearer {API_TOKEN}", "Content-Type": "application/json"}
 WORDS_KEY = "vocabulary_words"
-
-# ── OpenRouter Config ────────────────────────────────────────────────────────
-MODEL_NAME     = os.environ.get("MODEL_NAME")
-OPENROUTER_URL = os.environ.get("OPENROUTER_URL")
-OPEN_TOKEN     = os.environ.get("OPEN_TOKEN")
 
 # ── In-memory cache ──────────────────────────────────────────────────────────
 # Avoids hitting KV on every request. TTL of 60 s is a safety net;
@@ -123,59 +118,6 @@ def check_kv_connection() -> bool:
     except Exception:
         return False
 
-
-# ── AI helper ────────────────────────────────────────────────────────────────
-
-def generate_sentence(english: str, persian: str = "") -> tuple[str, str]:
-    user_content = f"English Word: {english}\nPersian meaning: {persian}"
-    payload = {
-        "model": MODEL_NAME,
-        "messages": [
-            {
-                "role": "system",
-                "content": (
-                    "You are a vocabulary assistant that creates example English sentences with Persian translations.\n\n"
-                    "The user will give you a English word (or sentence) along with its Persian meaning.\n\n"
-                    "Your task:\n"
-                    "- Create a short natural English sentence using that word\n"
-                    "- The sentence MUST reflect the EXACT meaning indicated by the Persian translation\n"
-                    "- CRITICAL: If the word has multiple meanings, use ONLY the meaning that matches the provided Persian translation\n\n"
-                    "Rules:\n"
-                    "- Always create a NEW sentence — never copy or directly translate the input\n"
-                    "- Keep sentences simple and natural (under 15 words)\n"
-                    "- NEVER use commas (,) anywhere in your English sentence\n"
-                    "- The Persian output must be a translation of YOUR new English sentence\n\n"
-                    "Respond ONLY in this exact JSON format:\n"
-                    "{\"english\":\"English sentence\", \"persian\":\"Persian sentence\"}\n\n"
-                    "Example:\n"
-                    'Word: light / Persian meaning: روشنایی → {\"english\":\"Please turn on the light\", \"persian\":\"لطفا چراغ را روشن کن\"}\n'
-                    "No extra text. No explanation. Nothing else."
-                )
-            },
-            {"role": "user", "content": user_content},
-        ],
-        "temperature": 0.4,
-    }
-    ai_headers = {
-        "Authorization": f"Bearer {OPEN_TOKEN}",
-        "Content-Type": "application/json",
-        "X-Title": "Vocab Site",
-    }
-    try:
-        r = requests.post(OPENROUTER_URL, json=payload, headers=ai_headers, timeout=180)
-        r.raise_for_status()
-        parts = json.loads(r.json()["choices"][0]["message"]["content"].strip())
-        return parts
-    except requests.HTTPError as e:
-        raise Exception(f"HTTP error: {e.response.status_code}")
-    except requests.ConnectionError:
-        raise Exception("Connection failed")
-    except requests.Timeout:
-        raise Exception("Request timed out")
-    except json.decoder.JSONDecodeError:
-        raise Exception("Unexpected AI response format")
-
-
 # ── Routes ───────────────────────────────────────────────────────────────────
 
 @app.route('/')
@@ -204,7 +146,8 @@ def add_word():
     words = load_words()
     if aigen:
         try:
-            new_word = generate_sentence(english, persian)
+            new_english, new_persian = generate_sentence(english, persian)
+            new_word = {'english': new_english, 'persian': new_persian}
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     else:
@@ -254,26 +197,32 @@ def delete_word(index):
     if not save_words(words):
         return jsonify({'error': 'Failed to save changes to Cloudflare KV.'}), 500
 
-    return jsonify({'message': f'"{removed["english"]}" deleted.'})
+    en = removed["english"] if isinstance(removed, dict) else removed[0]
+    return jsonify({'message': f'"{en}" deleted.'})
 
 
 @app.route('/api/aigen/<int:index>', methods=['PUT'])
 def ai_gen(index):
     words = load_words()
 
-    # ✅ Bounds check BEFORE accessing words[index]
     if index < 0 or index >= len(words):
         return jsonify({'error': 'Word not found.'}), 404
 
     english_word = words[index].get('english', '')
     persian_word = words[index].get('persian', '')
 
+    data = request.get_json(silent=True) or {}
+    is_edit = data.get('is_edit', False)
+
     try:
-        ai_sentence = generate_sentence(english=english_word, persian=persian_word)
+        new_english, new_persian = generate_sentence(
+            english=english_word, persian=persian_word, is_edit=is_edit
+        )
+        print("Result: ",new_english, new_persian)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-    words[index] = ai_sentence
+    words[index] = {'english': new_english, 'persian': new_persian}
 
     if not save_words(words):
         return jsonify({'error': 'Failed to save changes to Cloudflare KV.'}), 500
@@ -337,59 +286,13 @@ def get_definitions(word):
     word = word.strip().lower()
     if not word:
         return jsonify({'error': 'Word is required.'}), 400
-
-    prompt = (
-        f'Give me all distinct meanings (Limit 5 meanings) of the English word "{word}".\n'
-        "For each meaning provide a short English sentence and its Persian translation.\n\n"
-        "Respond ONLY with valid JSON in this exact format — no extra text:\n"
-        '{\n'
-        '  "main_word": "<word>",\n'
-        '  "definitions": [\n'
-        '    { "english": "<short sentence>", "persian": "<Persian translation>" },\n'
-        '    ...\n'
-        '  ]\n'
-        '}'
-    )
-
-    payload = {
-        "model": MODEL_NAME,
-        "messages": [
-            {
-                "role": "system",
-                "content": (
-                    "You are a bilingual English–Persian dictionary assistant.\n"
-                    "Return ONLY a JSON object with no markdown, no backticks, and no explanation.\n"
-                    "Each definition must be a distinct meaning (different part of speech or clearly different sense).\n"
-                    "Keep English definitions concise (under 15 words). Persian translations should be natural Farsi."
-                )
-            },
-            {"role": "user", "content": prompt},
-        ],
-        "temperature": 0.4,
-    }
-
-    ai_headers = {
-        "Authorization": f"Bearer {OPEN_TOKEN}",
-        "Content-Type": "application/json",
-        "X-Title": "Vocab Site",
-    }
-
+    
     try:
-        r = requests.post(OPENROUTER_URL, json=payload, headers=ai_headers, timeout=180)
-        r.raise_for_status()
-        raw = r.json()["choices"][0]["message"]["content"].strip()
-        # Strip accidental markdown fences
-        raw = raw.replace("```json", "").replace("```", "").strip()
-        result = json.loads(raw)
-        return jsonify(result)
-    except requests.HTTPError as e:
-        return jsonify({'error': f'AI error: {e.response.status_code}'}), 500
-    except requests.ConnectionError:
-        return jsonify({'error': 'Connection failed'}), 500
-    except requests.Timeout:
-        return jsonify({'error': 'Request timed out'}), 500
-    except json.JSONDecodeError:
-        return jsonify({'error': 'Unexpected AI response format'}), 500
+        defint = gen_definitions(word)
+        return jsonify(defint)
+            
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
 
 @app.route('/api/words/clear', methods=['DELETE'])
 def clear_words():

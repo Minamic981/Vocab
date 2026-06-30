@@ -332,6 +332,104 @@ textarea {
   cursor: not-allowed;
 }
 
+.btn-speak {
+  background: var(--ink);
+  color: #fff;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-speak:hover {
+  background: #333;
+}
+
+.btn-speak.speaking {
+  animation: pulse-speak 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes pulse-speak {
+  from { transform: scale(1); }
+  to { transform: scale(1.1); }
+}
+
+/* ── Bookmark button ─────────────────────────────────────── */
+.btn-bookmark {
+  background: transparent;
+  color: var(--ink-faint);
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.btn-bookmark svg {
+  transition: fill 0.2s, stroke 0.2s;
+  fill: none;
+  stroke: currentColor;
+}
+
+.btn-bookmark:hover {
+  color: var(--warn);
+}
+
+.btn-bookmark.active {
+  color: var(--warn);
+}
+
+.btn-bookmark.active svg {
+  fill: var(--warn);
+}
+
+/* ── Bookmark filter (library) ───────────────────────────── */
+.bookmark-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  cursor: pointer;
+  color: var(--ink-faint);
+  flex-shrink: 0;
+  transition: color 0.15s;
+}
+
+.bookmark-filter-btn input[type="checkbox"] {
+  position: absolute;
+  width: 0;
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.bookmark-filter-btn svg {
+  transition: fill 0.2s, stroke 0.2s;
+  fill: none;
+  stroke: currentColor;
+}
+
+.bookmark-filter-btn:hover {
+  color: var(--warn);
+}
+
+.bookmark-filter-btn:has(input:checked) {
+  color: var(--warn);
+}
+
+.bookmark-filter-btn:has(input:checked) svg {
+  fill: var(--warn);
+}
+
 /* ── Labels ──────────────────────────────────────────────── */
 .aigen-label {
   display: inline-flex;
@@ -645,6 +743,21 @@ textarea {
 
   .inline-add-fields .btn {
     width: 100%;
+  }
+
+  .btn-speak {
+    width: 48px;
+    height: 48px;
+  }
+
+  .btn-bookmark {
+    width: 48px;
+    height: 48px;
+  }
+
+  .bookmark-filter-btn {
+    width: 48px;
+    height: 48px;
   }
 }
 
