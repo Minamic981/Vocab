@@ -1,9 +1,12 @@
 from flask import Flask, render_template, request, jsonify
 import os
+import sys
 import json
 import time
 import requests
 from dotenv import load_dotenv
+
+sys.path.insert(0, os.path.dirname(__file__))
 from ai import generate_sentence, gen_definitions
 app = Flask(
     __name__,
