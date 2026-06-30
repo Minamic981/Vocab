@@ -1,4 +1,4 @@
-# My WordBook — Vocabulary Learning App
+# My WordBook — Vocabulary Learning App V1
 
 A personal English vocabulary tracker for Persian speakers, built with Flask and powered by AI.
 
