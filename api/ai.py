@@ -29,12 +29,14 @@ SYSTEM_PROMPTS = {
         "{\"english\":\"...\", \"persian\":\"...\"}"
     ),
     SentenceMode.EN_WORD: (
-        "You are a vocabulary assistant. The user gives a single English word. Pick its most "
-        "common everyday meaning and write one short natural example sentence using it.\n\n"
+        "You are a vocabulary assistant. The user gives a single English word. "
+        "You MUST write one short natural example sentence that CONTAINS the given word.\n\n"
         "Rules:\n"
+        "- The sentence MUST include the exact given word\n"
         "- Keep the sentence under 15 words, natural, no commas\n"
         "- Provide an accurate Persian translation of the sentence you wrote\n"
-        "- If the word has several common meanings, choose the most frequent/basic one\n\n"
+        "- Randomly choose from different: subjects (I/you/he/she/we/they), tenses (past/present/future), and contexts (daily life/work/school/family)\n"
+        "- Try to make each response unique even for the same word\n\n"
         "Respond ONLY in this JSON format, nothing else:\n"
         "{\"english\":\"...\", \"persian\":\"...\"}"
     ),
@@ -90,7 +92,7 @@ def _detect_mode(english: str, persian: str, is_edit: bool = False) -> SentenceM
 
 def generate_sentence(english: str = "", persian: str = "", is_edit=False) -> tuple[str, str]:
     mode = _detect_mode(english=english, persian=persian,is_edit=is_edit)
-    print(mode)
+    print("Mode: ", mode)
     if mode == SentenceMode.EN_WITH_PERSIAN:
         user_content = f"English: {english}\nPersian meaning: {persian}"
     elif mode == SentenceMode.EN_WORD:
@@ -123,6 +125,7 @@ def generate_sentence(english: str = "", persian: str = "", is_edit=False) -> tu
         if raw.startswith("```"):
             raw = raw.strip("`")
             raw = raw[raw.find("{"):]
+        print("Raw: ", raw)
         parts = json.loads(raw)
         return parts["english"], parts["persian"]
     except requests.HTTPError as e:
