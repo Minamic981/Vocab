@@ -173,3 +173,4 @@ __marimo__/
 
 .mimocode/*
 .mimocode/
+.env*
