@@ -31,6 +31,16 @@
       <input type="checkbox" id="add-aigen" />
       ✨ Ai Generate Sentence
     </label>
+    <div class="advanced-toggle" id="advanced-toggle">
+      <span class="advanced-arrow" id="advanced-arrow"></span>
+      Advanced
+    </div>
+    <div class="advanced-section" id="advanced-section">
+      <div class="field">
+        <label for="add-alts">Alternative sentences (same meaning, one per line)</label>
+        <textarea id="add-alts" rows="3" placeholder="She is highly skilled in her work.&#10;She does her job extremely well."></textarea>
+      </div>
+    </div>
     <div class="inline-add-alert" id="add-alert"></div>
   </div>
 </div>
@@ -166,9 +176,13 @@
       <label for="edit-en">English</label>
       <input type="text" id="edit-en" />
     </div>
-    <div class="field">
+    <div class="field" style="margin-bottom: 12px">
       <label for="edit-fa">Persian (فارسی)</label>
       <input type="text" id="edit-fa" dir="rtl" />
+    </div>
+    <div class="field">
+      <label for="edit-alts">Alternative sentences (same meaning, one per line)</label>
+      <textarea id="edit-alts" rows="3" placeholder="Optional alternative sentences..."></textarea>
     </div>
     <div class="alert" id="edit-alert"></div>
     <div class="modal-actions">

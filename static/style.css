@@ -449,6 +449,58 @@ textarea {
   cursor: pointer;
 }
 
+/* ── Advanced toggle ──────────────────────────────────────── */
+.advanced-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  padding-left: 23px;
+  font-size: 13px;
+  color: var(--ink-light);
+  cursor: pointer;
+  user-select: none;
+  border: none;
+  background: transparent;
+  transition: color 0.15s;
+}
+
+.advanced-toggle:hover {
+  color: var(--accent);
+}
+
+.advanced-arrow {
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 5px solid currentColor;
+  transition: transform 0.25s ease;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.advanced-arrow.open {
+  transform: rotate(90deg);
+}
+
+.advanced-section {
+  display: none;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--rule);
+}
+
+.advanced-section.open {
+  display: block;
+}
+
+.advanced-section textarea {
+  font-family: "Lora", serif;
+  font-size: 13px;
+  min-height: 60px;
+}
+
 /* ── Alerts ──────────────────────────────────────────────── */
 .alert {
   padding: 10px 14px;
@@ -494,6 +546,11 @@ textarea {
   gap: 2.5px;
 }
 
+.word-row-wrap {
+  display: flex;
+  flex-direction: column;
+}
+
 .word-row {
   display: flex;
   align-items: center;
@@ -508,6 +565,48 @@ textarea {
 
 .word-row:hover {
   background: var(--paper-2);
+}
+
+.word-alt-arrow {
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 5px solid var(--ink-faint);
+  cursor: pointer;
+  transition: transform 0.2s, border-left-color 0.15s;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.word-alt-arrow:hover {
+  border-left-color: var(--accent);
+}
+
+.word-alt-arrow.open {
+  transform: rotate(90deg);
+  border-left-color: var(--accent);
+}
+
+.word-alts {
+  display: none;
+  padding: 8px 16px 8px 60px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-top: none;
+  border-radius: 0 0 var(--radius) var(--radius);
+}
+
+.word-alts.open {
+  display: block;
+}
+
+.word-alt-item {
+  font-family: "Lora", serif;
+  font-size: 13px;
+  color: var(--ink-light);
+  padding: 3px 0;
+  line-height: 1.5;
 }
 
 .word-index {
@@ -731,6 +830,17 @@ textarea {
 
   .word-en.revealed-hint::after {
     opacity: 0;
+  }
+
+  .word-alt-arrow {
+    border-left-width: 6px;
+    border-top-width: 5px;
+    border-bottom-width: 5px;
+  }
+
+  .word-row {
+    gap: 10px;
+    padding: 10px 12px;
   }
 
   .flip-word {

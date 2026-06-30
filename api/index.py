@@ -147,14 +147,18 @@ def add_word():
         return jsonify({'error': 'Persian field is required.'}), 400
 
     words = load_words()
+    alternatives = data.get('alternatives', [])
+    if isinstance(alternatives, str):
+        alternatives = [a.strip() for a in alternatives.splitlines() if a.strip()]
+
     if aigen:
         try:
             new_english, new_persian = generate_sentence(english, persian)
-            new_word = {'english': new_english, 'persian': new_persian}
+            new_word = {'english': new_english, 'persian': new_persian, 'alternatives': alternatives}
         except Exception as e:
             return jsonify({'error': str(e)}), 500
     else:
-        new_word = {'english': english, 'persian': persian}
+        new_word = {'english': english, 'persian': persian, 'alternatives': alternatives}
     words.append(new_word)
 
     if not save_words(words):
@@ -172,6 +176,10 @@ def edit_word(index):
     if not english or not persian:
         return jsonify({'error': 'Both fields are required.'}), 400
 
+    alternatives = data.get('alternatives', [])
+    if isinstance(alternatives, str):
+        alternatives = [a.strip() for a in alternatives.splitlines() if a.strip()]
+
     words = load_words()
 
     if index < 0 or index >= len(words):
@@ -180,7 +188,7 @@ def edit_word(index):
     if any(i != index and w['english'].lower() == english for i, w in enumerate(words)):
         return jsonify({'error': f'"{english}" already exists.'}), 409
 
-    words[index] = {'english': english, 'persian': persian}
+    words[index] = {'english': english, 'persian': persian, 'alternatives': alternatives}
 
     if not save_words(words):
         return jsonify({'error': 'Failed to save changes to Cloudflare KV.'}), 500
@@ -225,7 +233,7 @@ def ai_gen(index):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-    words[index] = {'english': new_english, 'persian': new_persian}
+    words[index] = {'english': new_english, 'persian': new_persian, 'alternatives': words[index].get('alternatives', [])}
 
     if not save_words(words):
         return jsonify({'error': 'Failed to save changes to Cloudflare KV.'}), 500
@@ -266,7 +274,7 @@ def batch_import():
             duplicates.append(english)
             continue
 
-        new_word = {'english': english, 'persian': persian}
+        new_word = {'english': english, 'persian': persian, 'alternatives': []}
         words.append(new_word)
         existing.add(english)
         added.append(new_word)

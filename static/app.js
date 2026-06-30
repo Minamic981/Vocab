@@ -78,20 +78,42 @@ function renderList(filter = '') {
 
   list.innerHTML = filtered.map((w, i) => {
     const realIndex = words.indexOf(w);
+    const alts = w.alternatives || [];
+    const altHtml = alts.length
+      ? `<div class="word-alts" id="alts-${realIndex}">
+           ${alts.map(a => `<div class="word-alt-item">- ${escHtml(a)}</div>`).join('')}
+         </div>`
+      : '';
+    const altCheckHtml = alts.length
+      ? `<span class="word-alt-arrow" data-index="${realIndex}" title="Show alternatives"></span>`
+      : '';
     return `
-      <div class="word-row" data-index="${realIndex}">
-        <span class="word-index">${realIndex + 1}</span>
-        <span class="word-en">${escHtml(w.english)}</span>
-        <span class="word-fa">${escHtml(w.persian)}</span>
-        <div class="word-actions">
-          <button class="btn btn-ghost btn-sm edit-btn" data-index="${realIndex}">Edit</button>
-          <button class="btn btn-danger btn-sm delete-btn" data-index="${realIndex}">✕</button>
+      <div class="word-row-wrap">
+        <div class="word-row" data-index="${realIndex}">
+          <span class="word-index">${realIndex + 1}</span>
+          ${altCheckHtml}
+          <span class="word-en">${escHtml(w.english)}</span>
+          <span class="word-fa">${escHtml(w.persian)}</span>
+          <div class="word-actions">
+            <button class="btn btn-ghost btn-sm edit-btn" data-index="${realIndex}">Edit</button>
+            <button class="btn btn-danger btn-sm delete-btn" data-index="${realIndex}">✕</button>
+          </div>
         </div>
+        ${altHtml}
       </div>`;
   }).join('');
 
   list.querySelectorAll('.edit-btn').forEach(b => b.addEventListener('click', () => openEdit(+b.dataset.index)));
   list.querySelectorAll('.delete-btn').forEach(b => b.addEventListener('click', () => deleteWord(+b.dataset.index)));
+  list.querySelectorAll('.word-alt-arrow').forEach(b => {
+    b.addEventListener('click', () => {
+      const idx = b.dataset.index;
+      const altsEl = document.getElementById('alts-' + idx);
+      if (!altsEl) return;
+      const isOpen = altsEl.classList.toggle('open');
+      b.classList.toggle('open', isOpen);
+    });
+  });
 }
 
 function escHtml(s) {
@@ -119,6 +141,7 @@ document.getElementById('add-btn').addEventListener('click', async () => {
   const en = document.getElementById('add-en').value.trim();
   const fa = document.getElementById('add-fa').value.trim();
   const aiGen = document.getElementById('add-aigen').checked;
+  const alts = document.getElementById('add-alts').value.trim();
   if (!en) { showAlert('add-alert', 'English field is required.'); return; }
   if (!aiGen && !fa) { showAlert('add-alert', 'Persian field is required.'); return; }
   const btn = document.getElementById('add-btn');
@@ -128,7 +151,7 @@ document.getElementById('add-btn').addEventListener('click', async () => {
   const res = await fetch('/api/words', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ english: en, persian: fa, aigen: aiGen })
+    body: JSON.stringify({ english: en, persian: fa, aigen: aiGen, alternatives: alts })
   });
   const data = await res.json();
 
@@ -140,6 +163,7 @@ document.getElementById('add-btn').addEventListener('click', async () => {
   words.push(data.word);
   document.getElementById('add-en').value = '';
   document.getElementById('add-fa').value = '';
+  document.getElementById('add-alts').value = '';
   renderList(document.getElementById('search-input').value);
   updateHeaderCount();
   showAlert('add-alert', `"${data.word.english}" added!`, 'success');
@@ -160,6 +184,14 @@ document.getElementById('add-btn').addEventListener('click', async () => {
   });
 });
 
+// ── Advanced toggle ─────────────────────────────────────────
+document.getElementById('advanced-toggle').addEventListener('click', () => {
+  const section = document.getElementById('advanced-section');
+  const arrow = document.getElementById('advanced-arrow');
+  const isOpen = section.classList.toggle('open');
+  arrow.classList.toggle('open', isOpen);
+});
+
 // ── Delete word ────────────────────────────────────────────────
 async function deleteWord(index) {
   const word = words[index];
@@ -177,6 +209,7 @@ function openEdit(index) {
   editingIndex = index;
   document.getElementById('edit-en').value = words[index].english;
   document.getElementById('edit-fa').value = words[index].persian;
+  document.getElementById('edit-alts').value = (words[index].alternatives || []).join('\n');
   document.getElementById('edit-modal').classList.add('open');
   document.getElementById('edit-en').focus();
 }
@@ -192,12 +225,13 @@ document.getElementById('edit-modal').addEventListener('click', e => {
 document.getElementById('modal-save').addEventListener('click', async () => {
   const en = document.getElementById('edit-en').value.trim();
   const fa = document.getElementById('edit-fa').value.trim();
+  const alts = document.getElementById('edit-alts').value.trim();
   if (!en || !fa) { showAlert('edit-alert', 'Fill in both fields.'); return; }
 
   const res = await fetch(`/api/words/${editingIndex}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ english: en, persian: fa })
+    body: JSON.stringify({ english: en, persian: fa, alternatives: alts })
   });
   const data = await res.json();
   if (!res.ok) { showAlert('edit-alert', data.error); return; }
@@ -229,12 +263,15 @@ document.getElementById('modal-aigen').addEventListener('click', async () => {
     const wordsRes = await fetch('/api/words');
     if (wordsRes.ok) {
       const wordsData = await wordsRes.json();
-      words = wordsData.words ?? wordsData;
+      words = (wordsData.words ?? wordsData).map(w =>
+        Array.isArray(w) ? { english: w[0], persian: w[1], alternatives: [] } : { ...w, alternatives: w.alternatives || [] }
+      );
     }
 
     // Refresh modal fields with new values
     document.getElementById('edit-en').value = words[editingIndex].english;
     document.getElementById('edit-fa').value = words[editingIndex].persian;
+    document.getElementById('edit-alts').value = (words[editingIndex].alternatives || []).join('\n');
 
     // Refresh the word list in the background
     renderList(document.getElementById('search-input').value);
@@ -410,9 +447,10 @@ document.addEventListener('keydown', e => {
   try {
     const res = await fetch('/api/words');
     const data = await res.json();
-    words = (data.words ?? data).map(w =>
-      Array.isArray(w) ? { english: w[0], persian: w[1] } : w
-    );
+    words = (data.words ?? data).map(w => {
+      if (Array.isArray(w)) return { english: w[0], persian: w[1], alternatives: [] };
+      return { english: w.english, persian: w.persian, alternatives: w.alternatives || [] };
+    });
     updateHeaderCount();
   } catch (e) {
     console.error('Failed to load words:', e);
