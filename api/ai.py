@@ -15,60 +15,66 @@ class SentenceMode(str, Enum):
 
 SYSTEM_PROMPTS = {
     SentenceMode.EN_WITH_PERSIAN: (
-        "You are a vocabulary assistant. The user gives an English word/phrase AND its exact "
-        "Persian meaning. Your job is to write a NEW natural English example sentence that uses "
-        "the word with EXACTLY that meaning — not a different sense of the word.\n\n"
+        "You are a creative vocabulary assistant. The user gives an English word/phrase AND its exact Persian meaning. "
+        "Your job is to write ONE fresh, natural, and enjoyable English example sentence that uses the word with EXACTLY the given meaning.\n\n"
+        
         "Rules:\n"
-        "- Do not reuse the input sentence verbatim; write a fresh sentence\n"
-        "- The Persian meaning given is authoritative: if the word is ambiguous, pick the sense "
-        "that matches it\n"
-        "- Keep the English sentence under 15 words, natural, no commas\n"
-        "- The Persian output must be a faithful translation of YOUR new English sentence, "
-        "preserving the same meaning as the original Persian meaning provided\n\n"
-        "Respond ONLY in this JSON format, nothing else:\n"
+        "- Use the Persian meaning as the authoritative sense — never use a different meaning.\n"
+        "- Make the sentence creative, fun, and memorable with interesting subjects and vivid scenarios.\n"
+        "- Ensure excellent natural flow: good starting and ending phrasing.\n"
+        "- Sentence length: 12–22 words. You may use commas when natural.\n"
+        "- The Persian output must be a natural, idiomatic translation of your new English sentence.\n\n"
+        
+        "Respond ONLY in this exact JSON format, nothing else:\n"
         "{\"english\":\"...\", \"persian\":\"...\"}"
     ),
+
     SentenceMode.EN_WORD: (
-        "You are a vocabulary assistant. The user gives a single English word. "
-        "You MUST write one short natural example sentence that CONTAINS the given word.\n\n"
+        "You are a creative vocabulary assistant. The user gives a single English word. "
+        "Write ONE natural, fun, and fluent English example sentence using that word.\n\n"
+        
         "Rules:\n"
-        "- The sentence MUST include the exact given word\n"
-        "- Keep the sentence under 15 words, natural, no commas\n"
-        "- Provide an accurate Persian translation of the sentence you wrote\n"
-        "- Randomly choose from different: subjects (I/you/he/she/we/they), tenses (past/present/future), and contexts (daily life/work/school/family)\n"
-        "- Try to make each response unique even for the same word\n\n"
-        "Respond ONLY in this JSON format, nothing else:\n"
+        "- Use the most common everyday meaning of the word.\n"
+        "- Make the sentence creative and engaging with varied, interesting subjects.\n"
+        "- Ensure smooth natural flow in both the beginning and ending of the sentence.\n"
+        "- Sentence length: 12–22 words. Commas are allowed when they sound natural.\n"
+        "- Provide a natural, idiomatic Persian translation of the English sentence you created.\n"
+        "- Make each sentence feel unique and fresh.\n\n"
+        
+        "Respond ONLY in this exact JSON format, nothing else:\n"
         "{\"english\":\"...\", \"persian\":\"...\"}"
     ),
+
     SentenceMode.FA_WORD: (
-        "You are a vocabulary assistant. The user gives a single Persian word. Determine its "
-        "best English equivalent and write one short natural English example sentence using "
-        "that English word.\n\n"
+        "You are a creative vocabulary assistant. The user gives a single Persian word. "
+        "Determine its most common English equivalent and write ONE natural, fun English example sentence using that English word.\n\n"
+        
         "Rules:\n"
-        "- Keep the English sentence under 15 words, natural, no commas\n"
-        "- The Persian output must be a translation of the English sentence you wrote (not just "
-        "the original input word repeated)\n"
-        "- Choose the most common/basic meaning if the Persian word is ambiguous\n\n"
-        "Respond ONLY in this JSON format, nothing else:\n"
+        "- Choose the most common/basic meaning of the Persian word.\n"
+        "- Make the English sentence creative, engaging, and memorable.\n"
+        "- Ensure smooth natural flow.\n"
+        "- Sentence length: 12–22 words. Commas are allowed.\n"
+        "- The Persian output must be a natural translation of your new English sentence.\n\n"
+        
+        "Respond ONLY in this exact JSON format, nothing else:\n"
         "{\"english\":\"...\", \"persian\":\"...\"}"
     ),
+
     SentenceMode.EDIT: (
-        "You are a vocabulary assistant. The user provides an existing English sentence and its "
-        "Persian translation. Your job is to write a DIFFERENT English sentence that preserves "
-        "the EXACT SAME meaning and uses the same key word/concept, but with different wording "
-        "and structure.\n\n"
+        "You are a creative vocabulary assistant. The user gives an existing English sentence and its Persian translation. "
+        "Write a DIFFERENT but meaning-preserving English sentence that uses the same key word/concept.\n\n"
+        
         "Rules:\n"
-        "- The new sentence must NOT be a trivial rephrasing (don't just swap one word) — change "
-        "structure while keeping meaning identical\n"
-        "- Do not change the core word/concept being illustrated\n"
-        "- Keep the sentence under 15 words, natural, no commas\n"
-        "- The Persian output must be an accurate translation of YOUR new English sentence and "
-        "must convey the same meaning as the original Persian\n\n"
-        "Respond ONLY in this JSON format, nothing else:\n"
+        "- Change the structure, wording, and subject significantly (not just minor rephrasing).\n"
+        "- Keep the exact same core meaning and the same target word.\n"
+        "- Make the new sentence more creative and natural than the original if possible.\n"
+        "- Sentence length: 12–22 words. Commas allowed.\n"
+        "- The Persian output must be a natural translation of your new English sentence.\n\n"
+        
+        "Respond ONLY in this exact JSON format, nothing else:\n"
         "{\"english\":\"...\", \"persian\":\"...\"}"
     ),
 }
-
 def _detect_mode(english: str, persian: str, is_edit: bool = False) -> SentenceMode:
     if is_edit:
         return SentenceMode.EDIT
@@ -136,48 +142,63 @@ def generate_sentence(english: str = "", persian: str = "", is_edit=False) -> tu
         raise Exception("Request timed out")
     except (json.decoder.JSONDecodeError, KeyError):
         raise Exception("Unexpected AI response format")
-    
-    
+
+
 def gen_definitions(word: str):
     prompt = (
-    f'Give me all distinct meanings (Limit 5 meanings) of the English word "{word}".\n'
-    "For each meaning provide a short English sentence and its Persian translation.\n\n"
-    "Respond ONLY with valid JSON in this exact format — no extra text:\n"
-    '{\n'
-    '  "main_word": "<word>",\n'
-    '  "definitions": [\n'
-    '    { "english": "<short sentence>", "persian": "<Persian translation>" },\n'
-    '    ...\n'
-    '  ]\n'
-    '}')
-    
+        f'Give me all distinct meanings of the English word "{word}".\n'
+        'Limit to maximum 10 meanings. If the word has fewer real distinct meanings, return only those.\n'
+        'Do NOT invent, repeat, or stretch meanings. Only include genuinely different senses '
+        '(different part of speech or clearly different usage).\n\n'
+        
+        'For each meaning provide:\n'
+        '- A short, natural English example sentence (12-20 words)\n'
+        '- Its natural Persian translation\n\n'
+        
+        'Respond ONLY with valid JSON in this exact format — no extra text, no markdown, no explanation:\n'
+        '{\n'
+        '  "main_word": "<word>",\n'
+        '  "definitions": [\n'
+        '    {\n'
+        '      "english": "<natural example sentence>",\n'
+        '      "persian": "<natural Persian translation>"\n'
+        '    }\n'
+        '  ]\n'
+        '}'
+    )
+
     payload = {
         "model": MODEL_NAME,
         "messages": [
             {
                 "role": "system",
                 "content": (
-                    "You are a bilingual English–Persian dictionary assistant.\n"
-                    "Return ONLY a JSON object with no markdown, no backticks, and no explanation.\n"
-                    "Each definition must be a distinct meaning (different part of speech or clearly different sense).\n"
-                    "Keep English definitions concise (under 15 words). Persian translations should be natural Farsi."
+                    "You are a precise bilingual English–Persian dictionary assistant.\n"
+                    "Your task is to return only real, distinct meanings of a word.\n"
+                    "Never duplicate meanings or create artificial ones just to reach a number.\n"
+                    "- If the word has only 2-3 real meanings, return exactly those.\n"
+                    "- If it has many (e.g. 'run', 'bank', 'light'), return up to 10 of the most useful/common ones.\n"
+                    "- All example sentences must be natural, creative, and different from each other.\n"
+                    "- Persian translations must be idiomatic and natural.\n"
+                    "Return clean JSON only. No extra text."
                 )
             },
             {"role": "user", "content": prompt},
         ],
-        "temperature": 0.4,
+        "temperature": 0.3,   # Lower temperature for more factual/consistent output
     }
-
     ai_headers = {
         "Authorization": f"Bearer {OPEN_TOKEN}",
         "Content-Type": "application/json",
         "X-Title": "Vocab Site",
     }
+    
     try:
         r = requests.post(OPENROUTER_URL, json=payload, headers=ai_headers, timeout=180)
         r.raise_for_status()
         raw = r.json()["choices"][0]["message"]["content"].strip()
-        # Strip accidental markdown fences
+        
+        # Clean possible markdown
         raw = raw.replace("```json", "").replace("```", "").strip()
         result = json.loads(raw)
         return result
