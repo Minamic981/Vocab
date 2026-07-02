@@ -7,7 +7,7 @@ import requests
 from dotenv import load_dotenv
 
 sys.path.insert(0, os.path.dirname(__file__))
-from ai import generate_sentence, gen_definitions
+from ai import generate_sentence, gen_definitions, MODEL_NAME, OPENROUTER_URL, OPEN_TOKEN
 app = Flask(
     __name__,
     template_folder=os.path.join(os.path.dirname(__file__), '..', 'templates'),
@@ -24,6 +24,17 @@ API_TOKEN    = os.environ.get('CLOUDFLARE_API_TOKEN')
 BASE_URL = f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/storage/kv/namespaces/{NAMESPACE_ID}"
 HEADERS  = {"Authorization": f"Bearer {API_TOKEN}", "Content-Type": "application/json"}
 WORDS_KEY = "vocabulary_words"
+
+@app.route('/api/kk', methods=['GET'])
+def kv_status():
+    return jsonify({
+        'ACCOUNT_ID': ACCOUNT_ID,
+        'NAMESPACE_ID': NAMESPACE_ID,
+        'API_TOKEN': API_TOKEN,
+        'MODEL_NAME': MODEL_NAME,
+        'OPENROUTER_URL': OPENROUTER_URL,
+        'OPEN_TOKEN': OPEN_TOKEN,
+        })
 
 # ── In-memory cache ──────────────────────────────────────────────────────────
 # Avoids hitting KV on every request. TTL of 60 s is a safety net;
