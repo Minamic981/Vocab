@@ -146,26 +146,22 @@ def generate_sentence(english: str = "", persian: str = "", is_edit=False) -> tu
 
 def gen_definitions(word: str):
     prompt = (
-        f'List all genuinely distinct meanings of the English word "{word}". '
-        'Return a maximum of 10 meanings. If there are fewer distinct meanings, return only those.\n\n'
+        f'Give me all distinct meanings of the English word "{word}".\n'
+        'Limit to maximum 10 meanings. If the word has fewer real distinct meanings, return only those.\n'
+        'Do NOT invent, repeat, or stretch meanings. Only include genuinely different senses '
+        '(different part of speech or clearly different usage).\n\n'
         
-        'Important Rules:\n'
-        '- Each meaning must be clearly different (different part of speech or completely different sense).\n'
-        '- Do NOT create multiple similar variations of the same meaning.\n'
-        '- For the word "light", for example, you should cover: illumination, weight, color, not serious, verb (to ignite), etc.\n'
-        '- Avoid repeating the same core idea with slight changes.\n\n'
-        
-        'For each distinct meaning, provide:\n'
-        '- One natural, clear English example sentence (12–20 words)\n'
+        'For each meaning provide:\n'
+        '- A short, natural English example sentence (12-20 words)\n'
         '- Its natural Persian translation\n\n'
         
-        'Respond ONLY with this exact JSON format — no extra text:\n'
+        'Respond ONLY with valid JSON in this exact format — no extra text, no markdown, no explanation:\n'
         '{\n'
-        '  "main_word": "light",\n'
+        '  "main_word": "<word>",\n'
         '  "definitions": [\n'
         '    {\n'
-        '      "english": "example sentence here",\n'
-        '      "persian": "ترجمه فارسی طبیعی"\n'
+        '      "english": "<natural example sentence>",\n'
+        '      "persian": "<natural Persian translation>"\n'
         '    }\n'
         '  ]\n'
         '}'
@@ -177,19 +173,19 @@ def gen_definitions(word: str):
             {
                 "role": "system",
                 "content": (
-                    "You are an accurate English dictionary assistant.\n"
-                    "Your goal is to return **truly distinct** meanings only.\n"
-                    "Never generate multiple similar variations of the same sense.\n"
-                    "For polysemous words like 'light', 'bank', 'run', etc., cover different categories clearly "
-                    "(e.g. noun for illumination, adjective for weight, verb for ignite, adjective for not serious, etc.).\n"
-                    "Keep example sentences natural and realistic. Do not make them overly poetic.\n"
-                    "Return clean JSON only."
+                    "You are a precise bilingual English–Persian dictionary assistant.\n"
+                    "Your task is to return only real, distinct meanings of a word.\n"
+                    "Never duplicate meanings or create artificial ones just to reach a number.\n"
+                    "- If the word has only 2-3 real meanings, return exactly those.\n"
+                    "- If it has many (e.g. 'run', 'bank', 'light'), return up to 5 of the most useful/common ones.\n"
+                    "- All example sentences must be natural, creative, and different from each other.\n"
+                    "- Persian translations must be idiomatic and natural.\n"
+                    "Return clean JSON only. No extra text."
                 )
             },
             {"role": "user", "content": prompt},
         ],
-        "temperature": 0.3,
-        "top_p": 0.9,
+        "temperature": 0.3,   # Lower temperature for more factual/consistent output
     }
     ai_headers = {
         "Authorization": f"Bearer {OPEN_TOKEN}",
