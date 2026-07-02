@@ -49,12 +49,17 @@ def _cache_clear():
 
 # ── KV helpers ───────────────────────────────────────────────────────────────
 
+KV_RETRIES = 3          # max attempts for transient failures
+KV_RETRY_DELAY = 3      # seconds between retries
+
+
 def _kv_ok() -> bool:
     return all([ACCOUNT_ID, NAMESPACE_ID, API_TOKEN])
 
 
 def load_words() -> list:
-    """Load words — served from cache when possible, one KV read otherwise."""
+    """Load words — served from cache when possible, one KV read otherwise.
+    Retries up to KV_RETRIES times on network / timeout errors."""
     cached = _cache_get()
     if cached is not None:
         return cached
@@ -63,52 +68,66 @@ def load_words() -> list:
         print("⚠️  Cloudflare credentials not configured. Using empty list.")
         return []
 
-    try:
-        r = requests.get(f"{BASE_URL}/values/{WORDS_KEY}", headers=HEADERS, timeout=10)
-        if r.status_code == 200:
-            data = r.json()
-            words = data if isinstance(data, list) else json.loads(data.get("value", "[]"))
-        elif r.status_code == 404:
-            words = []
-        else:
-            print(f"❌ KV load error {r.status_code}: {r.text}")
+    last_err = None
+    for attempt in range(1, KV_RETRIES + 1):
+        try:
+            r = requests.get(f"{BASE_URL}/values/{WORDS_KEY}", headers=HEADERS, timeout=15)
+            if r.status_code == 200:
+                data = r.json()
+                words = data if isinstance(data, list) else json.loads(data.get("value", "[]"))
+                _cache_set(words)
+                return words
+            elif r.status_code == 404:
+                _cache_set([])
+                return []
+            else:
+                print(f"❌ KV load error {r.status_code}: {r.text}")
+                return []
+        except (requests.RequestException, requests.Timeout) as e:
+            last_err = e
+            print(f"⚠️  KV load attempt {attempt}/{KV_RETRIES} failed: {e}")
+            if attempt < KV_RETRIES:
+                time.sleep(KV_RETRY_DELAY)
+        except json.JSONDecodeError as e:
+            print(f"❌ KV JSON error: {e}")
             return []
-    except requests.RequestException as e:
-        print(f"❌ KV network error: {e}")
-        return []
-    except json.JSONDecodeError as e:
-        print(f"❌ KV JSON error: {e}")
-        return []
 
-    _cache_set(words)
-    return words
+    print(f"❌ KV load failed after {KV_RETRIES} attempts: {last_err}")
+    _cache_clear()
+    return []
 
 
 def save_words(words: list) -> bool:
-    """Persist words to KV and update the cache on success."""
+    """Persist words to KV with retry on transient errors."""
     if not _kv_ok():
         print("⚠️  Cloudflare credentials not configured. Cannot save.")
         return False
 
-    try:
-        r = requests.put(
-            f"{BASE_URL}/values/{WORDS_KEY}",
-            headers=HEADERS,
-            data=json.dumps(words, ensure_ascii=False),
-            timeout=10,
-        )
-        if r.status_code == 200:
-            _cache_set(words)   # keep cache in sync — no extra KV read needed
-            print(f"✅ Saved {len(words)} words to KV")
-            return True
-        else:
-            print(f"❌ KV save error {r.status_code}: {r.text}")
-            _cache_clear()      # stale cache is worse than no cache
-            return False
-    except requests.RequestException as e:
-        print(f"❌ KV network error: {e}")
-        _cache_clear()
-        return False
+    last_err = None
+    for attempt in range(1, KV_RETRIES + 1):
+        try:
+            r = requests.put(
+                f"{BASE_URL}/values/{WORDS_KEY}",
+                headers=HEADERS,
+                data=json.dumps(words, ensure_ascii=False),
+                timeout=15,
+            )
+            if r.status_code == 200:
+                _cache_set(words)
+                print(f"✅ Saved {len(words)} words to KV")
+                return True
+            else:
+                print(f"❌ KV save error {r.status_code}: {r.text}")
+                return False
+        except (requests.RequestException, requests.Timeout) as e:
+            last_err = e
+            print(f"⚠️  KV save attempt {attempt}/{KV_RETRIES} failed: {e}")
+            if attempt < KV_RETRIES:
+                time.sleep(KV_RETRY_DELAY)
+
+    print(f"❌ KV save failed after {KV_RETRIES} attempts: {last_err}")
+    _cache_clear()
+    return False
 
 
 def check_kv_connection() -> bool:

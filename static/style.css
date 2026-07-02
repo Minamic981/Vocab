@@ -662,6 +662,11 @@ textarea {
   gap: 12px;
 }
 
+.practice-header-btns {
+  display: flex;
+  gap: 8px;
+}
+
 .progress-bar-wrap {
   height: 4px;
   background: var(--rule);

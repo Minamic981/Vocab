@@ -24,6 +24,43 @@ function toggleBookmark(english) {
 }
 
 // ── Helpers ────────────────────────────────────────────────────
+const RETRY_MAX   = 3;
+const RETRY_DELAY = 3000; // ms
+
+async function fetchWithRetry(url, options = {}, retries = RETRY_MAX) {
+  for (let i = 1; i <= retries; i++) {
+    try {
+      const res = await fetch(url, options);
+      return res;
+    } catch (err) {
+      if (i === retries) throw err;
+      const wait = RETRY_DELAY / 1000;
+      showToast(`Network error — retrying in ${wait}s… (${i}/${retries})`, 'warn');
+      await new Promise(r => setTimeout(r, RETRY_DELAY));
+    }
+  }
+}
+
+function showToast(msg, type = 'info') {
+  let container = document.getElementById('toast-container');
+  if (!container) {
+    container = document.createElement('div');
+    container.id = 'toast-container';
+    container.style.cssText = 'position:fixed;top:20px;right:20px;z-index:10000;display:flex;flex-direction:column;gap:10px;pointer-events:none;';
+    document.body.appendChild(container);
+  }
+  const toast = document.createElement('div');
+  toast.textContent = msg;
+  toast.style.cssText = `pointer-events:auto;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;color:#fff;background:${type==='success'?'#22c55e':type==='error'?'#ef4444':type==='warn'?'#f59e0b':'#3b82f6'};box-shadow:0 4px 12px rgba(0,0,0,.25);opacity:0;transform:translateY(-10px);transition:opacity .25s,transform .25s;max-width:360px;word-wrap:break-word;`;
+  container.appendChild(toast);
+  requestAnimationFrame(() => { toast.style.opacity='1'; toast.style.transform='translateY(0)'; });
+  setTimeout(() => {
+    toast.style.opacity='0';
+    toast.style.transform='translateY(-10px)';
+    setTimeout(() => toast.remove(), 300);
+  }, 3500);
+}
+
 function showAlert(id, msg, type = 'error') {
   const el = document.getElementById(id);
   el.textContent = msg;
@@ -144,35 +181,55 @@ document.getElementById('add-btn').addEventListener('click', async () => {
   const alts = document.getElementById('add-alts').value.trim();
   if (!en) { showAlert('add-alert', 'English field is required.'); return; }
   if (!aiGen && !fa) { showAlert('add-alert', 'Persian field is required.'); return; }
-  const btn = document.getElementById('add-btn');
-  btn.disabled = true;
-  btn.textContent = aiGen ? '⏳ Generating…' : 'Adding…';
 
-  const res = await fetch('/api/words', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ english: en, persian: fa, aigen: aiGen, alternatives: alts })
-  });
-  const data = await res.json();
-
-  btn.disabled = false;
-  btn.textContent = 'Add';
-
-  if (!res.ok) { showAlert('add-alert', data.error); return; }
-
-  words.push(data.word);
+  // Optimistic: show placeholder word immediately
+  const placeholder = { english: en, persian: fa || '(generating…)', alternatives: [] };
+  words.push(placeholder);
+  renderList(document.getElementById('search-input').value);
+  updateHeaderCount();
   document.getElementById('add-en').value = '';
   document.getElementById('add-fa').value = '';
   document.getElementById('add-alts').value = '';
-  renderList(document.getElementById('search-input').value);
-  updateHeaderCount();
-  showAlert('add-alert', `"${data.word.english}" added!`, 'success');
 
   const rows = document.querySelectorAll('.word-row');
-  if (rows.length) {
-    rows[rows.length - 1].scrollIntoView({ behavior: 'smooth', block: 'center' });
-    rows[rows.length - 1].style.background = 'var(--accent-lt)';
-    setTimeout(() => { rows[rows.length - 1].style.background = ''; }, 1200);
+  const lastRow = rows[rows.length - 1];
+  if (lastRow) {
+    lastRow.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    lastRow.style.background = 'var(--accent-lt)';
+    setTimeout(() => { lastRow.style.background = ''; }, 1200);
+  }
+
+  showToast(`Adding "${en}"…`, 'info');
+
+  try {
+    const res = await fetchWithRetry('/api/words', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ english: en, persian: fa, aigen: aiGen, alternatives: alts })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      // Revert optimistic update
+      words.pop();
+      renderList(document.getElementById('search-input').value);
+      updateHeaderCount();
+      showAlert('add-alert', data.error);
+      return;
+    }
+
+    // Replace placeholder with server response
+    words[words.length - 1] = data.word;
+    renderList(document.getElementById('search-input').value);
+    showAlert('add-alert', `"${data.word.english}" added!`, 'success');
+    showToast(`Added "${data.word.english}"`, 'success');
+  } catch (e) {
+    // Revert on network failure
+    words.pop();
+    renderList(document.getElementById('search-input').value);
+    updateHeaderCount();
+    showAlert('add-alert', 'Network error — please try again.', 'error');
+    showToast('Add failed: ' + e.message, 'error');
   }
 
   document.getElementById('add-en').focus();
@@ -193,15 +250,33 @@ document.getElementById('advanced-toggle').addEventListener('click', () => {
 });
 
 // ── Delete word ────────────────────────────────────────────────
-async function deleteWord(index) {
-  const word = words[index];
+function deleteWord(index) {
+  const removed = words[index];
 
-  const res = await fetch(`/api/words/${index}`, { method: 'DELETE' });
-  if (!res.ok) { alert('Failed to delete.'); return; }
-
+  // Optimistic: remove instantly
   words.splice(index, 1);
   renderList(document.getElementById('search-input').value);
   updateHeaderCount();
+  showToast(`Deleted "${removed.english}"`, 'success');
+
+  // Fire delete in background
+  fetchWithRetry(`/api/words/${index}`, { method: 'DELETE' })
+    .then(async res => {
+      if (!res.ok) {
+        const data = await res.json();
+        // Revert: re-insert at original position
+        words.splice(index, 0, removed);
+        renderList(document.getElementById('search-input').value);
+        updateHeaderCount();
+        showToast(data.error || 'Delete failed — word restored.', 'error');
+      }
+    })
+    .catch(e => {
+      words.splice(index, 0, removed);
+      renderList(document.getElementById('search-input').value);
+      updateHeaderCount();
+      showToast('Delete failed — word restored: ' + e.message, 'error');
+    });
 }
 
 // ── Edit modal ─────────────────────────────────────────────────
@@ -228,17 +303,35 @@ document.getElementById('modal-save').addEventListener('click', async () => {
   const alts = document.getElementById('edit-alts').value.trim();
   if (!en || !fa) { showAlert('edit-alert', 'Fill in both fields.'); return; }
 
-  const res = await fetch(`/api/words/${editingIndex}`, {
+  const idx = editingIndex;
+  const oldWord = { ...words[idx] };
+
+  // Optimistic: update local state, close modal instantly
+  const updated = { english: en, persian: fa, alternatives: alts ? alts.split('\n').map(s => s.trim()).filter(Boolean) : [] };
+  words[idx] = updated;
+  document.getElementById('edit-modal').classList.remove('open');
+  renderList(document.getElementById('search-input').value);
+  showToast(`Updated "${en}"`, 'success');
+
+  // Fire PUT in background
+  fetchWithRetry(`/api/words/${idx}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ english: en, persian: fa, alternatives: alts })
-  });
-  const data = await res.json();
-  if (!res.ok) { showAlert('edit-alert', data.error); return; }
-
-  words[editingIndex] = data.word;
-  document.getElementById('edit-modal').classList.remove('open');
-  renderList(document.getElementById('search-input').value);
+  })
+    .then(async res => {
+      if (!res.ok) {
+        const data = await res.json();
+        words[idx] = oldWord;
+        renderList(document.getElementById('search-input').value);
+        showToast(data.error || 'Edit failed — reverted.', 'error');
+      }
+    })
+    .catch(e => {
+      words[idx] = oldWord;
+      renderList(document.getElementById('search-input').value);
+      showToast('Edit failed — reverted: ' + e.message, 'error');
+    });
 });
 
 document.getElementById('modal-aigen').addEventListener('click', async () => {
@@ -247,7 +340,7 @@ document.getElementById('modal-aigen').addEventListener('click', async () => {
   btn.textContent = '⏳ Generating…';
 
   try {
-    const res = await fetch(`/api/aigen/${editingIndex}`, {
+    const res = await fetchWithRetry(`/api/aigen/${editingIndex}`, {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ is_edit: true })
@@ -260,7 +353,7 @@ document.getElementById('modal-aigen').addEventListener('click', async () => {
     }
 
     // Reload the updated word from server state
-    const wordsRes = await fetch('/api/words');
+    const wordsRes = await fetchWithRetry('/api/words');
     if (wordsRes.ok) {
       const wordsData = await wordsRes.json();
       words = (wordsData.words ?? wordsData).map(w =>
@@ -276,9 +369,11 @@ document.getElementById('modal-aigen').addEventListener('click', async () => {
     // Refresh the word list in the background
     renderList(document.getElementById('search-input').value);
 
-    showAlert('edit-alert', '✨ Sentence generated!', 'success');
+    showAlert('edit-alert', 'Sentence generated!', 'success');
+    showToast('New sentence generated', 'success');
   } catch (e) {
     showAlert('edit-alert', 'Network error: ' + e.message, 'error');
+    showToast('Generation failed: ' + e.message, 'error');
   } finally {
     btn.disabled = false;
     btn.textContent = '✨ Generate Sentence';
@@ -289,28 +384,41 @@ document.getElementById('import-btn').addEventListener('click', async () => {
   const text = document.getElementById('import-text').value;
   if (!text.trim()) { showAlert('import-alert', 'Paste some words first.'); return; }
 
-  const res = await fetch('/api/words/batch', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text })
-  });
-  const data = await res.json();
+  const btn = document.getElementById('import-btn');
+  btn.disabled = true;
+  btn.textContent = 'Importing…';
 
-  if (!res.ok) { showAlert('import-alert', data.error); return; }
+  try {
+    const res = await fetchWithRetry('/api/words/batch', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    const data = await res.json();
 
-  words.push(...data.added);
-  renderList();
-  updateHeaderCount();
-  document.getElementById('import-text').value = '';
+    if (!res.ok) { showAlert('import-alert', data.error); return; }
 
-  let msg = `✓ Added ${data.added_count} word${data.added_count !== 1 ? 's' : ''}.`;
-  let type = 'success';
-  if (data.duplicates.length) {
-    msg += ` ${data.duplicates.length} duplicate${data.duplicates.length > 1 ? 's' : ''} skipped.`;
-    type = 'warn';
+    words.push(...data.added);
+    renderList();
+    updateHeaderCount();
+    document.getElementById('import-text').value = '';
+
+    let msg = `Added ${data.added_count} word${data.added_count !== 1 ? 's' : ''}.`;
+    let type = 'success';
+    if (data.duplicates.length) {
+      msg += ` ${data.duplicates.length} duplicate${data.duplicates.length > 1 ? 's' : ''} skipped.`;
+      type = 'warn';
+    }
+    if (data.errors.length) msg += ` ${data.errors.length} line${data.errors.length > 1 ? 's' : ''} had errors.`;
+    showAlert('import-alert', msg, type);
+    showToast(msg, data.added_count > 0 ? 'success' : 'warn');
+  } catch (e) {
+    showAlert('import-alert', 'Network error — please try again.', 'error');
+    showToast('Import failed: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Import';
   }
-  if (data.errors.length) msg += ` ${data.errors.length} line${data.errors.length > 1 ? 's' : ''} had errors.`;
-  showAlert('import-alert', msg, type);
 });
 
 // ── Speech synthesis ───────────────────────────────────────────
@@ -370,10 +478,50 @@ if (window.speechSynthesis.onvoiceschanged !== undefined) {
 }
 
 // ── Practice mode ──────────────────────────────────────────────
+let practiceFilter = 'all'; // 'all' | 'bookmarked' | 'unbookmarked'
+const PRACTICE_FILTERS = [
+  { key: 'all',          label: '🔖 All',          title: 'Show all words' },
+  { key: 'bookmarked',   label: '🔖 Bookmarked',   title: 'Show only bookmarked' },
+  { key: 'unbookmarked', label: '🔖 Unbookmarked', title: 'Show only unbookmarked' },
+];
+
+function applyPracticeFilter() {
+  const f = PRACTICE_FILTERS.find(p => p.key === practiceFilter);
+  const btn = document.getElementById('practice-filter-btn');
+  btn.textContent = f.label;
+  btn.title = f.title;
+}
+
+function cyclePracticeFilter() {
+  const idx = PRACTICE_FILTERS.findIndex(p => p.key === practiceFilter);
+  practiceFilter = PRACTICE_FILTERS[(idx + 1) % PRACTICE_FILTERS.length].key;
+  applyPracticeFilter();
+  shuffleQueue();
+  showCard();
+}
+
+document.getElementById('practice-filter-btn').addEventListener('click', cyclePracticeFilter);
+
+function getFilteredWords() {
+  if (practiceFilter === 'bookmarked') return words.filter(w => isBookmarked(w.english));
+  if (practiceFilter === 'unbookmarked') return words.filter(w => !isBookmarked(w.english));
+  return [...words];
+}
+
 function initPractice() {
+  applyPracticeFilter();
   if (!words.length) {
     document.getElementById('practice-card-wrap').style.display = 'none';
     document.getElementById('practice-empty').style.display = 'block';
+    document.getElementById('practice-empty').textContent = 'Add some words first to start practicing!';
+    return;
+  }
+  const filtered = getFilteredWords();
+  if (!filtered.length) {
+    document.getElementById('practice-card-wrap').style.display = 'none';
+    document.getElementById('practice-empty').style.display = 'block';
+    document.getElementById('practice-empty').textContent =
+      practiceFilter === 'bookmarked' ? 'No bookmarked words yet.' : 'All words are bookmarked.';
     return;
   }
   document.getElementById('practice-card-wrap').style.display = 'block';
@@ -383,7 +531,7 @@ function initPractice() {
 }
 
 function shuffleQueue() {
-  practiceQueue = [...words].sort(() => Math.random() - .5);
+  practiceQueue = getFilteredWords().sort(() => Math.random() - .5);
   practiceIndex = 0;
 }
 
@@ -404,10 +552,43 @@ document.getElementById('bookmark-btn').addEventListener('click', (e) => {
   const w = practiceQueue[idx];
   toggleBookmark(w.english);
   document.getElementById('bookmark-btn').classList.toggle('active', isBookmarked(w.english));
+
+  // Remove word from queue if it no longer matches the filter
+  const matches = practiceFilter === 'all'
+    || (practiceFilter === 'bookmarked' && isBookmarked(w.english))
+    || (practiceFilter === 'unbookmarked' && !isBookmarked(w.english));
+
+  if (!matches) {
+    practiceQueue.splice(idx, 1);
+    if (!practiceQueue.length) {
+      // Queue empty — show message and auto-switch to All
+      document.getElementById('card-en').textContent = practiceFilter === 'bookmarked'
+        ? 'No bookmarked words.' : 'All words are bookmarked.';
+      document.getElementById('card-fa').textContent = '';
+      document.getElementById('flip-inner').classList.remove('flipped');
+      document.getElementById('practice-stat').textContent = '';
+      document.getElementById('progress-fill').style.width = '0%';
+      showToast('No words match — switching to All', 'warn');
+      practiceFilter = 'all';
+      applyPracticeFilter();
+      setTimeout(() => { shuffleQueue(); showCard(); }, 800);
+      return;
+    }
+    // Clamp index and show next card
+    practiceIndex = idx % practiceQueue.length;
+  }
+  showCard();
 });
 
 function showCard() {
-  if (!practiceQueue.length) return;
+  if (!practiceQueue.length) {
+    document.getElementById('card-en').textContent = 'No bookmarked words.';
+    document.getElementById('card-fa').textContent = '';
+    document.getElementById('flip-inner').classList.remove('flipped');
+    document.getElementById('practice-stat').textContent = '';
+    document.getElementById('progress-fill').style.width = '0%';
+    return;
+  }
   const idx = practiceIndex % practiceQueue.length;
   const w = practiceQueue[idx];
   document.getElementById('card-en').textContent = w.english;
