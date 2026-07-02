@@ -96,9 +96,8 @@ def _detect_mode(english: str, persian: str, is_edit: bool = False) -> SentenceM
 
     raise ValueError("Cannot determine mode: provide english and/or persian")
 
-def generate_sentence(english: str = "", persian: str = "", is_edit=False) -> tuple[str, str]:
+def generate_sentence(english: str = "", persian: str = "", is_edit=False, temperature: float = 0.4) -> tuple[str, str]:
     mode = _detect_mode(english=english, persian=persian,is_edit=is_edit)
-    print("Mode: ", mode)
     if mode == SentenceMode.EN_WITH_PERSIAN:
         user_content = f"English: {english}\nPersian meaning: {persian}"
     elif mode == SentenceMode.EN_WORD:
@@ -116,7 +115,7 @@ def generate_sentence(english: str = "", persian: str = "", is_edit=False) -> tu
             {"role": "system", "content": SYSTEM_PROMPTS[mode]},
             {"role": "user", "content": user_content},
         ],
-        "temperature": 0.4,
+        "temperature": temperature,
     }
     ai_headers = {
         "Authorization": f"Bearer {OPEN_TOKEN}",
@@ -131,7 +130,6 @@ def generate_sentence(english: str = "", persian: str = "", is_edit=False) -> tu
         if raw.startswith("```"):
             raw = raw.strip("`")
             raw = raw[raw.find("{"):]
-        print("Raw: ", raw)
         parts = json.loads(raw)
         return parts["english"], parts["persian"]
     except requests.HTTPError as e:

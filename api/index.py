@@ -20,7 +20,6 @@ load_dotenv()
 ACCOUNT_ID   = os.environ.get('CLOUDFLARE_ACCOUNT_ID')
 NAMESPACE_ID = os.environ.get('CLOUDFLARE_NAMESPACE_ID')
 API_TOKEN    = os.environ.get('CLOUDFLARE_API_TOKEN')
-
 BASE_URL = f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/storage/kv/namespaces/{NAMESPACE_ID}"
 HEADERS  = {"Authorization": f"Bearer {API_TOKEN}", "Content-Type": "application/json"}
 WORDS_KEY = "vocabulary_words"
@@ -140,7 +139,6 @@ def add_word():
     english = data.get('english', '').strip().lower()
     persian = data.get('persian', '').strip()
     aigen = data.get('aigen', False)
-    print(aigen)
     if not english:
         return jsonify({'error': 'English field is required.'}), 400
     if not aigen and not persian:
@@ -206,7 +204,7 @@ def delete_word(index):
     removed = words.pop(index)
 
     if not save_words(words):
-        return jsonify({'error': 'Failed to save changes to Cloudflare KV.'}), 500
+        return jsonify({'error': 'Failed to save changes to Cloudflare KV.'}), 500  
 
     en = removed["english"] if isinstance(removed, dict) else removed[0]
     return jsonify({'message': f'"{en}" deleted.'})
@@ -229,7 +227,6 @@ def ai_gen(index):
         new_english, new_persian = generate_sentence(
             english=english_word, persian=persian_word, is_edit=is_edit
         )
-        print("Result: ",new_english, new_persian)
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
