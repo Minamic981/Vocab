@@ -354,8 +354,13 @@ textarea {
 }
 
 @keyframes pulse-speak {
-  from { transform: scale(1); }
-  to { transform: scale(1.1); }
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(1.1);
+  }
 }
 
 /* ── Bookmark button ─────────────────────────────────────── */
@@ -499,6 +504,58 @@ textarea {
   font-family: "Lora", serif;
   font-size: 13px;
   min-height: 60px;
+}
+
+/* ── Writing style toggle & dropdown ────────────────────── */
+.style-toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 12px;
+  font-size: 13px;
+  color: var(--ink-light);
+  cursor: pointer;
+  user-select: none;
+}
+
+.style-toggle-label input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 15px;
+  height: 15px;
+  cursor: pointer;
+}
+
+.style-options {
+  display: none;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--rule);
+}
+
+.style-options.visible {
+  display: block;
+}
+
+.style-options .field {
+  min-width: 0;
+}
+
+.style-options select {
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  padding: 9px 12px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--ink);
+  outline: none;
+  width: 100%;
+  cursor: pointer;
+  transition: border-color 0.15s;
+}
+
+.style-options select:focus {
+  border-color: var(--accent);
 }
 
 /* ── Alerts ──────────────────────────────────────────────── */

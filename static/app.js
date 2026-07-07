@@ -24,7 +24,7 @@ function toggleBookmark(english) {
 }
 
 // ── Helpers ────────────────────────────────────────────────────
-const RETRY_MAX   = 3;
+const RETRY_MAX = 3;
 const RETRY_DELAY = 3000; // ms
 
 async function fetchWithRetry(url, options = {}, retries = RETRY_MAX) {
@@ -51,12 +51,12 @@ function showToast(msg, type = 'info') {
   }
   const toast = document.createElement('div');
   toast.textContent = msg;
-  toast.style.cssText = `pointer-events:auto;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;color:#fff;background:${type==='success'?'#22c55e':type==='error'?'#ef4444':type==='warn'?'#f59e0b':'#3b82f6'};box-shadow:0 4px 12px rgba(0,0,0,.25);opacity:0;transform:translateY(-10px);transition:opacity .25s,transform .25s;max-width:360px;word-wrap:break-word;`;
+  toast.style.cssText = `pointer-events:auto;padding:12px 20px;border-radius:8px;font-size:14px;font-weight:500;color:#fff;background:${type === 'success' ? '#22c55e' : type === 'error' ? '#ef4444' : type === 'warn' ? '#f59e0b' : '#3b82f6'};box-shadow:0 4px 12px rgba(0,0,0,.25);opacity:0;transform:translateY(-10px);transition:opacity .25s,transform .25s;max-width:360px;word-wrap:break-word;`;
   container.appendChild(toast);
-  requestAnimationFrame(() => { toast.style.opacity='1'; toast.style.transform='translateY(0)'; });
+  requestAnimationFrame(() => { toast.style.opacity = '1'; toast.style.transform = 'translateY(0)'; });
   setTimeout(() => {
-    toast.style.opacity='0';
-    toast.style.transform='translateY(-10px)';
+    toast.style.opacity = '0';
+    toast.style.transform = 'translateY(-10px)';
     setTimeout(() => toast.remove(), 300);
   }, 3500);
 }
@@ -179,6 +179,9 @@ document.getElementById('add-btn').addEventListener('click', async () => {
   const fa = document.getElementById('add-fa').value.trim();
   const aiGen = document.getElementById('add-aigen').checked;
   const alts = document.getElementById('add-alts').value.trim();
+  const styleEnabled = document.getElementById('add-style-toggle').checked;
+  const style = styleEnabled ? document.getElementById('add-style').value : '';
+  const customStyle = styleEnabled ? document.getElementById('add-style-custom').value.trim() : '';
   if (!en) { showAlert('add-alert', 'English field is required.'); return; }
   if (!aiGen && !fa) { showAlert('add-alert', 'Persian field is required.'); return; }
 
@@ -205,7 +208,7 @@ document.getElementById('add-btn').addEventListener('click', async () => {
     const res = await fetchWithRetry('/api/words', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ english: en, persian: fa, aigen: aiGen, alternatives: alts })
+      body: JSON.stringify({ english: en, persian: fa, aigen: aiGen, alternatives: alts, style: style, custom_style: customStyle })
     });
     const data = await res.json();
 
@@ -247,6 +250,11 @@ document.getElementById('advanced-toggle').addEventListener('click', () => {
   const arrow = document.getElementById('advanced-arrow');
   const isOpen = section.classList.toggle('open');
   arrow.classList.toggle('open', isOpen);
+});
+
+// ── Writing style toggle ────────────────────────────────────
+document.getElementById('add-style-toggle').addEventListener('change', (e) => {
+  document.getElementById('style-options').classList.toggle('visible', e.target.checked);
 });
 
 // ── Delete word ────────────────────────────────────────────────
@@ -450,7 +458,7 @@ function speakWord(word) {
 
   if (!selectedVoice) {
     selectedVoice = voices.find(voice => voice.lang === 'en-US') ||
-                   voices.find(voice => voice.lang.startsWith('en'));
+      voices.find(voice => voice.lang.startsWith('en'));
   }
 
   if (selectedVoice) {
@@ -474,14 +482,14 @@ function speakCurrentWord() {
 }
 
 if (window.speechSynthesis.onvoiceschanged !== undefined) {
-  window.speechSynthesis.onvoiceschanged = () => {};
+  window.speechSynthesis.onvoiceschanged = () => { };
 }
 
 // ── Practice mode ──────────────────────────────────────────────
 let practiceFilter = 'all'; // 'all' | 'bookmarked' | 'unbookmarked'
 const PRACTICE_FILTERS = [
-  { key: 'all',          label: '🔖 All',          title: 'Show all words' },
-  { key: 'bookmarked',   label: '🔖 Bookmarked',   title: 'Show only bookmarked' },
+  { key: 'all', label: '🔖 All', title: 'Show all words' },
+  { key: 'bookmarked', label: '🔖 Bookmarked', title: 'Show only bookmarked' },
   { key: 'unbookmarked', label: '🔖 Unbookmarked', title: 'Show only unbookmarked' },
 ];
 

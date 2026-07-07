@@ -96,7 +96,7 @@ def _detect_mode(english: str, persian: str, is_edit: bool = False) -> SentenceM
 
     raise ValueError("Cannot determine mode: provide english and/or persian")
 
-def generate_sentence(english: str = "", persian: str = "", is_edit=False, temperature: float = 0.4) -> tuple[str, str]:
+def generate_sentence(english: str = "", persian: str = "", is_edit=False, temperature: float = 0.4, style: str = "", custom_style: str = "") -> tuple[str, str]:
     mode = _detect_mode(english=english, persian=persian,is_edit=is_edit)
     if mode == SentenceMode.EN_WITH_PERSIAN:
         user_content = f"English: {english}\nPersian meaning: {persian}"
@@ -109,10 +109,28 @@ def generate_sentence(english: str = "", persian: str = "", is_edit=False, tempe
     else:
         raise ValueError(f"Unknown mode: {mode}")
 
+    system_prompt = SYSTEM_PROMPTS[mode]
+    if custom_style:
+        system_prompt += f"\n\nWrite in this specified style of sentence construction: {custom_style}."
+    elif style:
+        style_map = {
+            "romantic": "romantic and emotionally expressive",
+            "formal": "formal and professional",
+            "humorous": "humorous and witty",
+            "poetic": "poetic and lyrical",
+            "minimalist": "minimalist with very few words",
+            "academic": "academic and scholarly",
+            "casual": "casual and conversational",
+            "dramatic": "dramatic and vivid",
+            "simple": "simple with basic everyday words and short sentences",
+        }
+        style_desc = style_map.get(style, style)
+        system_prompt += f"\n\nWrite in this specified style of sentence construction: {style_desc}." # Later Add Condition If Natural Removed This
+
     payload = {
         "model": MODEL_NAME,
         "messages": [
-            {"role": "system", "content": SYSTEM_PROMPTS[mode]},
+            {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_content},
         ],
         "temperature": temperature,

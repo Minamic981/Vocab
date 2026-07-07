@@ -181,9 +181,12 @@ def add_word():
 
     if aigen:
         try:
-            new_english, new_persian = generate_sentence(english, persian)
+            style = data.get('style', '')
+            custom_style = data.get('custom_style', '')
+            new_english, new_persian = generate_sentence(english, persian, style=style, custom_style=custom_style)
             new_word = {'english': new_english, 'persian': new_persian, 'alternatives': alternatives}
         except Exception as e:
+            print('api words method POST: ',e)
             return jsonify({'error': str(e)}), 500
     else:
         new_word = {'english': english, 'persian': persian, 'alternatives': alternatives}
@@ -252,12 +255,15 @@ def ai_gen(index):
 
     data = request.get_json(silent=True) or {}
     is_edit = data.get('is_edit', False)
+    style = data.get('style', '')
+    custom_style = data.get('custom_style', '')
 
     try:
         new_english, new_persian = generate_sentence(
-            english=english_word, persian=persian_word, is_edit=is_edit
+            english=english_word, persian=persian_word, is_edit=is_edit, style=style, custom_style=custom_style
         )
     except Exception as e:
+        print('aigen method put: ',e)
         return jsonify({'error': str(e)}), 500
 
     words[index] = {'english': new_english, 'persian': new_persian, 'alternatives': words[index].get('alternatives', [])}
