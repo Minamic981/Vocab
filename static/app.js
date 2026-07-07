@@ -98,17 +98,18 @@ document.querySelectorAll('.tab-btn').forEach(btn => {
 function renderList(filter = '') {
   const list = document.getElementById('word-list');
   const f = filter.toLowerCase().trim();
-  const bookmarkOnly = document.getElementById('bookmark-filter').checked;
   let filtered = f
     ? words.filter(w => w.english.toLowerCase().includes(f) || w.persian.includes(f))
     : words;
 
-  if (bookmarkOnly) {
+  if (bookmarkFilter === 'bookmarked') {
     filtered = filtered.filter(w => isBookmarked(w.english));
+  } else if (bookmarkFilter === 'unbookmarked') {
+    filtered = filtered.filter(w => !isBookmarked(w.english));
   }
 
   if (!filtered.length) {
-    const msg = f ? 'No matches found.' : bookmarkOnly ? 'No bookmarked words yet.' : 'No words yet — add one below!';
+    const msg = f ? 'No matches found.' : bookmarkFilter === 'bookmarked' ? 'No bookmarked words yet.' : bookmarkFilter === 'unbookmarked' ? 'All words are bookmarked.' : 'No words yet — add one below!';
     list.innerHTML = `<div class="no-words">${msg}</div>`;
     return;
   }
@@ -132,6 +133,9 @@ function renderList(filter = '') {
           <span class="word-en">${escHtml(w.english)}</span>
           <span class="word-fa">${escHtml(w.persian)}</span>
           <div class="word-actions">
+            <button class="btn btn-speak-row btn-sm" data-word="${escHtml(w.english)}" title="Listen">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
+            </button>
             <button class="btn btn-ghost btn-sm edit-btn" data-index="${realIndex}">Edit</button>
             <button class="btn btn-danger btn-sm delete-btn" data-index="${realIndex}">✕</button>
           </div>
@@ -151,6 +155,30 @@ function renderList(filter = '') {
       b.classList.toggle('open', isOpen);
     });
   });
+  list.querySelectorAll('.btn-speak-row').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      speakWord(btn.dataset.word);
+    });
+  });
+  list.querySelectorAll('.word-row').forEach(row => {
+    const enEl = row.querySelector('.word-en');
+    if (!enEl || enEl.dataset.segBound === '1') return;
+    enEl.dataset.segBound = '1';
+    const rawText = enEl.textContent;
+    let segmented = false;
+    row.addEventListener('mouseenter', () => {
+      if (segmented) return;
+      segmented = true;
+      enEl.innerHTML = segmentEnglish(rawText);
+      enEl.querySelectorAll('.word-segment').forEach(span => {
+        span.addEventListener('click', (e) => {
+          e.stopPropagation();
+          openWordPopup(span.dataset.word);
+        });
+      });
+    });
+  });
 }
 
 function escHtml(s) {
@@ -158,8 +186,32 @@ function escHtml(s) {
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
 }
 
+// ── Word segmentation (lazy — on hover only) ───────────────
+const wordSegmenter = typeof Intl !== 'undefined' && Intl.Segmenter
+  ? new Intl.Segmenter('en', { granularity: 'word' })
+  : null;
+
+function segmentEnglish(text) {
+  if (!wordSegmenter || !text) return escHtml(text);
+  const segments = [...wordSegmenter.segment(text)];
+  return segments.map(seg => {
+    if (seg.isWordLike) {
+      return `<span class="word-segment" data-word="${escHtml(seg.segment)}">${escHtml(seg.segment)}</span>`;
+    }
+    return escHtml(seg.segment);
+  }).join('');
+}
+
+let bookmarkFilter = 'all'; // 'all' | 'bookmarked' | 'unbookmarked'
+
 document.getElementById('search-input').addEventListener('input', e => renderList(e.target.value));
-document.getElementById('bookmark-filter').addEventListener('change', () => renderList(document.getElementById('search-input').value));
+document.getElementById('bookmark-filter-btn').addEventListener('click', () => {
+  const cycle = ['all', 'bookmarked', 'unbookmarked'];
+  bookmarkFilter = cycle[(cycle.indexOf(bookmarkFilter) + 1) % cycle.length];
+  const labels = { all: '🔖 All', bookmarked: '🔖 Bookmarked', unbookmarked: '🔖 Unbookmarked' };
+  document.getElementById('bookmark-filter-btn').textContent = labels[bookmarkFilter];
+  renderList(document.getElementById('search-input').value);
+});
 
 document.getElementById('export-btn').addEventListener('click', () => {
   if (!words.length) return;
@@ -721,4 +773,62 @@ document.getElementById('defs-btn').addEventListener('click', async () => {
 
 document.getElementById('defs-en').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('defs-btn').click();
+});
+
+// ── Word popup ─────────────────────────────────────────────
+function openWordPopup(word) {
+  document.getElementById('popup-en').value = word;
+  document.getElementById('popup-fa').value = '';
+  document.getElementById('popup-alert').className = 'alert';
+  document.getElementById('word-popup').classList.add('open');
+  document.getElementById('popup-fa').focus();
+}
+
+document.getElementById('popup-cancel').addEventListener('click', () => {
+  document.getElementById('word-popup').classList.remove('open');
+});
+document.getElementById('word-popup').addEventListener('click', e => {
+  if (e.target === document.getElementById('word-popup'))
+    document.getElementById('word-popup').classList.remove('open');
+});
+
+document.getElementById('popup-generate').addEventListener('click', async () => {
+  const en = document.getElementById('popup-en').value.trim();
+  const fa = document.getElementById('popup-fa').value.trim();
+  if (!en) return;
+
+  const btn = document.getElementById('popup-generate');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generating…';
+
+  try {
+    const res = await fetchWithRetry('/api/words', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ english: en, persian: fa, aigen: true })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      document.getElementById('popup-alert').className = 'alert show alert-error';
+      document.getElementById('popup-alert').textContent = data.error || 'Generation failed.';
+      return;
+    }
+
+    words.push(data.word);
+    renderList(document.getElementById('search-input').value);
+    updateHeaderCount();
+    document.getElementById('word-popup').classList.remove('open');
+    showToast(`Added "${data.word.english}"`, 'success');
+  } catch (e) {
+    document.getElementById('popup-alert').className = 'alert show alert-error';
+    document.getElementById('popup-alert').textContent = 'Network error — please try again.';
+  } finally {
+    btn.disabled = false;
+    btn.textContent = '✨ Generate';
+  }
+});
+
+document.getElementById('popup-fa').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('popup-generate').click();
 });

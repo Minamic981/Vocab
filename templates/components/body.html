@@ -2,13 +2,7 @@
 <div class="tab-panel active" id="tab-library">
   <div class="search-bar">
     <input type="text" id="search-input" placeholder="Search words…" />
-    <label class="bookmark-filter-btn" id="bookmark-filter-label" title="Show bookmarked only">
-      <input type="checkbox" id="bookmark-filter" />
-      <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-        stroke-linecap="round" stroke-linejoin="round">
-        <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
-      </svg>
-    </label>
+    <button class="btn btn-ghost btn-sm" id="bookmark-filter-btn" title="Filter bookmarked words">🔖 All</button>
     <button class="btn btn-ghost btn-sm" id="export-btn" title="Export words as text">Export</button>
   </div>
   <div id="word-list"></div>
@@ -230,6 +224,26 @@
         ✨ Generate Sentence
       </button>
       <button class="btn btn-primary" id="modal-save">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── Word Popup ─────────────────────────────────────────── -->
+<div class="modal-overlay" id="word-popup">
+  <div class="modal">
+    <div class="modal-title">Generate Sentence for Word</div>
+    <div class="field" style="margin-bottom: 12px">
+      <label for="popup-en">English</label>
+      <input type="text" id="popup-en" readonly />
+    </div>
+    <div class="field" style="margin-bottom: 12px">
+      <label for="popup-fa">Persian (فارسی) — optional</label>
+      <input type="text" id="popup-fa" dir="rtl" placeholder="e.g. سخت" />
+    </div>
+    <div class="alert" id="popup-alert"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="popup-cancel">Cancel</button>
+      <button class="btn btn-primary" id="popup-generate">✨ Generate</button>
     </div>
   </div>
 </div>

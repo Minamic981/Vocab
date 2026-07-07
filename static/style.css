@@ -312,6 +312,7 @@ textarea {
 }
 
 .btn-danger {
+  height: 25px;
   background: var(--danger);
   color: #fff;
 }
@@ -395,45 +396,7 @@ textarea {
   fill: var(--warn);
 }
 
-/* ── Bookmark filter (library) ───────────────────────────── */
-.bookmark-filter-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 50%;
-  cursor: pointer;
-  color: var(--ink-faint);
-  flex-shrink: 0;
-  transition: color 0.15s;
-}
 
-.bookmark-filter-btn input[type="checkbox"] {
-  position: absolute;
-  width: 0;
-  height: 0;
-  opacity: 0;
-  pointer-events: none;
-}
-
-.bookmark-filter-btn svg {
-  transition: fill 0.2s, stroke 0.2s;
-  fill: none;
-  stroke: currentColor;
-}
-
-.bookmark-filter-btn:hover {
-  color: var(--warn);
-}
-
-.bookmark-filter-btn:has(input:checked) {
-  color: var(--warn);
-}
-
-.bookmark-filter-btn:has(input:checked) svg {
-  fill: var(--warn);
-}
 
 /* ── Labels ──────────────────────────────────────────────── */
 .aigen-label {
@@ -700,6 +663,27 @@ textarea {
   display: flex;
   gap: 6px;
   flex-shrink: 0;
+  align-items: center;
+}
+
+/* ── Row speak button ────────────────────────────────────── */
+.btn-speak-row {
+  background: #3b82f6;
+  color: #fff;
+}
+
+.btn-speak-row:hover {
+  background: #2563eb;
+}
+
+.word-actions .btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-speak-row:hover {
+  background: #2563eb;
 }
 
 .no-words {
@@ -1024,4 +1008,32 @@ textarea {
 
 .defs-table tbody tr:hover {
   background: var(--paper-2);
+}
+
+/* ── Segmented words (clickable words in sentences) ─────── */
+.word-segment {
+  display: inline;
+  cursor: default;
+  transition: color 0.15s, border-color 0.15s;
+  border-bottom: 1px solid transparent;
+}
+
+.word-segment:hover {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+
+/* ── Word popup ──────────────────────────────────────────── */
+#word-popup .modal {
+  max-width: 380px;
+}
+
+#word-popup input[readonly] {
+  background: var(--paper-2);
+  color: var(--ink-light);
+  cursor: default;
+}
+
+#word-popup .alert {
+  margin-top: 0;
 }
