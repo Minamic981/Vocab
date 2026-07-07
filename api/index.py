@@ -24,6 +24,9 @@ BASE_URL = f"https://api.cloudflare.com/client/v4/accounts/{ACCOUNT_ID}/storage/
 HEADERS  = {"Authorization": f"Bearer {API_TOKEN}", "Content-Type": "application/json"}
 WORDS_KEY = "vocabulary_words"
 
+# ── MongoDB Configuration ────────────────────────────────────────────────────
+MONGODB_URI = os.environ.get('MONGODB_URI')
+
 @app.route('/api/kk', methods=['GET'])
 def kv_status():
     return jsonify({
@@ -344,6 +347,88 @@ def clear_words():
     if not save_words([]):
         return jsonify({'error': 'Failed to clear words from KV.'}), 500
     return jsonify({'message': 'All words cleared.'})
+
+
+@app.route('/testSS', methods=['GET'])
+def test_ss():
+    results = {}
+
+    # ── Test Cloudflare KV ────────────────────────────────────────────────
+    kv_start = time.time()
+    try:
+        if not _kv_ok():
+            results['cloudflare_kv'] = {'status': 'error', 'message': 'Credentials not configured'}
+        else:
+            r = requests.get(f"{BASE_URL}/keys", headers=HEADERS, timeout=10)
+            kv_ms = round((time.time() - kv_start) * 1000)
+            if r.status_code == 200:
+                data = r.json()
+                count = len(data.get('result', []))
+                results['cloudflare_kv'] = {'status': 'ok', 'message': f'Connected — {count} keys', 'ms': kv_ms}
+            else:
+                results['cloudflare_kv'] = {'status': 'error', 'message': f'HTTP {r.status_code}', 'ms': kv_ms}
+    except Exception as e:
+        kv_ms = round((time.time() - kv_start) * 1000)
+        results['cloudflare_kv'] = {'status': 'error', 'message': str(e), 'ms': kv_ms}
+
+    # ── Test MongoDB ──────────────────────────────────────────────────────
+    mongo_start = time.time()
+    try:
+        if not MONGODB_URI:
+            results['mongodb'] = {'status': 'error', 'message': 'MONGODB_URI not set in .env'}
+        else:
+            from pymongo import MongoClient
+            client = MongoClient(MONGODB_URI, serverSelectionTimeoutMS=5000)
+            client.admin.command('ping')
+            mongo_ms = round((time.time() - mongo_start) * 1000)
+            results['mongodb'] = {'status': 'ok', 'message': 'Connected — ping successful', 'ms': mongo_ms}
+            client.close()
+    except ImportError:
+        mongo_ms = round((time.time() - mongo_start) * 1000)
+        results['mongodb'] = {'status': 'error', 'message': 'pymongo not installed — run: pip install pymongo', 'ms': mongo_ms}
+    except Exception as e:
+        mongo_ms = round((time.time() - mongo_start) * 1000)
+        results['mongodb'] = {'status': 'error', 'message': str(e), 'ms': mongo_ms}
+
+    # ── Build HTML ────────────────────────────────────────────────────────
+    def card(name, r):
+        color = '#22c55e' if r['status'] == 'ok' else '#ef4444'
+        icon = '✅' if r['status'] == 'ok' else '❌'
+        ms = f" — {r['ms']}ms" if 'ms' in r else ''
+        return f'''
+        <div style="background:#fff;border:1px solid #e0ddd5;border-radius:8px;padding:20px 24px;box-shadow:0 2px 12px rgba(0,0,0,.08);">
+          <div style="font-size:18px;font-weight:600;margin-bottom:8px;">{icon} {name}</div>
+          <div style="font-size:14px;color:#555;">{r['message']}{ms}</div>
+          <div style="margin-top:10px;height:4px;background:#e0ddd5;border-radius:99px;overflow:hidden;">
+            <div style="height:100%;width:{100 if r['status'] == 'ok' else 0}%;background:{color};border-radius:99px;transition:width .3s;"></div>
+          </div>
+        </div>'''
+
+    html = f'''<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Storage Service Test</title>
+  <style>
+    body {{ font-family: "Inter", sans-serif; background: #faf9f6; color: #1a1a1a; display: flex; justify-content: center; padding: 60px 20px; }}
+    .container {{ max-width: 500px; width: 100%; }}
+    h1 {{ font-family: "Lora", serif; font-size: 24px; font-weight: 600; margin-bottom: 24px; text-align: center; }}
+    .cards {{ display: flex; flex-direction: column; gap: 16px; }}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Storage Service Test</h1>
+    <div class="cards">
+      {card('Cloudflare KV', results['cloudflare_kv'])}
+      {card('MongoDB', results['mongodb'])}
+    </div>
+  </div>
+</body>
+</html>'''
+
+    return html
 
 
 # ── Startup ──────────────────────────────────────────────────────────────────
