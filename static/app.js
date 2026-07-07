@@ -172,7 +172,7 @@ function renderList(filter = '') {
       segmented = true;
       enEl.innerHTML = segmentEnglish(rawText);
       enEl.querySelectorAll('.word-segment').forEach(span => {
-        span.addEventListener('click', (e) => {
+        span.addEventListener('dblclick', (e) => {
           e.stopPropagation();
           openWordPopup(span.dataset.word);
         });
