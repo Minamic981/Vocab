@@ -125,9 +125,14 @@ function renderList(filter = '') {
     const altCheckHtml = alts.length
       ? `<span class="word-alt-arrow" data-index="${realIndex}" title="Show alternatives"></span>`
       : '';
+    const checkboxHtml = selectMode
+      ? `<input type="checkbox" class="word-checkbox" data-index="${realIndex}" ${selectedIndices.has(realIndex) ? 'checked' : ''} />`
+      : '';
+    const selectedClass = selectMode && selectedIndices.has(realIndex) ? ' selected' : '';
     return `
       <div class="word-row-wrap">
-        <div class="word-row" data-index="${realIndex}">
+        <div class="word-row${selectedClass}" data-index="${realIndex}">
+          ${checkboxHtml}
           <span class="word-index">${realIndex + 1}</span>
           ${altCheckHtml}
           <span class="word-en">${escHtml(w.english)}</span>
@@ -153,6 +158,18 @@ function renderList(filter = '') {
       if (!altsEl) return;
       const isOpen = altsEl.classList.toggle('open');
       b.classList.toggle('open', isOpen);
+    });
+  });
+  list.querySelectorAll('.word-checkbox').forEach(cb => {
+    cb.addEventListener('change', () => {
+      const idx = +cb.dataset.index;
+      if (cb.checked) {
+        selectedIndices.add(idx);
+      } else {
+        selectedIndices.delete(idx);
+      }
+      cb.closest('.word-row').classList.toggle('selected', cb.checked);
+      updateBulkCount();
     });
   });
   list.querySelectorAll('.btn-speak-row').forEach(btn => {
@@ -203,6 +220,8 @@ function segmentEnglish(text) {
 }
 
 let bookmarkFilter = 'all'; // 'all' | 'bookmarked' | 'unbookmarked'
+let selectMode = false;
+let selectedIndices = new Set();
 
 document.getElementById('search-input').addEventListener('input', e => renderList(e.target.value));
 document.getElementById('bookmark-filter-btn').addEventListener('click', () => {
@@ -223,6 +242,73 @@ document.getElementById('export-btn').addEventListener('click', () => {
   a.download = 'vocabulary.txt';
   a.click();
   URL.revokeObjectURL(url);
+});
+
+// ── Select mode & bulk delete ──────────────────────────────────
+document.getElementById('select-toggle-btn').addEventListener('click', () => {
+  selectMode = !selectMode;
+  selectedIndices.clear();
+  const btn = document.getElementById('select-toggle-btn');
+  btn.textContent = selectMode ? 'Done' : 'Select';
+  btn.classList.toggle('active', selectMode);
+  document.getElementById('bulk-actions').style.display = selectMode ? 'flex' : 'none';
+  updateBulkCount();
+  renderList(document.getElementById('search-input').value);
+});
+
+document.getElementById('bulk-cancel-btn').addEventListener('click', () => {
+  selectMode = false;
+  selectedIndices.clear();
+  document.getElementById('select-toggle-btn').textContent = 'Select';
+  document.getElementById('select-toggle-btn').classList.remove('active');
+  document.getElementById('bulk-actions').style.display = 'none';
+  renderList(document.getElementById('search-input').value);
+});
+
+function updateBulkCount() {
+  document.getElementById('bulk-count').textContent = `${selectedIndices.size} selected`;
+}
+
+document.getElementById('bulk-delete-btn').addEventListener('click', async () => {
+  if (!selectedIndices.size) return;
+  const count = selectedIndices.size;
+  if (!confirm(`Delete ${count} word${count !== 1 ? 's' : ''}?`)) return;
+
+  const indices = [...selectedIndices].sort((a, b) => b - a);
+  const removed = indices.map(i => words[i]);
+
+  // Optimistic: remove from local state
+  indices.forEach(i => words.splice(i, 1));
+  selectedIndices.clear();
+  selectMode = false;
+  document.getElementById('select-toggle-btn').textContent = 'Select';
+  document.getElementById('select-toggle-btn').classList.remove('active');
+  document.getElementById('bulk-actions').style.display = 'none';
+  renderList(document.getElementById('search-input').value);
+  updateHeaderCount();
+  showToast(`Deleted ${count} word${count !== 1 ? 's' : ''}`, 'success');
+
+  // Fire delete in background
+  try {
+    const res = await fetchWithRetry('/api/words/delete-multiple', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ indices: indices.map(i => i) })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      // Revert
+      removed.forEach((w, i) => words.splice(indices[i], 0, w));
+      renderList(document.getElementById('search-input').value);
+      updateHeaderCount();
+      showToast(data.error || 'Delete failed — words restored.', 'error');
+    }
+  } catch (e) {
+    removed.forEach((w, i) => words.splice(indices[i], 0, w));
+    renderList(document.getElementById('search-input').value);
+    updateHeaderCount();
+    showToast('Delete failed — words restored: ' + e.message, 'error');
+  }
 });
 
 // ── Add word (inline at end of list) ───────────────────────────

@@ -3,7 +3,13 @@
   <div class="search-bar">
     <input type="text" id="search-input" placeholder="Search words…" />
     <button class="btn btn-ghost btn-sm" id="bookmark-filter-btn" title="Filter bookmarked words">🔖 All</button>
+    <button class="btn btn-ghost btn-sm" id="select-toggle-btn" title="Select multiple words">Select</button>
     <button class="btn btn-ghost btn-sm" id="export-btn" title="Export words as text">Export</button>
+  </div>
+  <div class="bulk-actions" id="bulk-actions" style="display:none;">
+    <span class="bulk-count" id="bulk-count">0 selected</span>
+    <button class="btn btn-danger btn-sm" id="bulk-delete-btn">Delete Selected</button>
+    <button class="btn btn-ghost btn-sm" id="bulk-cancel-btn">Cancel</button>
   </div>
   <div id="word-list"></div>
 

@@ -81,7 +81,7 @@ Words are stored in **Cloudflare KV** as a single JSON array under the key `voca
 | POST | `/api/words/batch` | Batch import |
 | PUT | `/api/aigen/<index>` | AI sentence generation (`is_edit: true` for rephrase) |
 | POST | `/defs/<word>` | AI multi-definition lookup |
-| DELETE | `/api/words/clear` | Delete all words |
+| POST | `/api/words/delete-multiple` | Delete multiple words by indices |
 
 ## AI Integration
 

@@ -327,12 +327,36 @@ def get_definitions(word):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
-@app.route('/api/words/clear', methods=['DELETE'])
-def clear_words():
-    """⚠️ WARNING: Deletes all words from KV"""
-    if not save_words([]):
-        return jsonify({'error': 'Failed to clear words from KV.'}), 500
-    return jsonify({'message': 'All words cleared.'})
+@app.route('/api/words/delete-multiple', methods=['POST'])
+def delete_multiple_words():
+    """Delete multiple words by their indices."""
+    data = request.get_json()
+    indices = data.get('indices', [])
+
+    if not indices or not isinstance(indices, list):
+        return jsonify({'error': 'No indices provided.'}), 400
+
+    words = load_words()
+    max_idx = len(words) - 1
+
+    for i in indices:
+        if not isinstance(i, int) or i < 0 or i > max_idx:
+            return jsonify({'error': f'Invalid index: {i}'}), 400
+
+    # Sort descending so popping higher indices doesn't shift lower ones
+    sorted_indices = sorted(set(indices), reverse=True)
+    removed_words = []
+    for i in sorted_indices:
+        removed_words.append(words.pop(i))
+
+    if not save_words(words):
+        return jsonify({'error': 'Failed to save changes to Cloudflare KV.'}), 500
+
+    return jsonify({
+        'message': f'{len(removed_words)} word(s) deleted.',
+        'deleted_count': len(removed_words),
+        'total': len(words),
+    })
 # ── Startup ──────────────────────────────────────────────────────────────────
 
 if __name__ == '__main__':
