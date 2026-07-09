@@ -669,8 +669,8 @@ textarea {
   font-size: 12px;
   line-height: 1;
   cursor: pointer;
-  color: inherit;
-  opacity: 0.6;
+  color: #e74c3c;
+  opacity: 0.7;
 }
 
 .category-badge:hover .cat-delete {
