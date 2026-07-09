@@ -183,6 +183,43 @@ header {
   min-width: 140px;
 }
 
+/* ── Add form category field ─────────────────────────────── */
+.add-cat-field {
+  min-width: 180px;
+}
+
+.add-cat-row {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+  flex: 1;
+}
+
+.add-category-select {
+  flex: 1;
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  padding: 9px 12px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center;
+  background-size: 14px;
+  color: var(--ink);
+  outline: none;
+  cursor: pointer;
+  transition: border-color 0.15s;
+  min-width: 0;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
+  line-height: 1.4;
+}
+
+.add-category-select:focus {
+  border-color: var(--accent);
+}
+
 .inline-add-fields input {
   font-family: "Inter", sans-serif;
   font-size: 14px;
@@ -566,6 +603,130 @@ textarea {
   border-color: var(--accent);
 }
 
+/* ── Category bar ──────────────────────────────────────── */
+.category-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 8px 0;
+  flex-wrap: wrap;
+}
+
+.category-bar .cat-filter-btn.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.category-badges {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 10px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  user-select: none;
+}
+
+.category-badge:hover {
+  background: var(--accent-lt);
+  border-color: var(--accent);
+}
+
+.category-badge.active {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+
+.category-badge .cat-name {
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-badge .cat-delete {
+  display: none;
+  width: 14px;
+  height: 14px;
+  padding: 0;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  font-size: 12px;
+  line-height: 1;
+  cursor: pointer;
+  color: inherit;
+  opacity: 0.6;
+}
+
+.category-badge:hover .cat-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.category-badge .cat-delete:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.category-badge.active .cat-delete {
+  color: #fff;
+}
+
+/* ── Word category badge ────────────────────────────────── */
+.word-category {
+  font-size: 11px;
+  padding: 2px 8px;
+  background: var(--accent-lt);
+  color: var(--accent);
+  border-radius: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+/* ── Move to category modal ─────────────────────────────── */
+.move-cat-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 16px;
+}
+
+.move-cat-option {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+
+.move-cat-option:hover {
+  background: var(--accent-lt);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* ── Bulk actions bar ────────────────────────────────────── */
 .bulk-actions {
   display: flex;
@@ -583,6 +744,32 @@ textarea {
   font-weight: 600;
   color: var(--danger);
   flex: 1;
+}
+
+.bulk-move-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink-light);
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.bulk-move-select {
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  padding: 5px 10px;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  outline: none;
+  max-width: 180px;
+  transition: border-color 0.15s;
+}
+
+.bulk-move-select:focus {
+  border-color: var(--accent);
 }
 
 /* ── Selection checkbox ──────────────────────────────────── */
@@ -953,6 +1140,38 @@ textarea {
   .bookmark-filter-btn {
     width: 48px;
     height: 48px;
+  }
+
+  .category-bar {
+    gap: 6px;
+    padding: 6px 0;
+  }
+
+  .category-badge {
+    font-size: 11px;
+    padding: 3px 8px;
+  }
+
+  .word-category {
+    font-size: 10px;
+    padding: 1px 6px;
+  }
+
+  .bulk-actions {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .add-cat-field {
+    min-width: 100%;
+  }
+
+  .add-cat-row {
+    width: 100%;
+  }
+
+  .add-category-select {
+    width: 100%;
   }
 }
 

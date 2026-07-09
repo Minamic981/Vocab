@@ -1,5 +1,7 @@
 // ── State ──────────────────────────────────────────────────────
 let words = [];
+let categories = [];
+let categoryFilter = null; // null = all, '' = no category, 'name' = filter by category
 let practiceQueue = [];
 let practiceIndex = 0;
 let editingIndex = null;
@@ -21,6 +23,170 @@ function toggleBookmark(english) {
     bookmarkedWords.splice(i, 1);
   }
   saveBookmarks();
+}
+
+// ── Categories ─────────────────────────────────────────────────
+async function loadCategories() {
+  try {
+    const res = await fetch('/api/categories');
+    const data = await res.json();
+    categories = data.categories || [];
+    renderCategoryBar();
+    updateCategorySelects();
+  } catch (e) {
+    console.error('Failed to load categories:', e);
+  }
+}
+
+function renderCategoryBar() {
+  const container = document.getElementById('category-badges');
+  if (!container) return;
+  container.innerHTML = categories.map(c => `
+    <div class="category-badge ${categoryFilter === c.name ? 'active' : ''}" data-cat="${escHtml(c.name)}" title="${escHtml(c.description || '')}">
+      <span class="cat-name">${escHtml(c.name)}</span>
+      <button class="cat-delete" data-cat="${escHtml(c.name)}" title="Delete category">&times;</button>
+    </div>
+  `).join('');
+
+  // Update filter button states — use individual checks to avoid double-toggle
+  const allBtn = document.querySelector('.cat-filter-btn[data-cat="all"]');
+  const noneBtn = document.querySelector('.cat-filter-btn[data-cat=""]');
+  if (allBtn) allBtn.classList.toggle('active', categoryFilter === null);
+  if (noneBtn) noneBtn.classList.toggle('active', categoryFilter === '');
+
+  // Add click handlers to badges
+  container.querySelectorAll('.category-badge').forEach(badge => {
+    badge.addEventListener('click', (e) => {
+      if (e.target.classList.contains('cat-delete')) return;
+      categoryFilter = badge.dataset.cat;
+      renderCategoryBar();
+      renderList(document.getElementById('search-input').value);
+    });
+  });
+
+  // Add delete handlers
+  container.querySelectorAll('.cat-delete').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      deleteCategory(btn.dataset.cat);
+    });
+  });
+}
+
+function updateCategorySelects() {
+  // Update edit modal category dropdown
+  const editSelect = document.getElementById('edit-category');
+  if (editSelect) {
+    const currentVal = editSelect.value;
+    editSelect.innerHTML = '<option value="">No Category</option>' +
+      categories.map(c => `<option value="${escHtml(c.name)}">${escHtml(c.name)}</option>`).join('');
+    editSelect.value = currentVal;
+  }
+
+  // Update bulk move select dropdown
+  const moveSelect = document.getElementById('bulk-move-select');
+  if (moveSelect) {
+    const currentVal = moveSelect.value;
+    moveSelect.innerHTML = '<option value="">— Select Category —</option>' +
+      '<option value="__none__">No Category</option>' +
+      categories.map(c => `<option value="${escHtml(c.name)}">${escHtml(c.name)}</option>`).join('');
+    moveSelect.value = currentVal;
+  }
+
+  // Update add word category dropdown
+  const addSelect = document.getElementById('add-category');
+  if (addSelect) {
+    const currentVal = addSelect.value;
+    addSelect.innerHTML = '<option value="">No Category</option>' +
+      categories.map(c => `<option value="${escHtml(c.name)}">${escHtml(c.name)}</option>`).join('');
+    addSelect.value = currentVal;
+  }
+}
+
+async function createCategory(name, description) {
+  try {
+    const res = await fetchWithRetry('/api/categories', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, description })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showAlert('cat-alert', data.error || 'Failed to create category.', 'error');
+      return false;
+    }
+    categories.push(data.category);
+    renderCategoryBar();
+    updateCategorySelects();
+    showToast(`Category "${name}" created`, 'success');
+    return true;
+  } catch (e) {
+    showAlert('cat-alert', 'Network error: ' + e.message, 'error');
+    return false;
+  }
+}
+
+async function deleteCategory(name) {
+  if (!confirm(`Delete category "${name}"? Words in this category will have no category.`)) return;
+
+  try {
+    const res = await fetchWithRetry(`/api/categories/${encodeURIComponent(name)}`, {
+      method: 'DELETE'
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || 'Failed to delete category.', 'error');
+      return;
+    }
+
+    categories = categories.filter(c => c.name !== name);
+    // Clear category from local words
+    words.forEach(w => {
+      if (w.category === name) w.category = null;
+    });
+    if (categoryFilter === name) categoryFilter = null;
+    renderCategoryBar();
+    renderList(document.getElementById('search-input').value);
+    showToast(`Category "${name}" deleted`, 'success');
+  } catch (e) {
+    showToast('Delete failed: ' + e.message, 'error');
+  }
+}
+
+async function moveWordsToCategory(indices, categoryName) {
+  const cat = categoryName || null;
+  const catLabel = cat ? `"${cat}"` : "No Category";
+
+  // Optimistic: update local state
+  indices.forEach(i => {
+    words[i].category = cat;
+  });
+  renderList(document.getElementById('search-input').value);
+
+  try {
+    const res = await fetchWithRetry('/api/words/move-category', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ indices, category: cat })
+    });
+    const data = await res.json();
+    if (!res.ok) {
+      showToast(data.error || 'Move failed.', 'error');
+      // Revert
+      indices.forEach(i => {
+        words[i].category = words[i].category === cat ? null : cat;
+      });
+      renderList(document.getElementById('search-input').value);
+    } else {
+      showToast(`${indices.length} word(s) moved to ${catLabel}`, 'success');
+    }
+  } catch (e) {
+    showToast('Move failed: ' + e.message, 'error');
+    indices.forEach(i => {
+      words[i].category = words[i].category === cat ? null : cat;
+    });
+    renderList(document.getElementById('search-input').value);
+  }
 }
 
 // ── Helpers ────────────────────────────────────────────────────
@@ -99,13 +265,23 @@ function renderList(filter = '') {
   const list = document.getElementById('word-list');
   const f = filter.toLowerCase().trim();
   let filtered = f
-    ? words.filter(w => w.english.toLowerCase().includes(f) || w.persian.includes(f))
+    ? words.filter(w => w.english.toLowerCase().includes(f) || w.persian.includes(f) || (w.category && w.category.toLowerCase().includes(f)))
     : words;
 
   if (bookmarkFilter === 'bookmarked') {
     filtered = filtered.filter(w => isBookmarked(w.english));
   } else if (bookmarkFilter === 'unbookmarked') {
     filtered = filtered.filter(w => !isBookmarked(w.english));
+  }
+
+  // Category filter
+  if (categoryFilter !== null) {
+    if (categoryFilter === '') {
+      // "No Category" — show words with null, undefined, or empty category
+      filtered = filtered.filter(w => !w.category);
+    } else {
+      filtered = filtered.filter(w => w.category === categoryFilter);
+    }
   }
 
   if (!filtered.length) {
@@ -232,6 +408,52 @@ document.getElementById('bookmark-filter-btn').addEventListener('click', () => {
   renderList(document.getElementById('search-input').value);
 });
 
+// ── Category filter bar ─────────────────────────────────────────
+document.querySelectorAll('.cat-filter-btn').forEach(btn => {
+  btn.addEventListener('click', (e) => {
+    e.stopPropagation();
+    const cat = btn.dataset.cat;
+    categoryFilter = cat === 'all' ? null : cat;
+    renderCategoryBar();
+    renderList(document.getElementById('search-input').value);
+  });
+});
+
+// Category modal
+document.getElementById('create-category-btn').addEventListener('click', () => {
+  document.getElementById('cat-name').value = '';
+  document.getElementById('cat-desc').value = '';
+  document.getElementById('cat-alert').className = 'alert';
+  document.getElementById('category-modal').classList.add('open');
+  document.getElementById('cat-name').focus();
+});
+
+document.getElementById('cat-modal-cancel').addEventListener('click', () => {
+  document.getElementById('category-modal').classList.remove('open');
+});
+
+document.getElementById('category-modal').addEventListener('click', e => {
+  if (e.target === document.getElementById('category-modal'))
+    document.getElementById('category-modal').classList.remove('open');
+});
+
+document.getElementById('cat-modal-save').addEventListener('click', async () => {
+  const name = document.getElementById('cat-name').value.trim();
+  const description = document.getElementById('cat-desc').value.trim();
+  if (!name) {
+    showAlert('cat-alert', 'Category name is required.', 'error');
+    return;
+  }
+  const success = await createCategory(name, description);
+  if (success) {
+    document.getElementById('category-modal').classList.remove('open');
+  }
+});
+
+document.getElementById('cat-name').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('cat-modal-save').click();
+});
+
 document.getElementById('export-btn').addEventListener('click', () => {
   if (!words.length) return;
   const text = words.map(w => `${w.english} = ${w.persian}`).join('\n');
@@ -311,6 +533,22 @@ document.getElementById('bulk-delete-btn').addEventListener('click', async () =>
   }
 });
 
+// ── Bulk move to category (instant on select) ──────────────────
+document.getElementById('bulk-move-select').addEventListener('change', async (e) => {
+  if (!selectedIndices.size || e.target.value === '') return;
+  const category = e.target.value === '__none__' ? null : e.target.value;
+  const indices = [...selectedIndices];
+  await moveWordsToCategory(indices, category);
+  // Reset select mode after move
+  selectMode = false;
+  selectedIndices.clear();
+  e.target.value = '';
+  document.getElementById('select-toggle-btn').textContent = 'Select';
+  document.getElementById('select-toggle-btn').classList.remove('active');
+  document.getElementById('bulk-actions').style.display = 'none';
+  renderList(document.getElementById('search-input').value);
+});
+
 // ── Add word (inline at end of list) ───────────────────────────
 document.getElementById('add-btn').addEventListener('click', async () => {
   const en = document.getElementById('add-en').value.trim();
@@ -320,17 +558,19 @@ document.getElementById('add-btn').addEventListener('click', async () => {
   const styleEnabled = document.getElementById('add-style-toggle').checked;
   const style = styleEnabled ? document.getElementById('add-style').value : '';
   const customStyle = styleEnabled ? document.getElementById('add-style-custom').value.trim() : '';
+  const addCategory = document.getElementById('add-category').value || null;
   if (!en) { showAlert('add-alert', 'English field is required.'); return; }
   if (!aiGen && !fa) { showAlert('add-alert', 'Persian field is required.'); return; }
 
   // Optimistic: show placeholder word immediately
-  const placeholder = { english: en, persian: fa || '(generating…)', alternatives: [] };
+  const placeholder = { english: en, persian: fa || '(generating…)', alternatives: [], category: addCategory };
   words.push(placeholder);
   renderList(document.getElementById('search-input').value);
   updateHeaderCount();
   document.getElementById('add-en').value = '';
   document.getElementById('add-fa').value = '';
   document.getElementById('add-alts').value = '';
+  document.getElementById('add-category').value = '';
 
   const rows = document.querySelectorAll('.word-row');
   const lastRow = rows[rows.length - 1];
@@ -346,7 +586,7 @@ document.getElementById('add-btn').addEventListener('click', async () => {
     const res = await fetchWithRetry('/api/words', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ english: en, persian: fa, aigen: aiGen, alternatives: alts, style: style, custom_style: customStyle })
+      body: JSON.stringify({ english: en, persian: fa, aigen: aiGen, alternatives: alts, style: style, custom_style: customStyle, category: addCategory })
     });
     const data = await res.json();
 
@@ -431,6 +671,11 @@ function openEdit(index) {
   document.getElementById('edit-en').value = words[index].english;
   document.getElementById('edit-fa').value = words[index].persian;
   document.getElementById('edit-alts').value = (words[index].alternatives || []).join('\n');
+  // Set category dropdown
+  const editSelect = document.getElementById('edit-category');
+  if (editSelect) {
+    editSelect.value = words[index].category || '';
+  }
   document.getElementById('edit-modal').classList.add('open');
   document.getElementById('edit-en').focus();
 }
@@ -447,13 +692,14 @@ document.getElementById('modal-save').addEventListener('click', async () => {
   const en = document.getElementById('edit-en').value.trim();
   const fa = document.getElementById('edit-fa').value.trim();
   const alts = document.getElementById('edit-alts').value.trim();
+  const category = document.getElementById('edit-category').value || null;
   if (!en || !fa) { showAlert('edit-alert', 'Fill in both fields.'); return; }
 
   const idx = editingIndex;
   const oldWord = { ...words[idx] };
 
   // Optimistic: update local state, close modal instantly
-  const updated = { english: en, persian: fa, alternatives: alts ? alts.split('\n').map(s => s.trim()).filter(Boolean) : [] };
+  const updated = { english: en, persian: fa, alternatives: alts ? alts.split('\n').map(s => s.trim()).filter(Boolean) : [], category };
   words[idx] = updated;
   document.getElementById('edit-modal').classList.remove('open');
   renderList(document.getElementById('search-input').value);
@@ -463,7 +709,7 @@ document.getElementById('modal-save').addEventListener('click', async () => {
   fetchWithRetry(`/api/words/${idx}`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ english: en, persian: fa, alternatives: alts })
+    body: JSON.stringify({ english: en, persian: fa, alternatives: alts, category })
   })
     .then(async res => {
       if (!res.ok) {
@@ -503,7 +749,7 @@ document.getElementById('modal-aigen').addEventListener('click', async () => {
     if (wordsRes.ok) {
       const wordsData = await wordsRes.json();
       words = (wordsData.words ?? wordsData).map(w =>
-        Array.isArray(w) ? { english: w[0], persian: w[1], alternatives: [] } : { ...w, alternatives: w.alternatives || [] }
+        Array.isArray(w) ? { english: w[0], persian: w[1], alternatives: [], category: null } : { ...w, alternatives: w.alternatives || [], category: w.category || null }
       );
     }
 
@@ -511,6 +757,7 @@ document.getElementById('modal-aigen').addEventListener('click', async () => {
     document.getElementById('edit-en').value = words[editingIndex].english;
     document.getElementById('edit-fa').value = words[editingIndex].persian;
     document.getElementById('edit-alts').value = (words[editingIndex].alternatives || []).join('\n');
+    document.getElementById('edit-category').value = words[editingIndex].category || '';
 
     // Refresh the word list in the background
     renderList(document.getElementById('search-input').value);
@@ -775,13 +1022,14 @@ document.addEventListener('keydown', e => {
     const res = await fetch('/api/words');
     const data = await res.json();
     words = (data.words ?? data).map(w => {
-      if (Array.isArray(w)) return { english: w[0], persian: w[1], alternatives: [] };
-      return { english: w.english, persian: w.persian, alternatives: w.alternatives || [] };
+      if (Array.isArray(w)) return { english: w[0], persian: w[1], alternatives: [], category: null };
+      return { english: w.english, persian: w.persian, alternatives: w.alternatives || [], category: w.category || null };
     });
     updateHeaderCount();
   } catch (e) {
     console.error('Failed to load words:', e);
   }
+  await loadCategories();
   renderList();
 })();
 
