@@ -18,12 +18,329 @@
 
 <body>
   <div class="shell">
-    {% include 'components/header.html' %}
-    {% include 'components/nav.html' %}
-    {% include 'components/body.html' %}
+    <!-- header.html -->
+    <header>
+      <div>
+        <div class="wordmark">My Word<span>Book</span></div>
+        <div class="word-count" id="header-count">Loading…</div>
+      </div>
+    </header>
+
+    <!-- nav.html -->
+    <nav class="tabs">
+      <button class="tab-btn active" data-tab="library">📚 Library</button>
+      <button class="tab-btn" data-tab="import">📋 Batch Import</button>
+      <button class="tab-btn" data-tab="practice">🎯 Practice</button>
+      <button class="tab-btn" data-tab="defs">🔤 Multiple Meanings</button>
+    </nav>
+
+    <!-- body.html -->
+    <!-- ── Library (with inline add at bottom) ───────────────── -->
+    <div class="tab-panel active" id="tab-library">
+      <div class="search-bar">
+        <input type="text" id="search-input" placeholder="Search words…" />
+        <button class="btn btn-ghost btn-sm" id="bookmark-filter-btn" title="Filter bookmarked words">🔖 All</button>
+        <button class="btn btn-ghost btn-sm" id="select-toggle-btn" title="Select multiple words">Select</button>
+        <button class="btn btn-ghost btn-sm" id="export-btn" title="Export words as text">Export</button>
+      </div>
+      <div class="category-bar" id="category-bar">
+        <button class="btn btn-ghost btn-sm cat-filter-btn active" data-cat="all">All</button>
+        <button class="btn btn-ghost btn-sm cat-filter-btn" data-cat="">No Category</button>
+        <div class="category-badges" id="category-badges"></div>
+        <button class="btn btn-ghost btn-sm" id="create-category-btn" title="Create a new category">📁 Create</button>
+      </div>
+      <div class="bulk-actions" id="bulk-actions" style="display:none;">
+        <span class="bulk-count" id="bulk-count">0 selected</span>
+        <label class="bulk-move-label" for="bulk-move-select">📁 Move to:</label>
+        <select id="bulk-move-select" class="bulk-move-select">
+          <option value="">— Select Category —</option>
+          <option value="__none__">No Category</option>
+        </select>
+        <button class="btn btn-danger btn-sm" id="bulk-delete-btn">Delete Selected</button>
+        <button class="btn btn-ghost btn-sm" id="bulk-cancel-btn">Cancel</button>
+      </div>
+      <div id="word-list"></div>
+
+      <!-- Inline add form — always at the end of the word list -->
+      <div class="inline-add-card" id="inline-add">
+        <div class="inline-add-header">
+          <span class="plus-icon">+</span>
+          Add a new word
+        </div>
+        <div class="inline-add-fields">
+          <div class="field">
+            <label for="add-en">English</label>
+            <input type="text" id="add-en" placeholder="e.g. tough" />
+          </div>
+          <div class="field">
+            <label for="add-fa">Persian (فارسی)</label>
+            <input type="text" class="add-fa" id="add-fa" placeholder="e.g. سخت" dir="rtl" />
+          </div>
+          <div class="field add-cat-field">
+            <label for="add-category">Category</label>
+            <div class="add-cat-row">
+              <select id="add-category" class="add-category-select">
+                <option value="">No Category</option>
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary" id="add-btn">Add</button>
+        </div>
+        <label class="aigen-label">
+          <input type="checkbox" id="add-aigen" />
+          ✨ Ai Generate Sentence
+        </label>
+        <div class="advanced-toggle" id="advanced-toggle">
+          <span class="advanced-arrow" id="advanced-arrow"></span>
+          Advanced
+        </div>
+        <div class="advanced-section" id="advanced-section">
+          <div class="field">
+            <label for="add-alts">Alternative sentences (same meaning, one per line)</label>
+            <textarea id="add-alts" rows="3"
+              placeholder="She is highly skilled in her work.&#10;She does her job extremely well."></textarea>
+          </div>
+          <label class="style-toggle-label">
+            <input type="checkbox" id="add-style-toggle" />
+            Writing Style
+          </label>
+          <div class="style-options" id="style-options">
+            <div class="field">
+              <label for="add-style">Sentence Style</label>
+              <select id="add-style">
+                <option value="" selected>User Manual</option>
+                <option value="romantic">Romantic</option>
+                <option value="formal">Formal</option>
+                <option value="humorous">Humorous</option>
+                <option value="poetic">Poetic</option>
+                <option value="minimalist">Minimalist</option>
+                <option value="academic">Academic</option>
+                <option value="casual">Casual</option>
+                <option value="dramatic">Dramatic</option>
+                <option value="simple">Simple Words</option>
+              </select>
+            </div>
+            <div class="field" style="margin-top: 10px;">
+              <label for="add-style-custom">Custom Style (optional — overrides dropdown)</label>
+              <input type="text" id="add-style-custom"
+                placeholder="e.g. romantic, include keywords: love, heart, soul" />
+            </div>
+          </div>
+        </div>
+        <div class="inline-add-alert" id="add-alert"></div>
+      </div>
+    </div>
+
+    <!-- ── Batch Import ─────────────────────────────────────── -->
+    <div class="tab-panel" id="tab-import">
+      <div class="card">
+        <div class="card-title">Paste Words from Clipboard</div>
+        <p style="
+              font-size: 13px;
+              color: var(--ink-light);
+              margin-bottom: 14px;
+            ">
+          One word per line in the format:
+          <code style="
+                background: var(--paper-2);
+                padding: 2px 6px;
+                border-radius: 4px;
+              ">English = فارسی</code>
+        </p>
+        <div class="field">
+          <label for="import-text">Paste here</label>
+          <textarea id="import-text"
+            placeholder="tough = سخت&#10;depiction = تصویر سازی&#10;deserve = لیاقت"></textarea>
+        </div>
+        <div style="margin-top: 14px">
+          <button class="btn btn-primary" id="import-btn">Import All</button>
+        </div>
+        <div class="alert" id="import-alert"></div>
+      </div>
+    </div>
+
+    <!-- ── Practice ─────────────────────────────────────────── -->
+    <div class="tab-panel" id="tab-practice">
+      <div class="practice-header">
+        <div>
+          <div style="
+                font-family: &quot;Lora&quot;, serif;
+                font-size: 18px;
+                font-weight: 600;
+              ">
+            Practice Mode
+          </div>
+          <div style="font-size: 13px; color: var(--ink-faint); margin-top: 2px">
+            Tap the card to reveal the Persian meaning
+          </div>
+        </div>
+        <div class="practice-header-btns">
+          <button class="btn btn-ghost" id="shuffle-btn">🔀 Shuffle</button>
+          <button class="btn btn-ghost" id="practice-filter-btn" title="Filter practice words">🔖 All</button>
+        </div>
+      </div>
+
+      <div class="progress-bar-wrap">
+        <div class="progress-bar-fill" id="progress-fill" style="width: 0%"></div>
+      </div>
+
+      <div id="practice-area">
+        <div class="no-words" id="practice-empty" style="display: none">
+          Add some words first to start practicing!
+        </div>
+
+        <div id="practice-card-wrap">
+          <div class="flip-wrap" id="flip-wrap" onclick="flipCard()">
+            <div class="flip-inner" id="flip-inner">
+              <div class="flip-front">
+                <div class="flip-hint">English</div>
+                <div class="flip-word" id="card-en">—</div>
+              </div>
+              <div class="flip-back">
+                <div class="flip-hint">Persian</div>
+                <div class="flip-word flip-fa" id="card-fa">—</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="practice-controls">
+            <button class="btn btn-ghost" id="prev-btn">← Previous</button>
+            <button class="btn btn-speak" id="speak-btn" title="Listen to pronunciation">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+                <path d="M19.07 4.93a10 10 0 0 1 0 14.14" />
+              </svg>
+            </button>
+            <button class="btn btn-bookmark" id="bookmark-btn" title="Bookmark this word">
+              <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                stroke-linecap="round" stroke-linejoin="round">
+                <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+              </svg>
+            </button>
+            <button class="btn btn-primary" id="next-btn">Next →</button>
+          </div>
+
+          <div class="practice-stat" id="practice-stat"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Multiple Meanings ────────────────────────────────── -->
+    <div class="tab-panel" id="tab-defs">
+      <div class="inline-add-card" id="defs-add-card">
+        <div class="inline-add-header">
+          <span class="plus-icon">🔤</span>
+          Look up a word
+        </div>
+        <div class="inline-add-fields">
+          <div class="field">
+            <label for="defs-en">English word</label>
+            <input type="text" id="defs-en" placeholder="e.g. light" autocomplete="off" />
+          </div>
+          <button class="btn btn-primary" id="defs-btn" style="height:41px">Look up</button>
+        </div>
+        <div class="inline-add-alert" id="defs-alert"></div>
+      </div>
+
+      <div id="defs-result" style="display:none; margin-top:24px;">
+        <div class="defs-word-title" id="defs-word-title"></div>
+        <div class="defs-table-wrap">
+          <table class="defs-table" id="defs-table">
+            <thead>
+              <tr>
+                <th class="defs-th defs-th-num">#</th>
+                <th class="defs-th">English Definition</th>
+                <th class="defs-th defs-th-fa">Persian (فارسی)</th>
+              </tr>
+            </thead>
+            <tbody id="defs-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="no-words" id="defs-empty" style="display:none;">
+        No definitions found for that word.
+      </div>
+    </div>
+
+    <!-- ── Edit Modal ─────────────────────────────────────────── -->
+    <div class="modal-overlay" id="edit-modal">
+      <div class="modal">
+        <div class="modal-title">Edit Word</div>
+        <div class="field" style="margin-bottom: 12px">
+          <label for="edit-en">English</label>
+          <input type="text" id="edit-en" />
+        </div>
+        <div class="field" style="margin-bottom: 12px">
+          <label for="edit-fa">Persian (فارسی)</label>
+          <input type="text" id="edit-fa" dir="rtl" />
+        </div>
+        <div class="field">
+          <label for="edit-alts">Alternative sentences (same meaning, one per line)</label>
+          <textarea id="edit-alts" rows="3" placeholder="Optional alternative sentences..."></textarea>
+        </div>
+        <div class="field" style="margin-bottom: 12px">
+          <label for="edit-category">Category</label>
+          <select id="edit-category">
+            <option value="">No Category</option>
+          </select>
+        </div>
+        <div class="alert" id="edit-alert"></div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" id="modal-cancel">Cancel</button>
+          <button class="btn btn-ai" id="modal-aigen" title="Generate a sentence using AI and replace both fields">
+            ✨ Generate Sentence
+          </button>
+          <button class="btn btn-primary" id="modal-save">Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Word Popup ─────────────────────────────────────────── -->
+    <div class="modal-overlay" id="word-popup">
+      <div class="modal">
+        <div class="modal-title">Generate Sentence for Word</div>
+        <div class="field" style="margin-bottom: 12px">
+          <label for="popup-en">English</label>
+          <input type="text" id="popup-en" readonly />
+        </div>
+        <div class="field" style="margin-bottom: 12px">
+          <label for="popup-fa">Persian (فارسی) — optional</label>
+          <input type="text" id="popup-fa" dir="rtl" placeholder="e.g. سخت" />
+        </div>
+        <div class="alert" id="popup-alert"></div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" id="popup-cancel">Cancel</button>
+          <button class="btn btn-primary" id="popup-generate">✨ Generate</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── Category Modal ─────────────────────────────────────── -->
+    <div class="modal-overlay" id="category-modal">
+      <div class="modal">
+        <div class="modal-title">Create Category</div>
+        <div class="field" style="margin-bottom: 12px">
+          <label for="cat-name">Category Name *</label>
+          <input type="text" id="cat-name" placeholder="e.g. Grammar" />
+        </div>
+        <div class="field" style="margin-bottom: 12px">
+          <label for="cat-desc">Description (optional)</label>
+          <textarea id="cat-desc" rows="2" placeholder="Optional description..."></textarea>
+        </div>
+        <div class="alert" id="cat-alert"></div>
+        <div class="modal-actions">
+          <button class="btn btn-ghost" id="cat-modal-cancel">Cancel</button>
+          <button class="btn btn-primary" id="cat-modal-save">Create</button>
+        </div>
+      </div>
+    </div>
   </div>
 
-  {% include 'components/footer.html' %}
+  <!-- footer.html -->
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 
 </html>
