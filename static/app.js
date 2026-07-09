@@ -360,17 +360,53 @@ function renderList(filter = '') {
     enEl.dataset.segBound = '1';
     const rawText = enEl.textContent;
     let segmented = false;
-    row.addEventListener('mouseenter', () => {
+    function doSegment() {
       if (segmented) return;
       segmented = true;
       enEl.innerHTML = segmentEnglish(rawText);
+      const isTouch = 'ontouchstart' in window;
       enEl.querySelectorAll('.word-segment').forEach(span => {
-        span.addEventListener('dblclick', (e) => {
-          e.stopPropagation();
-          openWordPopup(span.dataset.word);
-        });
+        if (isTouch) {
+          // Mobile: double-tap or long-press to open popup
+          let lastTap = 0;
+          let longPressTimer = null;
+          span.addEventListener('touchstart', (e) => {
+            if (typeof window._segTap === 'function') window._segTap();
+            const now = Date.now();
+            if (now - lastTap < 300) {
+              // Double-tap detected
+              e.preventDefault();
+              e.stopPropagation();
+              clearTimeout(longPressTimer);
+              openWordPopup(span.dataset.word);
+              lastTap = 0;
+              return;
+            }
+            lastTap = now;
+            // Start long-press timer
+            longPressTimer = setTimeout(() => {
+              e.preventDefault();
+              e.stopPropagation();
+              openWordPopup(span.dataset.word);
+            }, 500);
+          }, { passive: false });
+          span.addEventListener('touchend', () => {
+            clearTimeout(longPressTimer);
+          });
+          span.addEventListener('touchmove', () => {
+            clearTimeout(longPressTimer);
+          });
+        } else {
+          // Desktop: double-click to open popup
+          span.addEventListener('dblclick', (e) => {
+            e.stopPropagation();
+            openWordPopup(span.dataset.word);
+          });
+        }
       });
-    });
+    }
+    row.addEventListener('mouseenter', doSegment);
+    row.addEventListener('touchstart', doSegment, { passive: true });
   });
 }
 
@@ -1038,6 +1074,12 @@ document.addEventListener('keydown', e => {
   const isMobile = window.matchMedia('(max-width: 540px)').matches;
   if (!isMobile) return;
 
+  // Flag to block parent click when a word segment was tapped
+  let segmentTapped = false;
+
+  // Expose flag setter for word segment handlers
+  window._segTap = function () { segmentTapped = true; };
+
   function attachRevealListeners() {
     document.querySelectorAll('#word-list .word-row').forEach(function (row) {
       const enEl = row.querySelector('.word-en');
@@ -1047,6 +1089,10 @@ document.addEventListener('keydown', e => {
       enEl.dataset.revealBound = '1';
 
       enEl.addEventListener('click', function () {
+        if (segmentTapped) {
+          segmentTapped = false;
+          return;
+        }
         const isRevealed = faEl.classList.contains('revealed');
         faEl.classList.toggle('revealed', !isRevealed);
         enEl.classList.toggle('revealed-hint', !isRevealed);

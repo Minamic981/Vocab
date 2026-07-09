@@ -1271,14 +1271,22 @@ textarea {
 /* ── Segmented words (clickable words in sentences) ─────── */
 .word-segment {
   display: inline;
-  cursor: default;
+  cursor: pointer;
   transition: color 0.15s, border-color 0.15s;
   border-bottom: 1px solid transparent;
 }
 
-.word-segment:hover {
+.word-segment:hover,
+.word-segment:active {
   color: var(--accent);
   border-bottom-color: var(--accent);
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .word-segment {
+    padding: 2px 0;
+    border-bottom-width: 2px;
+  }
 }
 
 /* ── Word popup ──────────────────────────────────────────── */
