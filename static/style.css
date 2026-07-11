@@ -1175,6 +1175,40 @@ textarea {
   }
 }
 
+/* ── Generating wave animation ────────────────────────────── */
+.wave-generating {
+  display: inline-flex;
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  background: #0f1422;
+  border: 1.5px solid var(--accent);
+  border-radius: 6px;
+  padding: 4px 10px;
+  direction: ltr;
+}
+
+.wave-generating span {
+  display: inline-block;
+  animation: waveBounce 2s ease-in-out infinite;
+  will-change: transform, filter;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+  text-shadow: 0 0 20px currentColor, 0 0 40px currentColor;
+}
+
+@keyframes waveBounce {
+  0%, 100% {
+    transform: translateY(0px) scale(1);
+    filter: brightness(1) drop-shadow(0 0 8px currentColor);
+  }
+  50% {
+    transform: translateY(-8px) scale(1.04);
+    filter: brightness(1.4) drop-shadow(0 0 30px currentColor);
+  }
+}
+
 /* ── Multiple Meanings ───────────────────────────────────── */
 .defs-word-title {
   font-family: "Lora", serif;

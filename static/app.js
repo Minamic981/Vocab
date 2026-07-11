@@ -312,7 +312,7 @@ function renderList(filter = '') {
           <span class="word-index">${realIndex + 1}</span>
           ${altCheckHtml}
           <span class="word-en">${escHtml(w.english)}</span>
-          <span class="word-fa">${escHtml(w.persian)}</span>
+          <span class="word-fa">${w.isGenerating ? renderGeneratingWave() : escHtml(w.persian)}</span>
           <div class="word-actions">
             <button class="btn btn-speak-row btn-sm" data-word="${escHtml(w.english)}" title="Listen">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/></svg>
@@ -413,6 +413,27 @@ function renderList(filter = '') {
 function escHtml(s) {
   if (s == null) return '';
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+const RAINBOW_COLORS = [
+  '#FF6B6B', '#FF9F43', '#FECA57', '#48DBFB', '#0ABDE3', '#A29BFE',
+  '#6C5CE7', '#FD79A8', '#FDCB6E', '#00CEC9', '#E17055', '#74B9FF'
+];
+
+function renderGeneratingWave() {
+  const text = 'GENERATE';
+  const chars = text.split('');
+  const total = chars.length;
+  const maxDelay = 1.6;
+  const step = total > 1 ? maxDelay / (total - 1) : 0;
+
+  const spans = chars.map((ch, i) => {
+    const color = RAINBOW_COLORS[i % RAINBOW_COLORS.length];
+    const delay = (i * step).toFixed(2);
+    return `<span style="color:${color};text-shadow:0 0 12px ${color}80,0 0 40px ${color}40;animation-delay:${delay}s">${ch}</span>`;
+  }).join('');
+
+  return `<span class="wave-generating">${spans}</span>`;
 }
 
 // ── Word segmentation (lazy — on hover only) ───────────────
@@ -599,7 +620,7 @@ document.getElementById('add-btn').addEventListener('click', async () => {
   if (!aiGen && !fa) { showAlert('add-alert', 'Persian field is required.'); return; }
 
   // Optimistic: show placeholder word immediately
-  const placeholder = { english: en, persian: fa || '(generating…)', alternatives: [], category: addCategory };
+  const placeholder = { english: en, persian: fa || '(generating…)', alternatives: [], category: addCategory, isGenerating: !fa };
   words.push(placeholder);
   renderList(document.getElementById('search-input').value);
   updateHeaderCount();
