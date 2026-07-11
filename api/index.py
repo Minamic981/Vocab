@@ -331,6 +331,11 @@ def add_word():
         new_word = {'english': english, 'persian': persian, 'alternatives': alternatives}
 
     data = load_data()
+
+    # Check for duplicate english before adding
+    if _english_exists(data, english):
+        return jsonify({'error': f'"{english}" already exists.'}), 409
+
     cat_key = category or UNCATEGORIZED_KEY
 
     if cat_key not in data["categories"]:
@@ -366,24 +371,41 @@ def edit_word(index):
             category = None
 
     data = load_data()
-    old_cat, old_pos, old_word = _locate_word_by_index(data, index)
 
-    if old_word is None:
+    # Locate the word by english text (case-insensitive) rather than relying
+    # on the flat index, which can drift if the frontend list is stale.
+    found_cat, found_pos, found_word = None, None, None
+    for cat_name, cat_obj in data.get("categories", {}).items():
+        cat_words = cat_obj.get("words", []) if isinstance(cat_obj, dict) else []
+        for pos, w in enumerate(cat_words):
+            if w.get("english", "").lower() == english:
+                found_cat, found_pos, found_word = cat_name, pos, w
+                break
+        if found_word is not None:
+            break
+
+    if found_word is None:
+        # Fallback to index-based lookup
+        found_cat, found_pos, found_word = _locate_word_by_index(data, index)
+
+    if found_word is None:
         return jsonify({'error': 'Word not found.'}), 404
 
-    if _english_exists(data, english, exclude_cat=old_cat, exclude_pos=old_pos):
+    # Only block if english actually changed to a value that exists elsewhere
+    old_english = found_word.get("english", "").strip().lower()
+    if english != old_english and _english_exists(data, english, exclude_cat=found_cat, exclude_pos=found_pos):
         return jsonify({'error': f'"{english}" already exists.'}), 409
 
     new_cat = category or UNCATEGORIZED_KEY
 
     # Remove from old position directly (no re-scan needed, we already know where it is)
-    data["categories"][old_cat]["words"].pop(old_pos)
+    data["categories"][found_cat]["words"].pop(found_pos)
 
     # Clean up empty non-uncategorized categories
-    if old_cat != UNCATEGORIZED_KEY:
-        cat_obj = data["categories"].get(old_cat)
+    if found_cat != UNCATEGORIZED_KEY:
+        cat_obj = data["categories"].get(found_cat)
         if cat_obj and isinstance(cat_obj, dict) and len(cat_obj.get("words", [])) == 0:
-            del data["categories"][old_cat]
+            del data["categories"][found_cat]
 
     # Ensure new category exists
     if new_cat not in data["categories"]:
