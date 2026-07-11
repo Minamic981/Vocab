@@ -241,7 +241,7 @@ function showAlert(id, msg, type = 'error') {
     } else {
       el.className = 'alert';
     }
-  }, 4000);
+  }, 80000);
 }
 
 function updateHeaderCount() {
@@ -606,7 +606,6 @@ document.getElementById('add-btn').addEventListener('click', async () => {
   document.getElementById('add-en').value = '';
   document.getElementById('add-fa').value = '';
   document.getElementById('add-alts').value = '';
-  document.getElementById('add-category').value = '';
 
   const rows = document.querySelectorAll('.word-row');
   const lastRow = rows[rows.length - 1];

@@ -151,7 +151,8 @@ def generate_sentence(english: str = "", persian: str = "", is_edit=False, tempe
         parts = json.loads(raw)
         return parts["english"], parts["persian"]
     except requests.HTTPError as e:
-        raise Exception(f"HTTP error: {e.response.status_code}")
+        print(e.response.text)
+        raise Exception(f"HTTP error: {e.response.text}")
     except requests.ConnectionError:
         raise Exception("Connection failed")
     except requests.Timeout:
