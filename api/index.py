@@ -289,6 +289,9 @@ def check_kv_connection() -> bool:
 def index():
     return render_template('index.html')
 
+@app.route('/lab')
+def lab():
+    return render_template('lab.html')
 
 @app.route('/api/words', methods=['GET'])
 def get_words():

@@ -1,3 +1,3 @@
-Fix Problem Mobile Device Support Style
-Update Readme.md
-Clean and optimizing html structure and css style
+
+improves system prompt for multiple words input and style
+create extension for this site
