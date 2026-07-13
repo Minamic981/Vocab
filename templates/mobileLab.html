@@ -13,7 +13,7 @@
     rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet"
     type="text/css" />
-  <link rel="stylesheet" href="{{ url_for('static', filename='lab/labStyle.css') }}" />
+  <link rel="stylesheet" href="{{ url_for('static', filename='lab/mobileStyle.css') }}" />
 </head>
 
 <body>
@@ -24,15 +24,6 @@
         <div class="wordmark">My Word<span>Book</span></div>
         <div class="word-count" id="header-count">Loading…</div>
       </div>
-      <button class="fn-show-nav" id="fn-show-nav" title="Show floating bar" style="display:none">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-          stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="12" cy="12" r="10" />
-          <path d="M12 16v-4" />
-          <path d="M12 8h.01" />
-        </svg>
-        <span>Floating Bar</span>
-      </button>
     </header>
 
     <!-- nav.html -->
@@ -348,173 +339,8 @@
     </div>
   </div>
 
-  <!-- ── Floating Bottom Nav Bar (Web/PC only) ─────────────── -->
-  <div class="floating-nav" id="floating-nav">
-    <!-- Main toolbar row -->
-    <div class="fn-toolbar" id="fn-toolbar">
-      <!-- Left: brand -->
-      <div class="fn-brand">
-        <span class="fn-brand-text">My Word<span>Book</span></span>
-        <span class="fn-word-count" id="fn-header-count"></span>
-      </div>
-
-      <!-- Center: tabs -->
-      <div class="fn-tabs">
-        <button class="fn-tab active" data-tab="library">📚 Library</button>
-        <button class="fn-tab" data-tab="import">📋 Import</button>
-        <button class="fn-tab" data-tab="practice">🎯 Practice</button>
-        <button class="fn-tab" data-tab="defs">🔤 Meanings</button>
-      </div>
-
-      <!-- Right: actions -->
-      <div class="fn-actions">
-        <button class="fn-btn fn-hide-nav" id="fn-hide-nav" title="Hide floating bar">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <path
-              d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-            <line x1="1" y1="1" x2="23" y2="23" />
-          </svg>
-        </button>
-        <button class="fn-btn fn-scroll-toggle" id="fn-scroll-toggle" title="Scroll to top">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"
-            stroke-linecap="round">
-            <line x1="5" y1="8" x2="19" y2="8" />
-            <line x1="5" y1="16" x2="19" y2="16" />
-          </svg>
-        </button>
-        <button class="fn-btn fn-select-toggle" id="fn-select-toggle" title="Select multiple words">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <polyline points="9 11 12 14 22 4" />
-            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-          </svg>
-        </button>
-        <button class="fn-btn fn-search-toggle" id="fn-search-toggle" title="Search words">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-        </button>
-        <button class="fn-btn fn-add-toggle" id="fn-add-toggle" title="Add a new word">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <line x1="12" y1="5" x2="12" y2="19" />
-            <line x1="5" y1="12" x2="19" y2="12" />
-          </svg>
-        </button>
-      </div>
-    </div>
-
-    <!-- Expandable: select mode bar -->
-    <div class="fn-select-bar" id="fn-select-bar">
-      <span class="fn-select-count" id="fn-select-count">0 selected</span>
-      <div class="fn-select-actions">
-        <label class="fn-select-move-label" for="fn-bulk-move-select">📁 Move to:</label>
-        <select id="fn-bulk-move-select" class="fn-bulk-move-select">
-          <option value="">— Select Category —</option>
-          <option value="__none__">No Category</option>
-        </select>
-        <button class="fn-select-btn fn-select-delete" id="fn-bulk-delete-btn">Delete</button>
-        <button class="fn-select-btn fn-select-cancel" id="fn-bulk-cancel-btn">Cancel</button>
-      </div>
-    </div>
-
-    <!-- Expandable: search panel -->
-    <div class="fn-search-panel" id="fn-search-panel">
-      <div class="fn-search-row">
-        <input type="text" id="fn-search-input" placeholder="Search words…" />
-        <button class="fn-btn fn-search-go" id="fn-search-go">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round">
-            <circle cx="11" cy="11" r="8" />
-            <line x1="21" y1="21" x2="16.65" y2="16.65" />
-          </svg>
-        </button>
-      </div>
-      <div class="fn-search-filters">
-        <button class="fn-chip active" id="fn-bookmark-filter" title="Filter bookmarked words">🔖 All</button>
-        <button class="fn-chip" id="fn-cat-filter-btn" title="Filter by category">📁 Categories</button>
-      </div>
-      <!-- Category chips (hidden by default) -->
-      <div class="fn-categories" id="fn-categories" style="display:none;">
-        <button class="fn-chip active" data-fn-cat="all">All</button>
-        <button class="fn-chip" data-fn-cat="">No Category</button>
-        <div class="fn-cat-badges" id="fn-cat-badges"></div>
-        <button class="fn-chip fn-cat-create" id="fn-create-category-btn" title="Create a new category">📁
-          Create</button>
-      </div>
-    </div>
-
-    <!-- Expandable: add word panel -->
-    <div class="fn-add-panel" id="fn-add-panel">
-      <div class="fn-add-fields">
-        <div class="field">
-          <label for="fn-add-en">English</label>
-          <input type="text" id="fn-add-en" placeholder="e.g. tough" />
-        </div>
-        <div class="field">
-          <label for="fn-add-fa">Persian (فارسی)</label>
-          <input type="text" id="fn-add-fa" placeholder="e.g. سخت" dir="rtl" />
-        </div>
-        <div class="field fn-cat-field">
-          <label for="fn-add-category">Category</label>
-          <select id="fn-add-category" class="add-category-select">
-            <option value="">No Category</option>
-          </select>
-        </div>
-        <button class="btn btn-primary fn-add-btn" id="fn-add-btn">Add</button>
-      </div>
-      <div class="fn-add-extras">
-        <label class="aigen-label">
-          <input type="checkbox" id="fn-add-aigen" />
-          ✨ Ai Generate Sentence
-        </label>
-        <div class="fn-advanced-toggle" id="fn-advanced-toggle">
-          <span class="fn-advanced-arrow" id="fn-advanced-arrow"></span>
-          Advanced
-        </div>
-      </div>
-      <div class="fn-advanced-section" id="fn-advanced-section">
-        <div class="field">
-          <label for="fn-add-alts">Alternative sentences (one per line)</label>
-          <textarea id="fn-add-alts" rows="2"
-            placeholder="She is highly skilled in her work.&#10;She does her job extremely well."></textarea>
-        </div>
-        <label class="style-toggle-label">
-          <input type="checkbox" id="fn-add-style-toggle" />
-          Writing Style
-        </label>
-        <div class="style-options" id="fn-style-options">
-          <div class="field">
-            <label for="fn-add-style">Sentence Style</label>
-            <select id="fn-add-style">
-              <option value="" selected>User Manual</option>
-              <option value="romantic">Romantic</option>
-              <option value="formal">Formal</option>
-              <option value="humorous">Humorous</option>
-              <option value="poetic">Poetic</option>
-              <option value="minimalist">Minimalist</option>
-              <option value="academic">Academic</option>
-              <option value="casual">Casual</option>
-              <option value="dramatic">Dramatic</option>
-              <option value="simple">Simple Words</option>
-            </select>
-          </div>
-          <div class="field" style="margin-top: 10px;">
-            <label for="fn-add-style-custom">Custom Style (optional — overrides dropdown)</label>
-            <input type="text" id="fn-add-style-custom"
-              placeholder="e.g. romantic, include keywords: love, heart, soul" />
-          </div>
-        </div>
-      </div>
-      <div class="inline-add-alert" id="fn-add-alert"></div>
-    </div>
-  </div>
-
   <!-- footer.html -->
-  <script src="{{ url_for('static', filename='lab/lab.js') }}"></script>
+  <script src="{{ url_for('static', filename='lab/mobileJS.js') }}"></script>
 </body>
 
 </html>

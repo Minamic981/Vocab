@@ -6,7 +6,7 @@ import json
 import time
 import requests
 from dotenv import load_dotenv
-
+from user_agents import parse
 sys.path.insert(0, os.path.dirname(__file__))
 from ai import generate_sentence, gen_definitions
 app = Flask(
@@ -289,15 +289,19 @@ def check_kv_connection() -> bool:
 
 @app.route('/')
 def index():
+    user_agent = request.headers.get('User-Agent')
+    parse_user_agent = parse(user_agent)
+    if parse_user_agent.is_mobile:
+        return render_template('mobile.html')
     return render_template('index.html')
 
 @app.route('/lab')
 def lab():
+    user_agent = request.headers.get('User-Agent')
+    parse_user_agent = parse(user_agent)
+    if parse_user_agent.is_mobile:
+        return render_template('mobileLab.html')
     return render_template('lab.html')
-
-@app.route('/raw')
-def raw():
-    return jsonify({"user-agent":request.headers.get('User-Agent')})
 
 @app.route('/api/words', methods=['GET'])
 def get_words():

@@ -25,6 +25,13 @@ function toggleBookmark(english) {
   saveBookmarks();
 }
 
+// ── Auto-sync categoryFilter → add-category selects ───────────
+function syncAddCategorySelects() {
+  const val = categoryFilter || '';
+  const addSel = document.getElementById('add-category');
+  if (addSel) addSel.value = val;
+}
+
 // ── Categories ─────────────────────────────────────────────────
 async function loadCategories() {
   try {
@@ -60,6 +67,7 @@ function renderCategoryBar() {
       if (e.target.classList.contains('cat-delete')) return;
       categoryFilter = badge.dataset.cat;
       renderCategoryBar();
+      syncAddCategorySelects();
       renderList(document.getElementById('search-input').value);
     });
   });
@@ -365,13 +373,34 @@ function renderList(filter = '') {
       segmented = true;
       enEl.innerHTML = segmentEnglish(rawText);
       enEl.querySelectorAll('.word-segment').forEach(span => {
-        span.addEventListener('dblclick', (e) => {
-          e.stopPropagation();
-          openWordPopup(span.dataset.word);
+        let lastTap = 0;
+        let longPressTimer = null;
+        span.addEventListener('touchstart', (e) => {
+          const now = Date.now();
+          if (now - lastTap < 300) {
+            e.preventDefault();
+            e.stopPropagation();
+            clearTimeout(longPressTimer);
+            openWordPopup(span.dataset.word);
+            lastTap = 0;
+            return;
+          }
+          lastTap = now;
+          longPressTimer = setTimeout(() => {
+            e.preventDefault();
+            e.stopPropagation();
+            openWordPopup(span.dataset.word);
+          }, 500);
+        }, { passive: false });
+        span.addEventListener('touchend', () => {
+          clearTimeout(longPressTimer);
+        });
+        span.addEventListener('touchmove', () => {
+          clearTimeout(longPressTimer);
         });
       });
     }
-    row.addEventListener('mouseenter', doSegment);
+    row.addEventListener('touchstart', doSegment, { passive: true });
   });
 }
 
@@ -437,9 +466,19 @@ document.querySelectorAll('.cat-filter-btn').forEach(btn => {
     const cat = btn.dataset.cat;
     categoryFilter = cat === 'all' ? null : cat;
     renderCategoryBar();
+    syncAddCategorySelects();
     renderList(document.getElementById('search-input').value);
   });
 });
+
+// ── Auto-filter library when category is selected in Add Word section ──
+function onAddCategoryChange(e) {
+  const val = e.target.value;
+  categoryFilter = val || null;
+  renderCategoryBar();
+  renderList(document.getElementById('search-input').value);
+}
+document.getElementById('add-category').addEventListener('change', onAddCategoryChange);
 
 // Category modal
 document.getElementById('create-category-btn').addEventListener('click', () => {
@@ -1052,6 +1091,40 @@ document.addEventListener('keydown', e => {
   }
   await loadCategories();
   renderList();
+})();
+
+// ── Mobile tap-to-reveal Persian translation ───────────────────
+(function () {
+  // Flag to block parent click when a word segment was tapped
+  let segmentTapped = false;
+
+  function attachRevealListeners() {
+    document.querySelectorAll('#word-list .word-row').forEach(function (row) {
+      const enEl = row.querySelector('.word-en');
+      const faEl = row.querySelector('.word-fa');
+      if (!enEl || !faEl) return;
+      if (enEl.dataset.revealBound === '1') return;
+      enEl.dataset.revealBound = '1';
+
+      enEl.addEventListener('click', function () {
+        if (segmentTapped) {
+          segmentTapped = false;
+          return;
+        }
+        const isRevealed = faEl.classList.contains('revealed');
+        faEl.classList.toggle('revealed', !isRevealed);
+        enEl.classList.toggle('revealed-hint', !isRevealed);
+      });
+    });
+  }
+
+  const originalRenderList = renderList;
+  renderList = function () {
+    originalRenderList.apply(this, arguments);
+    setTimeout(attachRevealListeners, 0);
+  };
+
+  attachRevealListeners();
 })();
 
 // ── Multiple Meanings ───────────────────────────────────────

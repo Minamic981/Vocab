@@ -141,5 +141,5 @@ function showMsg(text, type) {
   const box = document.getElementById("msg-box");
   box.textContent = text;
   box.className = "msg-box show msg-" + type;
-  setTimeout(() => { box.className = "msg-box"; }, 4000);
+  setTimeout(() => { box.className = "msg-box"; }, 10000);
 }
