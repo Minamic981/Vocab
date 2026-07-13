@@ -69,6 +69,33 @@ header {
   font-style: italic;
 }
 
+<<<<<<< HEAD
+=======
+.mbn-show-nav {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border: none;
+  border-radius: 12px;
+  background: var(--ink);
+  color: rgba(255, 255, 255, 0.8);
+  cursor: pointer;
+  z-index: 90;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  transition: all 0.15s;
+}
+
+.mbn-show-nav:hover {
+  background: #333;
+  color: #fff;
+}
+
+>>>>>>> mobilesupport
 /* ── Tab nav ─────────────────────────────────────────────── */
 .tabs {
   display: flex;
@@ -1175,6 +1202,127 @@ textarea {
   }
 }
 
+<<<<<<< HEAD
+=======
+/* ── Mobile Floating Bottom Nav ──────────────────────────── */
+.mobile-bottom-nav {
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  background: var(--ink);
+  padding: 8px 16px;
+  border-radius: 14px;
+  z-index: 90;
+  width: calc(100% - 32px);
+  max-width: 500px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Brand */
+.mbn-brand {
+  display: flex;
+  flex-direction: column;
+  flex-shrink: 0;
+}
+
+.mbn-brand-text {
+  font-family: "Lora", serif;
+  font-size: 13px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+.mbn-brand-text span {
+  color: #6ee7b7;
+}
+
+.mbn-word-count {
+  font-size: 10px;
+  color: rgba(255, 255, 255, 0.4);
+  font-style: italic;
+}
+
+/* Tabs */
+.mbn-tabs {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+  justify-content: center;
+}
+
+.mbn-tab {
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 6px 10px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  color: rgba(255, 255, 255, 0.55);
+  transition: color 0.15s, background 0.15s;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.mbn-tab-icon {
+  font-size: 13px;
+}
+
+.mbn-tab:hover,
+.mbn-tab:active {
+  color: rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.mbn-tab.active {
+  color: #fff;
+  background: var(--accent);
+}
+
+/* Action buttons */
+.mbn-actions {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.mbn-action-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.7);
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.mbn-action-btn:hover,
+.mbn-action-btn:active {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+}
+
+/* Add bottom padding so content isn't hidden behind the nav */
+body .shell {
+  padding-bottom: 100px;
+}
+
+>>>>>>> mobilesupport
 /* ── Generating wave animation ────────────────────────────── */
 .wave-generating {
   display: inline-flex;

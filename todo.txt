@@ -1,11 +1,3 @@
 improves system prompt for multiple words input and style
 Reducing repetition of meaning, 3rd person overall need to improving system prompt
 add floating navbar for mobile
-fix error extension
-
-
-
-ok i found a new way device detector get header and parse with user_agents library now i want to you add condition if user open with mobile else for both routes / and /lab use a index and lab.html
-
-currently now doesn't need to modifed mobile.html
-just modifed and removed all mobile check in lab.html and index.html in js and css

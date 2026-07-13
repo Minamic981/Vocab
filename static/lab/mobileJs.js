@@ -1230,3 +1230,77 @@ document.getElementById('popup-generate').addEventListener('click', async () => 
 document.getElementById('popup-fa').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('popup-generate').click();
 });
+<<<<<<< HEAD
+=======
+
+// ── Mobile Floating Bottom Nav ────────────────────────────────
+(function () {
+  const nav = document.getElementById('mobile-bottom-nav');
+  if (!nav) return;
+
+  // Sync header count
+  const mbnCount = document.getElementById('mbn-header-count');
+  function syncHeaderCount() {
+    const c = words.length;
+    mbnCount.textContent = `${c} word${c !== 1 ? 's' : ''}`;
+  }
+  const origUpdateHeaderCount = updateHeaderCount;
+  updateHeaderCount = function () {
+    origUpdateHeaderCount();
+    syncHeaderCount();
+  };
+  syncHeaderCount();
+
+  // Tab switching — mirrors the top tab buttons
+  nav.querySelectorAll('.mbn-tab[data-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      nav.querySelectorAll('.mbn-tab[data-tab]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const topBtn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
+      if (topBtn) topBtn.click();
+    });
+  });
+
+  // Sync top tabs → floating tabs
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      nav.querySelectorAll('.mbn-tab[data-tab]').forEach(b => {
+        b.classList.toggle('active', b.dataset.tab === btn.dataset.tab);
+      });
+    });
+  });
+
+  // Hide / Show nav
+  const showNavBtn = document.getElementById('mbn-show-nav');
+
+  document.getElementById('mbn-hide-nav').addEventListener('click', () => {
+    nav.style.display = 'none';
+    showNavBtn.style.display = 'inline-flex';
+  });
+
+  showNavBtn.addEventListener('click', () => {
+    nav.style.display = '';
+    showNavBtn.style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  });
+
+  // Scroll toggle (= button) — toggles between top and bottom
+  const scrollToggle = document.getElementById('mbn-scroll-toggle');
+  const scrollIcon = scrollToggle.querySelector('svg');
+
+  function updateScrollToggle() {
+    const nearBottom = window.innerHeight + window.scrollY >= document.body.scrollHeight - 200;
+    scrollToggle.title = nearBottom ? 'Scroll to top' : 'Scroll to bottom';
+    // Flip the = icon vertically when near bottom
+    scrollIcon.style.transform = nearBottom ? 'rotate(180deg)' : '';
+  }
+  window.addEventListener('scroll', updateScrollToggle, { passive: true });
+  updateScrollToggle();
+
+  scrollToggle.addEventListener('click', () => {
+    const nearBottom = window.innerHeight + window.scrollY >= document.body.scrollHeight - 200;
+    window.scrollTo({ top: nearBottom ? 0 : document.body.scrollHeight, behavior: 'instant' });
+  });
+})();
+>>>>>>> mobilesupport
