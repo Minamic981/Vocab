@@ -1,0 +1,60 @@
+/* ── Local Fonts ──────────────────────────────────────────── */
+
+/* Inter (Latin) */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('inter-normal-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url('inter-normal-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('inter-normal-latin.woff2') format('woff2');
+}
+
+/* Lora (Latin) */
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('lora-normal-400-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Lora';
+  font-style: italic;
+  font-weight: 400;
+  font-display: swap;
+  src: url('lora-italic-400-latin.woff2') format('woff2');
+}
+
+@font-face {
+  font-family: 'Lora';
+  font-style: normal;
+  font-weight: 600;
+  font-display: swap;
+  src: url('lora-normal-400-latin.woff2') format('woff2');
+}
+
+/* Vazirmatn (Arabic/Persian) */
+@font-face {
+  font-family: 'Vazirmatn';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('vazirmatn-400.woff2') format('woff2');
+}
