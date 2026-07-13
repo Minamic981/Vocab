@@ -1,4 +1,5 @@
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session
+from flask_cors import CORS
 import os
 import sys
 import json
@@ -13,6 +14,7 @@ app = Flask(
     template_folder=os.path.join(os.path.dirname(__file__), '..', 'templates'),
     static_folder=os.path.join(os.path.dirname(__file__), '..', 'static')
 )
+CORS(app)
 
 load_dotenv()
 
@@ -287,6 +289,7 @@ def check_kv_connection() -> bool:
 
 @app.route('/')
 def index():
+    print(request.headers.get('User-Agent'))
     return render_template('index.html')
 
 @app.route('/lab')

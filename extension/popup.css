@@ -1,0 +1,355 @@
+/* ── Reset & tokens (matches labStyle.css) ──────────────── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --ink: #1a1a1a;
+  --ink-light: #555;
+  --ink-faint: #999;
+  --paper: #faf9f6;
+  --paper-2: #f1efe9;
+  --rule: #e0ddd5;
+  --accent: #2d6a4f;
+  --accent-lt: #d8f3dc;
+  --danger: #c0392b;
+  --danger-lt: #fdecea;
+  --warn: #b8850a;
+  --warn-lt: #fff8e1;
+  --radius: 8px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.08);
+}
+
+body {
+  font-family: "Inter", sans-serif;
+  background: var(--paper);
+  color: var(--ink);
+  width: 380px;
+  min-height: 100px;
+  line-height: 1.6;
+}
+
+.shell { padding: 16px; }
+
+/* ── Header ─────────────────────────────────────────────── */
+header {
+  padding-bottom: 12px;
+  border-bottom: 2px solid var(--ink);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.wordmark {
+  font-family: "Lora", serif;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+.wordmark span { color: var(--accent); }
+
+/* ── Form card ──────────────────────────────────────────── */
+.form-card {
+  background: var(--paper-2);
+  border: 2px dashed var(--rule);
+  border-radius: var(--radius);
+  padding: 16px;
+  transition: border-color 0.2s, background 0.2s;
+}
+
+.form-card:focus-within {
+  border-color: var(--accent);
+  background: #fff;
+}
+
+.form-header {
+  font-family: "Lora", serif;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink-faint);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.plus-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* ── Fields ─────────────────────────────────────────────── */
+.fields {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: flex-end;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+  min-width: 100px;
+}
+
+label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ink-light);
+}
+
+input[type="text"], textarea, select {
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  padding: 8px 10px;
+  border: 1px solid var(--rule);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--ink);
+  outline: none;
+  transition: border-color 0.15s;
+  width: 100%;
+}
+
+input[type="text"]:focus, textarea:focus, select:focus {
+  border-color: var(--accent);
+}
+
+textarea {
+  font-family: "Lora", serif;
+  font-size: 12px;
+  min-height: 50px;
+  resize: vertical;
+  line-height: 1.6;
+}
+
+select {
+  cursor: pointer;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  appearance: none;
+  background: #fff url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 8px center;
+  background-size: 14px;
+  padding-right: 28px;
+}
+
+.cat-field { min-width: 130px; }
+
+/* ── Buttons ────────────────────────────────────────────── */
+.btn {
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 16px;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.btn:active { transform: scale(0.98); }
+.btn:hover { opacity: 0.88; }
+
+.btn-primary {
+  background: var(--accent);
+  color: #fff;
+  margin-top: 12px;
+  width: 100%;
+}
+
+.btn-ghost {
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink-light);
+}
+
+.btn-sm {
+  padding: 5px 10px;
+  font-size: 11px;
+}
+
+/* ── Labels ─────────────────────────────────────────────── */
+.aigen-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--ink-light);
+  cursor: pointer;
+  user-select: none;
+}
+
+.aigen-label input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+/* ── Advanced toggle ────────────────────────────────────── */
+.advanced-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  padding-left: 20px;
+  font-size: 12px;
+  color: var(--ink-light);
+  cursor: pointer;
+  user-select: none;
+  border: none;
+  background: transparent;
+  transition: color 0.15s;
+}
+
+.advanced-toggle:hover { color: var(--accent); }
+
+.advanced-arrow {
+  width: 0;
+  height: 0;
+  border-top: 4px solid transparent;
+  border-bottom: 4px solid transparent;
+  border-left: 5px solid currentColor;
+  transition: transform 0.25s ease;
+  display: inline-block;
+}
+
+.advanced-arrow.open { transform: rotate(90deg); }
+
+.advanced-section {
+  display: none;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--rule);
+}
+
+.advanced-section.open { display: block; }
+
+/* ── Writing style ──────────────────────────────────────── */
+.style-toggle-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 12px;
+  color: var(--ink-light);
+  cursor: pointer;
+  user-select: none;
+}
+
+.style-toggle-label input[type="checkbox"] {
+  accent-color: var(--accent);
+  width: 14px;
+  height: 14px;
+  cursor: pointer;
+}
+
+.style-options {
+  display: none;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed var(--rule);
+}
+
+.style-options.visible { display: block; }
+
+/* ── Message box ────────────────────────────────────────── */
+.msg-box {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  line-height: 1.5;
+  display: none;
+  word-wrap: break-word;
+  white-space: pre-line;
+}
+
+.msg-box.show { display: block; }
+
+.msg-box.msg-success {
+  background: var(--accent-lt);
+  color: #1b5e38;
+  border: 1px solid #b7e4c7;
+}
+
+.msg-box.msg-error {
+  background: var(--danger-lt);
+  color: var(--danger);
+  border: 1px solid #f5c6cb;
+}
+
+.msg-box.msg-info {
+  background: var(--warn-lt);
+  color: var(--warn);
+  border: 1px solid #e6c96a;
+}
+
+/* ── Settings toggle ────────────────────────────────────── */
+.settings-toggle {
+  background: none;
+  border: 1px solid var(--rule);
+  border-radius: 50%;
+  color: var(--ink-faint);
+  font-size: 16px;
+  width: 32px;
+  height: 32px;
+  cursor: pointer;
+  transition: color 0.15s, border-color 0.15s;
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.settings-toggle:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ── Settings ───────────────────────────────────────────── */
+.settings-bar {
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.settings-bar label {
+  font-size: 10px;
+  text-transform: uppercase;
+  color: var(--ink-faint);
+  flex-shrink: 0;
+}
+
+.settings-bar input {
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  padding: 5px 8px;
+}
+
+.saved {
+  font-size: 11px;
+  color: var(--accent);
+  font-weight: 600;
+}

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Word Book</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Lora:wght@600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="popup.css" />
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="wordmark">My Word<span>Book</span></div>
+      <button class="settings-toggle" id="settings-toggle" title="Change API URL">⚙</button>
+    </header>
+
+    <div class="form-card">
+      <div class="form-header">
+        <span class="plus-icon">+</span>
+        Add a new word
+      </div>
+
+      <div class="fields">
+        <div class="field">
+          <label for="add-en">English</label>
+          <input type="text" id="add-en" placeholder="e.g. tough" />
+        </div>
+        <div class="field">
+          <label for="add-fa">Persian</label>
+          <input type="text" id="add-fa" placeholder="e.g. سخت" dir="rtl" />
+        </div>
+        <div class="field cat-field">
+          <label for="add-category">Category</label>
+          <select id="add-category">
+            <option value="">No Category</option>
+          </select>
+        </div>
+      </div>
+
+      <button class="btn btn-primary" id="add-btn">Add</button>
+
+      <label class="aigen-label">
+        <input type="checkbox" id="add-aigen" />
+        AI Generate Sentence
+      </label>
+
+      <div class="advanced-toggle" id="advanced-toggle">
+        <span class="advanced-arrow" id="advanced-arrow"></span>
+        Advanced
+      </div>
+      <div class="advanced-section" id="advanced-section">
+        <div class="field">
+          <label for="add-alts">Alternative sentences (one per line)</label>
+          <textarea id="add-alts" rows="2"
+            placeholder="She is highly skilled in her work.&#10;She does her job extremely well."></textarea>
+        </div>
+        <label class="style-toggle-label">
+          <input type="checkbox" id="add-style-toggle" />
+          Writing Style
+        </label>
+        <div class="style-options" id="style-options">
+          <div class="field">
+            <label for="add-style">Sentence Style</label>
+            <select id="add-style">
+              <option value="" selected>User Manual</option>
+              <option value="romantic">Romantic</option>
+              <option value="formal">Formal</option>
+              <option value="humorous">Humorous</option>
+              <option value="poetic">Poetic</option>
+              <option value="minimalist">Minimalist</option>
+              <option value="academic">Academic</option>
+              <option value="casual">Casual</option>
+              <option value="dramatic">Dramatic</option>
+              <option value="simple">Simple Words</option>
+            </select>
+          </div>
+          <div class="field" style="margin-top: 10px;">
+            <label for="add-style-custom">Custom Style (optional)</label>
+            <input type="text" id="add-style-custom"
+              placeholder="e.g. romantic, include keywords: love, heart, soul" />
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Message box -->
+    <div class="msg-box" id="msg-box"></div>
+
+    <!-- Settings -->
+    <div class="settings-bar" id="settings-bar" style="display:none">
+      <label>API URL</label>
+      <input type="text" id="api-url" placeholder="https://your-app.example.com" />
+      <button class="btn btn-ghost btn-sm" id="save-settings">Save</button>
+      <span class="saved" id="saved" style="display:none">Saved</span>
+    </div>
+  </div>
+  <script src="popup.js"></script>
+</body>
+</html>

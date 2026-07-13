@@ -1,0 +1,10 @@
+{
+  "manifest_version": 3,
+  "name": "My Word Book",
+  "version": "1.0.0",
+  "description": "Quick-add English-Persian words to your word book.",
+  "permissions": ["storage"],
+  "action": {
+    "default_popup": "popup.html"
+  }
+}

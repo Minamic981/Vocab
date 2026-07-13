@@ -19,13 +19,17 @@ SYSTEM_PROMPTS = {
         "Write ONE natural, clear, and fluent English example sentence that uses the **exact given word**.\n\n"
         
         "Rules:\n"
-        "- You MUST use the exact English word provided by the user. Do NOT replace it with synonyms (e.g. do not change 'ephemeral' to 'fleeting').\n"
+        "- You MUST use the exact English word provided by the user. Do NOT replace it with synonyms.\n"
         "- Use the Persian meaning as the only correct sense.\n"
-        "- Keep the sentence natural and realistic. Avoid overly poetic, dramatic, or silly descriptions.\n"
-        "- Make it engaging but believable — like something you would read in a book or hear in daily life.\n"
-        "- Good natural flow, proper starting and ending.\n"
+        "- Keep the sentence realistic and engaging.\n"
         "- Sentence length: 12–20 words.\n"
-        "- The Persian output must be a natural and accurate translation of your English sentence.\n\n"
+        "- The sentence MUST be unambiguous. Avoid vague time references like 'later' or 'then'.\n"
+        "- The Persian output must be accurate and idiomatic.\n\n"
+        
+        "IMPORTANT: Example sentences MUST be:\n"
+        "- Unambiguous: the meaning should be obvious from the context\n"
+        "- Natural: sound like something a native speaker would say\n"
+        "- Varied: each sentence should be different in structure and context\n\n"
         
         "Respond ONLY in this exact JSON format:\n"
         "{\"english\":\"...\", \"persian\":\"...\"}"
@@ -38,10 +42,16 @@ SYSTEM_PROMPTS = {
         "Rules:\n"
         "- Use the exact word given. Do NOT replace it with synonyms.\n"
         "- Use the most common meaning.\n"
-        "- Keep sentences natural and realistic. Avoid exaggerated or silly imagery.\n"
-        "- Make it interesting but believable.\n"
+        "- Keep sentences realistic and engaging.\n"
         "- Sentence length: 12–20 words.\n"
-        "- Provide a natural Persian translation.\n\n"
+        "- The sentence MUST clearly demonstrate the meaning. Avoid ambiguity.\n"
+        "- Avoid vague time references like 'later' or 'then'.\n"
+        "- Provide a natural Persian translation that is idiomatic and fluent.\n\n"
+        
+        "IMPORTANT: Example sentences MUST be:\n"
+        "- Unambiguous: the meaning should be obvious from the context\n"
+        "- Natural: sound like something a native speaker would say\n"
+        "- Varied: each sentence should be different in structure and context\n\n"
         
         "Respond ONLY in this exact JSON format:\n"
         "{\"english\":\"...\", \"persian\":\"...\"}"
@@ -53,22 +63,40 @@ SYSTEM_PROMPTS = {
         
         "Rules:\n"
         "- Use the exact English translation. Do not replace it with synonyms.\n"
-        "- Keep the sentence natural and realistic.\n"
+        "- Keep the sentence realistic.\n"
         "- Sentence length: 12–20 words.\n"
-        "- Persian output must be a natural translation of the English sentence.\n\n"
+        "- The sentence must clearly convey the meaning without ambiguity.\n"
+        "- Avoid unclear time references like 'later' or 'then'.\n"
+        "- Persian output must be a natural translation.\n\n"
+        
+        "IMPORTANT: Example sentences MUST be:\n"
+        "- Unambiguous: the meaning should be obvious from the context\n"
+        "- Natural: sound like something a native speaker would say\n"
+        "- Varied: each sentence should be different in structure and context\n\n"
         
         "Respond ONLY in this exact JSON format:\n"
         "{\"english\":\"...\", \"persian\":\"...\"}"
     ),
 
     SentenceMode.EDIT: (
-        "You are a vocabulary assistant. Create a different English sentence with the same meaning and same key word.\n\n"
+        "You are a vocabulary assistant. Create a NEW English sentence with the same meaning and same key word.\n\n"
         
         "Rules:\n"
         "- Keep the exact key word.\n"
-        "- Make it natural and realistic. Avoid overly flowery language.\n"
+        "- The new sentence MUST be significantly different from the original:\n"
+        "  * Change the subject, object, or context completely\n"
+        "  * Change the sentence structure (e.g., active to passive, different clause order)\n"
+        "  * Use different supporting words around the key word\n"
+        "  * Do NOT just change one word or one letter\n"
+        "- Make it realistic.\n"
         "- Sentence length: 12–20 words.\n"
-        "- Persian must be a natural translation of your new sentence.\n\n"
+        "- The meaning must remain clear.\n"
+        "- Persian must be a natural translation.\n\n"
+        
+        "IMPORTANT: Example sentences MUST be:\n"
+        "- Unambiguous: the meaning should be obvious from the context\n"
+        "- Natural: sound like something a native speaker would say\n"
+        "- Varied: each sentence should be different in structure and context\n\n"
         
         "Respond ONLY in this exact JSON format:\n"
         "{\"english\":\"...\", \"persian\":\"...\"}"
@@ -163,42 +191,47 @@ def generate_sentence(english: str = "", persian: str = "", is_edit=False, tempe
 
 def gen_definitions(word: str):
     prompt = (
-        f'Give me all distinct meanings of the English word "{word}".\n'
-        'Limit to maximum 10 meanings. If the word has fewer real distinct meanings, return only those.\n'
-        'Do NOT invent, repeat, or stretch meanings. Only include genuinely different senses '
-        '(different part of speech or clearly different usage).\n\n'
-        
-        'For each meaning provide:\n'
-        '- A short, natural English example sentence (12-20 words)\n'
-        '- Its natural Persian translation\n\n'
-        
-        'Respond ONLY with valid JSON in this exact format — no extra text, no markdown, no explanation:\n'
-        '{\n'
-        '  "main_word": "<word>",\n'
-        '  "definitions": [\n'
-        '    {\n'
-        '      "english": "<natural example sentence>",\n'
-        '      "persian": "<natural Persian translation>"\n'
-        '    }\n'
-        '  ]\n'
-        '}'
-    )
-
+    f'Give me all distinct meanings of the English word "{word}".\n'
+    'Limit to maximum 10 meanings. If the word has fewer real distinct meanings, return only those.\n'
+    'Do NOT invent, repeat, or stretch meanings. Only include genuinely different senses '
+    '(different part of speech or clearly different usage).\n\n'
+    
+    'For each meaning provide:\n'
+    '- A short, clear, and unambiguous English example sentence (12-20 words)\n'
+    '- Its natural Persian translation\n\n'
+    
+    'IMPORTANT: Example sentences MUST be:\n'
+    '- Unambiguous: the meaning should be obvious from the context\n'
+    '- Natural: sound like something a native speaker would say\n'
+    '- Varied: each sentence should be different in structure and context\n\n'
+    
+    'Respond ONLY with valid JSON in this exact format — no extra text, no markdown, no explanation:\n'
+    '{\n'
+    '  "main_word": "<word>",\n'
+    '  "definitions": [\n'
+    '    {\n'
+    '      "english": "<clear and unambiguous example sentence>",\n'
+    '      "persian": "<natural Persian translation>"\n'
+    '    }\n'
+    '  ]\n'
+    '}'
+)
     payload = {
         "model": MODEL_NAME,
         "messages": [
             {
                 "role": "system",
-                "content": (
-                    "You are a precise bilingual English–Persian dictionary assistant.\n"
-                    "Your task is to return only real, distinct meanings of a word.\n"
-                    "Never duplicate meanings or create artificial ones just to reach a number.\n"
-                    "- If the word has only 2-3 real meanings, return exactly those.\n"
-                    "- If it has many (e.g. 'run', 'bank', 'light'), return up to 5 of the most useful/common ones.\n"
-                    "- All example sentences must be natural, creative, and different from each other.\n"
-                    "- Persian translations must be idiomatic and natural.\n"
-                    "Return clean JSON only. No extra text."
-                )
+        "content": (
+            "You are a precise bilingual English–Persian dictionary assistant.\n"
+            "Your task is to return only real, distinct meanings of a word.\n"
+            "Never duplicate meanings or create artificial ones just to reach a number.\n"
+            "- If the word has only 2-3 real meanings, return exactly those.\n"
+            "- If it has many (e.g. 'run', 'bank', 'light'), return up to 5 of the most useful/common ones.\n"
+            "- All example sentences must be natural, creative, unambiguous, and clearly demonstrate the meaning.\n"
+            "- Avoid sentences with ambiguous time references (like 'later', 'then') unless the context is crystal clear.\n"
+            "- Persian translations must be idiomatic, natural, and fluent.\n"
+            "Return clean JSON only. No extra text."
+        )
             },
             {"role": "user", "content": prompt},
         ],

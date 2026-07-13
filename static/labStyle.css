@@ -69,6 +69,30 @@ header {
   font-style: italic;
 }
 
+.fn-show-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  border: 1px solid var(--rule);
+  border-radius: 20px;
+  background: var(--paper-2);
+  color: var(--ink-light);
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.fn-show-nav:hover {
+  background: var(--accent-lt);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 /* ── Tab nav ─────────────────────────────────────────────── */
 .tabs {
   display: flex;

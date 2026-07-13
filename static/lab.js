@@ -25,6 +25,15 @@ function toggleBookmark(english) {
   saveBookmarks();
 }
 
+// ── Auto-sync categoryFilter → add-category selects ───────────
+function syncAddCategorySelects() {
+  const val = categoryFilter || '';
+  const addSel = document.getElementById('add-category');
+  const fnSel = document.getElementById('fn-add-category');
+  if (addSel) addSel.value = val;
+  if (fnSel) fnSel.value = val;
+}
+
 // ── Categories ─────────────────────────────────────────────────
 async function loadCategories() {
   try {
@@ -60,6 +69,7 @@ function renderCategoryBar() {
       if (e.target.classList.contains('cat-delete')) return;
       categoryFilter = badge.dataset.cat;
       renderCategoryBar();
+      syncAddCategorySelects();
       renderList(document.getElementById('search-input').value);
     });
   });
@@ -472,6 +482,7 @@ document.querySelectorAll('.cat-filter-btn').forEach(btn => {
     const cat = btn.dataset.cat;
     categoryFilter = cat === 'all' ? null : cat;
     renderCategoryBar();
+    syncAddCategorySelects();
     renderList(document.getElementById('search-input').value);
   });
 });
@@ -1402,13 +1413,20 @@ document.getElementById('popup-fa').addEventListener('keydown', e => {
     }
   });
 
-  // ── Jump to top / bottom ──────────────────────────────────
-  document.getElementById('fn-scroll-top').addEventListener('click', () => {
-    window.scrollTo({ top: 0, behavior: 'instant' });
-  });
+  // ── Scroll toggle (top ↔ bottom based on position) ────────
+  const scrollToggle = document.getElementById('fn-scroll-toggle');
+  const scrollTitle = scrollToggle.querySelector('title') || scrollToggle;
 
-  document.getElementById('fn-scroll-bottom').addEventListener('click', () => {
-    window.scrollTo({ top: document.body.scrollHeight, behavior: 'instant' });
+  function updateScrollToggle() {
+    const nearBottom = window.innerHeight + window.scrollY >= document.body.scrollHeight - 200;
+    scrollToggle.title = nearBottom ? 'Scroll to top' : 'Scroll to bottom';
+  }
+  window.addEventListener('scroll', updateScrollToggle, { passive: true });
+  updateScrollToggle();
+
+  scrollToggle.addEventListener('click', () => {
+    const nearBottom = window.innerHeight + window.scrollY >= document.body.scrollHeight - 200;
+    window.scrollTo({ top: nearBottom ? 0 : document.body.scrollHeight, behavior: 'instant' });
   });
 
   // ── Close on Escape ──────────────────────────────────────
@@ -1419,6 +1437,20 @@ document.getElementById('popup-fa').addEventListener('keydown', e => {
       searchToggle.classList.remove('active');
       addToggle.classList.remove('active');
     }
+  });
+
+  // ── Hide floating bar → show header button ────────────────
+  const showNavBtn = document.getElementById('fn-show-nav');
+
+  document.getElementById('fn-hide-nav').addEventListener('click', () => {
+    nav.style.display = 'none';
+    showNavBtn.style.display = 'inline-flex';
+  });
+
+  showNavBtn.addEventListener('click', () => {
+    nav.style.display = '';
+    showNavBtn.style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   });
 
   // ── Sync search input with main search ───────────────────
@@ -1478,6 +1510,7 @@ document.getElementById('popup-fa').addEventListener('keydown', e => {
         categoryFilter = chip.dataset.fnCat === 'all' ? null : chip.dataset.fnCat;
         syncFnCategories();
         renderCategoryBar();
+        syncAddCategorySelects();
         renderList(document.getElementById('search-input').value);
       });
     });
@@ -1497,6 +1530,7 @@ document.getElementById('popup-fa').addEventListener('keydown', e => {
       categoryFilter = cat === 'all' ? null : cat;
       syncFnCategories();
       renderCategoryBar();
+      syncAddCategorySelects();
       renderList(document.getElementById('search-input').value);
     });
   });

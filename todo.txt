@@ -1,3 +1,4 @@
-
 improves system prompt for multiple words input and style
-create extension for this site
+Reducing repetition of meaning, 3rd person overall need to improving system prompt
+add floating navbar for mobile
+fix error extension
