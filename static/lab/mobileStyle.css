@@ -1178,7 +1178,7 @@ textarea {
 /* ── Mobile Floating Bottom Nav ──────────────────────────── */
 .mobile-bottom-nav {
   position: fixed;
-  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  bottom: 20px;
   left: 50%;
   transform: translateX(-50%);
   display: flex;
@@ -1223,7 +1223,7 @@ textarea {
 .mbn-popup {
   display: none;
   position: fixed;
-  bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  bottom: 80px;
   left: 50%;
   transform: translateX(-50%);
   background: var(--ink);
@@ -1280,7 +1280,7 @@ textarea {
 /* Hide/show button */
 .mbn-show-nav {
   position: fixed;
-  bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+  bottom: 20px;
   right: 16px;
   display: inline-flex;
   align-items: center;
@@ -1304,7 +1304,7 @@ textarea {
 
 /* Add bottom padding so content isn't hidden behind the nav */
 body .shell {
-  padding-bottom: calc(100px + env(safe-area-inset-bottom, 0px));
+  padding-bottom: 100px;
 }
 
 /* ── Generating wave animation ────────────────────────────── */
