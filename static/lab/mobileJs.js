@@ -25,6 +25,13 @@ function toggleBookmark(english) {
   saveBookmarks();
 }
 
+// ── Auto-sync categoryFilter → add-category selects ───────────
+function syncAddCategorySelects() {
+  const val = categoryFilter || '';
+  const addSel = document.getElementById('add-category');
+  if (addSel) addSel.value = val;
+}
+
 // ── Categories ─────────────────────────────────────────────────
 async function loadCategories() {
   try {
@@ -60,6 +67,7 @@ function renderCategoryBar() {
       if (e.target.classList.contains('cat-delete')) return;
       categoryFilter = badge.dataset.cat;
       renderCategoryBar();
+      syncAddCategorySelects();
       renderList(document.getElementById('search-input').value);
     });
   });
@@ -365,13 +373,34 @@ function renderList(filter = '') {
       segmented = true;
       enEl.innerHTML = segmentEnglish(rawText);
       enEl.querySelectorAll('.word-segment').forEach(span => {
-        span.addEventListener('dblclick', (e) => {
-          e.stopPropagation();
-          openWordPopup(span.dataset.word);
+        let lastTap = 0;
+        let longPressTimer = null;
+        span.addEventListener('touchstart', (e) => {
+          const now = Date.now();
+          if (now - lastTap < 300) {
+            e.preventDefault();
+            e.stopPropagation();
+            clearTimeout(longPressTimer);
+            openWordPopup(span.dataset.word);
+            lastTap = 0;
+            return;
+          }
+          lastTap = now;
+          longPressTimer = setTimeout(() => {
+            e.preventDefault();
+            e.stopPropagation();
+            openWordPopup(span.dataset.word);
+          }, 500);
+        }, { passive: false });
+        span.addEventListener('touchend', () => {
+          clearTimeout(longPressTimer);
+        });
+        span.addEventListener('touchmove', () => {
+          clearTimeout(longPressTimer);
         });
       });
     }
-    row.addEventListener('mouseenter', doSegment);
+    row.addEventListener('touchstart', doSegment, { passive: true });
   });
 }
 
@@ -437,9 +466,19 @@ document.querySelectorAll('.cat-filter-btn').forEach(btn => {
     const cat = btn.dataset.cat;
     categoryFilter = cat === 'all' ? null : cat;
     renderCategoryBar();
+    syncAddCategorySelects();
     renderList(document.getElementById('search-input').value);
   });
 });
+
+// ── Auto-filter library when category is selected in Add Word section ──
+function onAddCategoryChange(e) {
+  const val = e.target.value;
+  categoryFilter = val || null;
+  renderCategoryBar();
+  renderList(document.getElementById('search-input').value);
+}
+document.getElementById('add-category').addEventListener('change', onAddCategoryChange);
 
 // Category modal
 document.getElementById('create-category-btn').addEventListener('click', () => {
@@ -1054,6 +1093,40 @@ document.addEventListener('keydown', e => {
   renderList();
 })();
 
+// ── Mobile tap-to-reveal Persian translation ───────────────────
+(function () {
+  // Flag to block parent click when a word segment was tapped
+  let segmentTapped = false;
+
+  function attachRevealListeners() {
+    document.querySelectorAll('#word-list .word-row').forEach(function (row) {
+      const enEl = row.querySelector('.word-en');
+      const faEl = row.querySelector('.word-fa');
+      if (!enEl || !faEl) return;
+      if (enEl.dataset.revealBound === '1') return;
+      enEl.dataset.revealBound = '1';
+
+      enEl.addEventListener('click', function () {
+        if (segmentTapped) {
+          segmentTapped = false;
+          return;
+        }
+        const isRevealed = faEl.classList.contains('revealed');
+        faEl.classList.toggle('revealed', !isRevealed);
+        enEl.classList.toggle('revealed-hint', !isRevealed);
+      });
+    });
+  }
+
+  const originalRenderList = renderList;
+  renderList = function () {
+    originalRenderList.apply(this, arguments);
+    setTimeout(attachRevealListeners, 0);
+  };
+
+  attachRevealListeners();
+})();
+
 // ── Multiple Meanings ───────────────────────────────────────
 document.getElementById('defs-btn').addEventListener('click', async () => {
   const word = document.getElementById('defs-en').value.trim();
@@ -1157,3 +1230,74 @@ document.getElementById('popup-generate').addEventListener('click', async () => 
 document.getElementById('popup-fa').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('popup-generate').click();
 });
+
+// ── Mobile Floating Bottom Nav ────────────────────────────────
+(function () {
+  const nav = document.getElementById('mobile-bottom-nav');
+  if (!nav) return;
+
+  // Sync header count
+  const mbnCount = document.getElementById('mbn-header-count');
+  function syncHeaderCount() {
+    const c = words.length;
+    mbnCount.textContent = `${c} word${c !== 1 ? 's' : ''}`;
+  }
+  const origUpdateHeaderCount = updateHeaderCount;
+  updateHeaderCount = function () {
+    origUpdateHeaderCount();
+    syncHeaderCount();
+  };
+  syncHeaderCount();
+
+  // Tab switching — mirrors the top tab buttons
+  nav.querySelectorAll('.mbn-tab[data-tab]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tab = btn.dataset.tab;
+      nav.querySelectorAll('.mbn-tab[data-tab]').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      const topBtn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
+      if (topBtn) topBtn.click();
+    });
+  });
+
+  // Sync top tabs → floating tabs
+  document.querySelectorAll('.tab-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      nav.querySelectorAll('.mbn-tab[data-tab]').forEach(b => {
+        b.classList.toggle('active', b.dataset.tab === btn.dataset.tab);
+      });
+    });
+  });
+
+  // Hide / Show nav
+  const showNavBtn = document.getElementById('mbn-show-nav');
+
+  document.getElementById('mbn-hide-nav').addEventListener('click', () => {
+    nav.style.display = 'none';
+    showNavBtn.style.display = 'inline-flex';
+  });
+
+  showNavBtn.addEventListener('click', () => {
+    nav.style.display = '';
+    showNavBtn.style.display = 'none';
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  });
+
+  // Scroll toggle (= button) — toggles between top and bottom
+  const scrollToggle = document.getElementById('mbn-scroll-toggle');
+  const scrollIcon = scrollToggle.querySelector('svg');
+
+  function updateScrollToggle() {
+    const nearBottom = window.innerHeight + window.scrollY >= document.body.scrollHeight - 200;
+    scrollToggle.title = nearBottom ? 'Scroll to top' : 'Scroll to bottom';
+    // Flip the = icon vertically when near bottom
+    scrollIcon.style.transform = nearBottom ? 'rotate(180deg)' : '';
+  }
+  window.addEventListener('scroll', updateScrollToggle, { passive: true });
+  updateScrollToggle();
+
+  scrollToggle.addEventListener('click', () => {
+    const nearBottom = window.innerHeight + window.scrollY >= document.body.scrollHeight - 200;
+    window.scrollTo({ top: nearBottom ? 0 : document.body.scrollHeight, behavior: 'instant' });
+  });
+})();

@@ -374,49 +374,14 @@ function renderList(filter = '') {
       if (segmented) return;
       segmented = true;
       enEl.innerHTML = segmentEnglish(rawText);
-      const isTouch = 'ontouchstart' in window;
       enEl.querySelectorAll('.word-segment').forEach(span => {
-        if (isTouch) {
-          // Mobile: double-tap or long-press to open popup
-          let lastTap = 0;
-          let longPressTimer = null;
-          span.addEventListener('touchstart', (e) => {
-            if (typeof window._segTap === 'function') window._segTap();
-            const now = Date.now();
-            if (now - lastTap < 300) {
-              // Double-tap detected
-              e.preventDefault();
-              e.stopPropagation();
-              clearTimeout(longPressTimer);
-              openWordPopup(span.dataset.word);
-              lastTap = 0;
-              return;
-            }
-            lastTap = now;
-            // Start long-press timer
-            longPressTimer = setTimeout(() => {
-              e.preventDefault();
-              e.stopPropagation();
-              openWordPopup(span.dataset.word);
-            }, 500);
-          }, { passive: false });
-          span.addEventListener('touchend', () => {
-            clearTimeout(longPressTimer);
-          });
-          span.addEventListener('touchmove', () => {
-            clearTimeout(longPressTimer);
-          });
-        } else {
-          // Desktop: double-click to open popup
-          span.addEventListener('dblclick', (e) => {
-            e.stopPropagation();
-            openWordPopup(span.dataset.word);
-          });
-        }
+        span.addEventListener('dblclick', (e) => {
+          e.stopPropagation();
+          openWordPopup(span.dataset.word);
+        });
       });
     }
     row.addEventListener('mouseenter', doSegment);
-    row.addEventListener('touchstart', doSegment, { passive: true });
   });
 }
 
@@ -1121,46 +1086,6 @@ document.addEventListener('keydown', e => {
   renderList();
 })();
 
-// ── Mobile tap-to-reveal Persian translation ───────────────────
-(function () {
-  const isMobile = window.matchMedia('(max-width: 540px)').matches;
-  if (!isMobile) return;
-
-  // Flag to block parent click when a word segment was tapped
-  let segmentTapped = false;
-
-  // Expose flag setter for word segment handlers
-  window._segTap = function () { segmentTapped = true; };
-
-  function attachRevealListeners() {
-    document.querySelectorAll('#word-list .word-row').forEach(function (row) {
-      const enEl = row.querySelector('.word-en');
-      const faEl = row.querySelector('.word-fa');
-      if (!enEl || !faEl) return;
-      if (enEl.dataset.revealBound === '1') return;
-      enEl.dataset.revealBound = '1';
-
-      enEl.addEventListener('click', function () {
-        if (segmentTapped) {
-          segmentTapped = false;
-          return;
-        }
-        const isRevealed = faEl.classList.contains('revealed');
-        faEl.classList.toggle('revealed', !isRevealed);
-        enEl.classList.toggle('revealed-hint', !isRevealed);
-      });
-    });
-  }
-
-  const originalRenderList = renderList;
-  renderList = function () {
-    originalRenderList.apply(this, arguments);
-    setTimeout(attachRevealListeners, 0);
-  };
-
-  attachRevealListeners();
-})();
-
 // ── Multiple Meanings ───────────────────────────────────────
 document.getElementById('defs-btn').addEventListener('click', async () => {
   const word = document.getElementById('defs-en').value.trim();
@@ -1265,11 +1190,8 @@ document.getElementById('popup-fa').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('popup-generate').click();
 });
 
-// ── Floating Bottom Nav Bar (Web/PC only) ─────────────────────
+// ── Floating Bottom Nav Bar ────────────────────────────────────
 (function () {
-  const isDesktop = window.matchMedia('(min-width: 541px)').matches;
-  if (!isDesktop) return;
-
   document.body.classList.add('has-floating-nav');
 
   const nav = document.getElementById('floating-nav');
