@@ -1230,8 +1230,6 @@ document.getElementById('popup-generate').addEventListener('click', async () => 
 document.getElementById('popup-fa').addEventListener('keydown', e => {
   if (e.key === 'Enter') document.getElementById('popup-generate').click();
 });
-<<<<<<< HEAD
-=======
 
 // ── Mobile Floating Bottom Nav ────────────────────────────────
 (function () {
@@ -1292,7 +1290,6 @@ document.getElementById('popup-fa').addEventListener('keydown', e => {
   function updateScrollToggle() {
     const nearBottom = window.innerHeight + window.scrollY >= document.body.scrollHeight - 200;
     scrollToggle.title = nearBottom ? 'Scroll to top' : 'Scroll to bottom';
-    // Flip the = icon vertically when near bottom
     scrollIcon.style.transform = nearBottom ? 'rotate(180deg)' : '';
   }
   window.addEventListener('scroll', updateScrollToggle, { passive: true });
@@ -1303,4 +1300,3 @@ document.getElementById('popup-fa').addEventListener('keydown', e => {
     window.scrollTo({ top: nearBottom ? 0 : document.body.scrollHeight, behavior: 'instant' });
   });
 })();
->>>>>>> mobilesupport

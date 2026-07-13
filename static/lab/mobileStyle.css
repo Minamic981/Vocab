@@ -69,8 +69,6 @@ header {
   font-style: italic;
 }
 
-<<<<<<< HEAD
-=======
 .mbn-show-nav {
   position: fixed;
   bottom: 16px;
@@ -95,7 +93,6 @@ header {
   color: #fff;
 }
 
->>>>>>> mobilesupport
 /* ── Tab nav ─────────────────────────────────────────────── */
 .tabs {
   display: flex;
@@ -1202,8 +1199,6 @@ textarea {
   }
 }
 
-<<<<<<< HEAD
-=======
 /* ── Mobile Floating Bottom Nav ──────────────────────────── */
 .mobile-bottom-nav {
   position: fixed;
@@ -1322,7 +1317,6 @@ body .shell {
   padding-bottom: 100px;
 }
 
->>>>>>> mobilesupport
 /* ── Generating wave animation ────────────────────────────── */
 .wave-generating {
   display: inline-flex;
