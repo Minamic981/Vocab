@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, jsonify, session
+from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 import os
 import sys
@@ -289,12 +289,15 @@ def check_kv_connection() -> bool:
 
 @app.route('/')
 def index():
-    print(request.headers.get('User-Agent'))
     return render_template('index.html')
 
 @app.route('/lab')
 def lab():
     return render_template('lab.html')
+
+@app.route('/raw')
+def raw():
+    return jsonify({"user-agent":request.headers.get('User-Agent')})
 
 @app.route('/api/words', methods=['GET'])
 def get_words():
