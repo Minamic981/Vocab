@@ -69,30 +69,6 @@ header {
   font-style: italic;
 }
 
-.mbn-show-nav {
-  position: fixed;
-  bottom: 16px;
-  right: 16px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 44px;
-  height: 44px;
-  border: none;
-  border-radius: 12px;
-  background: var(--ink);
-  color: rgba(255, 255, 255, 0.8);
-  cursor: pointer;
-  z-index: 90;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
-  transition: all 0.15s;
-}
-
-.mbn-show-nav:hover {
-  background: #333;
-  color: #fff;
-}
-
 /* ── Tab nav ─────────────────────────────────────────────── */
 .tabs {
   display: flex;
@@ -1207,108 +1183,122 @@ textarea {
   transform: translateX(-50%);
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   background: var(--ink);
-  padding: 8px 16px;
+  padding: 8px 12px;
   border-radius: 14px;
   z-index: 90;
-  width: calc(100% - 32px);
-  max-width: 500px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35), 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
 }
 
-/* Brand */
-.mbn-brand {
+.mbn-btn {
   display: flex;
-  flex-direction: column;
-  flex-shrink: 0;
-}
-
-.mbn-brand-text {
-  font-family: "Lora", serif;
-  font-size: 13px;
-  font-weight: 600;
-  color: #fff;
-  white-space: nowrap;
-  line-height: 1.2;
-}
-
-.mbn-brand-text span {
-  color: #6ee7b7;
-}
-
-.mbn-word-count {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.4);
-  font-style: italic;
-}
-
-/* Tabs */
-.mbn-tabs {
-  display: flex;
-  gap: 2px;
-  flex: 1;
-  justify-content: center;
-}
-
-.mbn-tab {
+  align-items: center;
+  gap: 5px;
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: none;
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.7);
   font-family: "Inter", sans-serif;
   font-size: 12px;
   font-weight: 500;
-  padding: 6px 10px;
-  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+
+.mbn-btn:hover,
+.mbn-btn:active {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+}
+
+.mbn-btn.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+/* Popups */
+.mbn-popup {
+  display: none;
+  position: fixed;
+  bottom: 76px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--ink);
+  border-radius: 12px;
+  padding: 8px;
+  z-index: 91;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
+  flex-wrap: wrap;
+  gap: 6px;
+  max-width: calc(100% - 32px);
+  justify-content: center;
+}
+
+.mbn-popup.open {
+  display: flex;
+}
+
+.mbn-popup-tab,
+.mbn-cat-chip {
+  padding: 8px 14px;
+  background: rgba(255, 255, 255, 0.08);
   border: none;
   border-radius: 8px;
-  cursor: pointer;
-  color: rgba(255, 255, 255, 0.55);
-  transition: color 0.15s, background 0.15s;
-  white-space: nowrap;
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-.mbn-tab-icon {
+  color: rgba(255, 255, 255, 0.6);
+  font-family: "Inter", sans-serif;
   font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
 }
 
-.mbn-tab:hover,
-.mbn-tab:active {
-  color: rgba(255, 255, 255, 0.85);
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.mbn-tab.active {
+.mbn-popup-tab:hover,
+.mbn-popup-tab:active,
+.mbn-cat-chip:hover,
+.mbn-cat-chip:active {
+  background: rgba(255, 255, 255, 0.15);
   color: #fff;
-  background: var(--accent);
 }
 
-/* Action buttons */
-.mbn-actions {
+.mbn-popup-tab.active,
+.mbn-cat-chip.active {
+  background: var(--accent);
+  color: #fff;
+}
+
+#mbn-cat-badges {
   display: flex;
   gap: 6px;
-  flex-shrink: 0;
-  align-items: center;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
-.mbn-action-btn {
+/* Hide/show button */
+.mbn-show-nav {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 44px;
+  height: 44px;
   border: none;
-  background: rgba(255, 255, 255, 0.1);
-  color: rgba(255, 255, 255, 0.7);
+  border-radius: 12px;
+  background: var(--ink);
+  color: rgba(255, 255, 255, 0.8);
   cursor: pointer;
-  transition: background 0.15s, color 0.15s;
-  flex-shrink: 0;
+  z-index: 90;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  transition: all 0.15s;
 }
 
-.mbn-action-btn:hover,
-.mbn-action-btn:active {
-  background: rgba(255, 255, 255, 0.18);
+.mbn-show-nav:hover {
+  background: #333;
   color: #fff;
 }
 

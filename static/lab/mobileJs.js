@@ -1236,44 +1236,99 @@ document.getElementById('popup-fa').addEventListener('keydown', e => {
   const nav = document.getElementById('mobile-bottom-nav');
   if (!nav) return;
 
-  // Sync header count
-  const mbnCount = document.getElementById('mbn-header-count');
-  function syncHeaderCount() {
-    const c = words.length;
-    mbnCount.textContent = `${c} word${c !== 1 ? 's' : ''}`;
-  }
-  const origUpdateHeaderCount = updateHeaderCount;
-  updateHeaderCount = function () {
-    origUpdateHeaderCount();
-    syncHeaderCount();
-  };
-  syncHeaderCount();
+  const navPopup = document.getElementById('mbn-nav-popup');
+  const catPopup = document.getElementById('mbn-cat-popup');
 
-  // Tab switching — mirrors the top tab buttons
-  nav.querySelectorAll('.mbn-tab[data-tab]').forEach(btn => {
+  // Close popups when clicking outside
+  document.addEventListener('click', (e) => {
+    if (!nav.contains(e.target) && !navPopup.contains(e.target) && !catPopup.contains(e.target)) {
+      navPopup.classList.remove('open');
+      catPopup.classList.remove('open');
+      document.getElementById('mbn-nav-toggle').classList.remove('active');
+      document.getElementById('mbn-cat-toggle').classList.remove('active');
+    }
+  });
+
+  // Nav toggle — show/hide nav popup
+  document.getElementById('mbn-nav-toggle').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = navPopup.classList.toggle('open');
+    catPopup.classList.remove('open');
+    document.getElementById('mbn-nav-toggle').classList.toggle('active', isOpen);
+    document.getElementById('mbn-cat-toggle').classList.remove('active');
+  });
+
+  // Nav popup tab switching
+  navPopup.querySelectorAll('.mbn-popup-tab').forEach(btn => {
     btn.addEventListener('click', () => {
-      const tab = btn.dataset.tab;
-      nav.querySelectorAll('.mbn-tab[data-tab]').forEach(b => b.classList.remove('active'));
+      navPopup.querySelectorAll('.mbn-popup-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
-      const topBtn = document.querySelector(`.tab-btn[data-tab="${tab}"]`);
+      const topBtn = document.querySelector(`.tab-btn[data-tab="${btn.dataset.tab}"]`);
       if (topBtn) topBtn.click();
+      navPopup.classList.remove('open');
+      document.getElementById('mbn-nav-toggle').classList.remove('active');
     });
   });
 
-  // Sync top tabs → floating tabs
+  // Sync top tabs → nav popup
   document.querySelectorAll('.tab-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      nav.querySelectorAll('.mbn-tab[data-tab]').forEach(b => {
+      navPopup.querySelectorAll('.mbn-popup-tab').forEach(b => {
         b.classList.toggle('active', b.dataset.tab === btn.dataset.tab);
       });
     });
   });
+
+  // Category toggle — show/hide category popup
+  document.getElementById('mbn-cat-toggle').addEventListener('click', (e) => {
+    e.stopPropagation();
+    const isOpen = catPopup.classList.toggle('open');
+    navPopup.classList.remove('open');
+    document.getElementById('mbn-cat-toggle').classList.toggle('active', isOpen);
+    document.getElementById('mbn-nav-toggle').classList.remove('active');
+  });
+
+  // Category popup chip switching
+  function setupCatChips() {
+    catPopup.querySelectorAll('.mbn-cat-chip').forEach(chip => {
+      chip.addEventListener('click', () => {
+        catPopup.querySelectorAll('.mbn-cat-chip').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        categoryFilter = chip.dataset.cat === 'all' ? null : chip.dataset.cat || '';
+        renderCategoryBar();
+        renderList(document.getElementById('search-input').value);
+        catPopup.classList.remove('open');
+        document.getElementById('mbn-cat-toggle').classList.remove('active');
+      });
+    });
+  }
+  setupCatChips();
+
+  // Sync categories into cat popup
+  const origRenderCategoryBar = renderCategoryBar;
+  renderCategoryBar = function () {
+    origRenderCategoryBar();
+    const badgesContainer = document.getElementById('mbn-cat-badges');
+    if (badgesContainer) {
+      badgesContainer.innerHTML = categories.map(c => `
+        <button class="mbn-cat-chip ${categoryFilter === c.name ? 'active' : ''}" data-cat="${escHtml(c.name)}">${escHtml(c.name)}</button>
+      `).join('');
+      setupCatChips();
+    }
+    // Sync All / No Category chips
+    catPopup.querySelectorAll('.mbn-cat-chip').forEach(chip => {
+      if (chip.dataset.cat === 'all') chip.classList.toggle('active', categoryFilter === null);
+      if (chip.dataset.cat === '') chip.classList.toggle('active', categoryFilter === '');
+    });
+  };
 
   // Hide / Show nav
   const showNavBtn = document.getElementById('mbn-show-nav');
 
   document.getElementById('mbn-hide-nav').addEventListener('click', () => {
     nav.style.display = 'none';
+    navPopup.classList.remove('open');
+    catPopup.classList.remove('open');
     showNavBtn.style.display = 'inline-flex';
   });
 
@@ -1283,7 +1338,7 @@ document.getElementById('popup-fa').addEventListener('keydown', e => {
     window.scrollTo({ top: 0, behavior: 'instant' });
   });
 
-  // Scroll toggle (= button) — toggles between top and bottom
+  // Scroll toggle (= button)
   const scrollToggle = document.getElementById('mbn-scroll-toggle');
   const scrollIcon = scrollToggle.querySelector('svg');
 
