@@ -1,3 +1,4 @@
 improves system prompt for multiple words input and style
 Reducing repetition of meaning, 3rd person overall need to improving system prompt
 more option for export button
+optimizing code and reduce loading time

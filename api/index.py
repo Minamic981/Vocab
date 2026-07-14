@@ -7,6 +7,7 @@ import time
 import requests
 from dotenv import load_dotenv
 from user_agents import parse
+from flask_compress import Compress
 sys.path.insert(0, os.path.dirname(__file__))
 from ai import generate_sentence, gen_definitions
 app = Flask(
@@ -15,7 +16,18 @@ app = Flask(
     static_folder=os.path.join(os.path.dirname(__file__), '..', 'static')
 )
 CORS(app)
-
+app.config["COMPRESS_MIMETYPES"] = [
+    "text/html",
+    "text/css",
+    "text/plain",
+    "text/xml",
+    "application/json",
+    "application/javascript",
+    "application/xml",
+    "application/rss+xml",
+    "application/atom+xml",
+]
+compress = Compress(app)
 load_dotenv()
 
 # ── Cloudflare KV Configuration ─────────────────────────────────────────────
