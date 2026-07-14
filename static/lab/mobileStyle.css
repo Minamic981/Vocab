@@ -628,7 +628,7 @@ textarea {
 .category-badge {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 0;
   padding: 4px 10px;
   background: var(--paper-2);
   border: 1px solid var(--rule);
@@ -638,6 +638,7 @@ textarea {
   cursor: pointer;
   transition: all 0.15s;
   user-select: none;
+  overflow: hidden;
 }
 
 .category-badge:hover {
@@ -656,12 +657,21 @@ textarea {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  transition: margin 0.15s;
+  margin-right: 0;
+}
+
+.category-badge:hover .cat-name {
+  margin-right: 4px;
 }
 
 .category-badge .cat-delete {
-  display: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 14px;
   height: 14px;
+  min-width: 14px;
   padding: 0;
   background: none;
   border: none;
@@ -670,13 +680,14 @@ textarea {
   line-height: 1;
   cursor: pointer;
   color: #e74c3c;
-  opacity: 0.7;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s;
 }
 
 .category-badge:hover .cat-delete {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  opacity: 0.7;
+  pointer-events: auto;
 }
 
 .category-badge .cat-delete:hover {
