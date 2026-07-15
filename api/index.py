@@ -312,8 +312,8 @@ def lab():
     user_agent = request.headers.get('User-Agent')
     parse_user_agent = parse(user_agent)
     if parse_user_agent.is_mobile:
-        return render_template('mobileLab.html')
-    return render_template('lab.html')
+        return render_template('lab/mobileLab.html')
+    return render_template('lab/lab.html')
 
 @app.route('/api/words', methods=['GET'])
 def get_words():

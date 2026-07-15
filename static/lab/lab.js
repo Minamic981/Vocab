@@ -999,30 +999,6 @@ document.getElementById('bookmark-btn').addEventListener('click', (e) => {
   toggleBookmark(w.english);
   document.getElementById('bookmark-btn').classList.toggle('active', isBookmarked(w.english));
 
-  // Remove word from queue if it no longer matches the filter
-  const matches = practiceFilter === 'all'
-    || (practiceFilter === 'bookmarked' && isBookmarked(w.english))
-    || (practiceFilter === 'unbookmarked' && !isBookmarked(w.english));
-
-  if (!matches) {
-    practiceQueue.splice(idx, 1);
-    if (!practiceQueue.length) {
-      // Queue empty — show message and auto-switch to All
-      document.getElementById('card-en').textContent = practiceFilter === 'bookmarked'
-        ? 'No bookmarked words.' : 'All words are bookmarked.';
-      document.getElementById('card-fa').textContent = '';
-      document.getElementById('flip-inner').classList.remove('flipped');
-      document.getElementById('practice-stat').textContent = '';
-      document.getElementById('progress-fill').style.width = '0%';
-      showToast('No words match — switching to All', 'warn');
-      practiceFilter = 'all';
-      applyPracticeFilter();
-      setTimeout(() => { shuffleQueue(); showCard(); }, 800);
-      return;
-    }
-    // Clamp index and show next card
-    practiceIndex = idx % practiceQueue.length;
-  }
   showCard();
 });
 
