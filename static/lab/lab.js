@@ -25,13 +25,15 @@ function toggleBookmark(english) {
   saveBookmarks();
 }
 
-// ── Auto-sync categoryFilter → add-category selects ───────────
+// ── Auto-sync categoryFilter → add-category & popup-category selects ───
 function syncAddCategorySelects() {
   const val = categoryFilter || '';
   const addSel = document.getElementById('add-category');
   const fnSel = document.getElementById('fn-add-category');
+  const popupSel = document.getElementById('popup-category');
   if (addSel) addSel.value = val;
   if (fnSel) fnSel.value = val;
+  if (popupSel) popupSel.value = val;
 }
 
 // ── Categories ─────────────────────────────────────────────────
@@ -110,6 +112,15 @@ function updateCategorySelects() {
     addSelect.innerHTML = '<option value="">No Category</option>' +
       categories.map(c => `<option value="${escHtml(c.name)}">${escHtml(c.name)}</option>`).join('');
     addSelect.value = currentVal;
+  }
+
+  // Update word popup category dropdown
+  const popupSelect = document.getElementById('popup-category');
+  if (popupSelect) {
+    const currentVal = popupSelect.value;
+    popupSelect.innerHTML = '<option value="">No Category</option>' +
+      categories.map(c => `<option value="${escHtml(c.name)}">${escHtml(c.name)}</option>`).join('');
+    popupSelect.value = currentVal;
   }
 }
 
@@ -1113,6 +1124,9 @@ function openWordPopup(word) {
   document.getElementById('popup-en').value = word;
   document.getElementById('popup-fa').value = '';
   document.getElementById('popup-alert').className = 'alert';
+  // Default category to the currently active category filter
+  const popupCat = document.getElementById('popup-category');
+  if (popupCat) popupCat.value = categoryFilter || '';
   document.getElementById('word-popup').classList.add('open');
   document.getElementById('popup-fa').focus();
 }
@@ -1138,7 +1152,7 @@ document.getElementById('popup-generate').addEventListener('click', async () => 
     const res = await fetchWithRetry('/api/words', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ english: en, persian: fa, aigen: true })
+      body: JSON.stringify({ english: en, persian: fa, aigen: true, category: document.getElementById('popup-category').value || null })
     });
     const data = await res.json();
 
