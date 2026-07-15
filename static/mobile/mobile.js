@@ -1059,6 +1059,22 @@ function flipCard() {
   document.getElementById('flip-inner').classList.toggle('flipped');
 }
 
+// Double-tap to flip on mobile (dblclick doesn't fire on touch devices)
+{
+  let lastTap = 0;
+  const flipWrap = document.getElementById('flip-wrap');
+  flipWrap.addEventListener('touchend', e => {
+    const now = Date.now();
+    if (now - lastTap < 300) {
+      e.preventDefault();
+      flipCard();
+      lastTap = 0;
+    } else {
+      lastTap = now;
+    }
+  });
+}
+
 document.getElementById('next-btn').addEventListener('click', () => {
   practiceIndex = (practiceIndex + 1) % practiceQueue.length;
   showCard();

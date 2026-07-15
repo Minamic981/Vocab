@@ -7,3 +7,16 @@ user can move category on practice section
 since the bookmark store in localstorage add new button to save bookmark persistant in kv storage (we are talk about it)
 add category filter in practice button
 delete button has little problem when you in queue delete
+in popup box wordsegment user can set a category by default current category
+add sort in practice library filter
+add shortcut category button in floating
+prevent to next card when bookmarked in unbookmark filter 
+Future:
+show count read train sentence
+add google translate popup for segment and select mouse event
+special row box for tachibana san
+add bookmark/unbookmark button in library section and even multiple
+and ctrl + (shift) in multiple support 
+maybe use a database or better system store data
+add explainer for grammer
+add word segment for flip-card practice
