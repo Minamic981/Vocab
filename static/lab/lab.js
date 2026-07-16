@@ -44,45 +44,22 @@ async function loadCategories() {
     categories = data.categories || [];
     renderCategoryBar();
     updateCategorySelects();
+    updatePracticeCatFilterSelect();
+    updatePracticeMoveCatSelect();
   } catch (e) {
     console.error('Failed to load categories:', e);
   }
 }
 
 function renderCategoryBar() {
-  const container = document.getElementById('category-badges');
-  if (!container) return;
-  container.innerHTML = categories.map(c => `
-    <div class="category-badge ${categoryFilter === c.name ? 'active' : ''}" data-cat="${escHtml(c.name)}" title="${escHtml(c.description || '')}">
-      <span class="cat-name">${escHtml(c.name)}</span>
-      <button class="cat-delete" data-cat="${escHtml(c.name)}" title="Delete category">&times;</button>
-    </div>
-  `).join('');
+  const select = document.getElementById('category-filter-select');
+  if (!select) return;
 
-  // Update filter button states — use individual checks to avoid double-toggle
-  const allBtn = document.querySelector('.cat-filter-btn[data-cat="all"]');
-  const noneBtn = document.querySelector('.cat-filter-btn[data-cat=""]');
-  if (allBtn) allBtn.classList.toggle('active', categoryFilter === null);
-  if (noneBtn) noneBtn.classList.toggle('active', categoryFilter === '');
-
-  // Add click handlers to badges
-  container.querySelectorAll('.category-badge').forEach(badge => {
-    badge.addEventListener('click', (e) => {
-      if (e.target.classList.contains('cat-delete')) return;
-      categoryFilter = badge.dataset.cat;
-      renderCategoryBar();
-      syncAddCategorySelects();
-      renderList(document.getElementById('search-input').value);
-    });
-  });
-
-  // Add delete handlers
-  container.querySelectorAll('.cat-delete').forEach(btn => {
-    btn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      deleteCategory(btn.dataset.cat);
-    });
-  });
+  const prev = categoryFilter === null ? 'all' : categoryFilter;
+  select.innerHTML = '<option value="all">All</option>' +
+    '<option value="">No Category</option>' +
+    categories.map(c => `<option value="${escHtml(c.name)}">${escHtml(c.name)}</option>`).join('');
+  select.value = prev;
 }
 
 function updateCategorySelects() {
@@ -326,13 +303,23 @@ function renderList(filter = '') {
       ? `<input type="checkbox" class="word-checkbox" data-index="${realIndex}" ${selectedIndices.has(realIndex) ? 'checked' : ''} />`
       : '';
     const selectedClass = selectMode && selectedIndices.has(realIndex) ? ' selected' : '';
+    const isTribute = w.english.toLowerCase().includes('tachiba san');
+    const tributeClass = isTribute ? ' word-row-tribute' : '';
+    let enHtml = escHtml(w.english);
+    let tributeAuthorHtml = '';
+    if (isTribute) {
+      const idx = w.english.toLowerCase().lastIndexOf('tachiba san');
+      enHtml = escHtml(w.english.slice(0, idx));
+      tributeAuthorHtml = '<span class="tribute-author">Tachiba San</span>';
+    }
     return `
       <div class="word-row-wrap">
-        <div class="word-row${selectedClass}" data-index="${realIndex}">
+        <div class="word-row${selectedClass}${tributeClass}" data-index="${realIndex}">
           ${checkboxHtml}
           <span class="word-index">${realIndex + 1}</span>
           ${altCheckHtml}
-          <span class="word-en">${escHtml(w.english)}</span>
+          <span class="word-en">${enHtml}</span>
+          ${tributeAuthorHtml}
           <span class="word-fa">${w.isGenerating ? renderGeneratingWave() : escHtml(w.persian)}</span>
           <div class="word-actions">
             <button class="btn btn-speak-row btn-sm" data-word="${escHtml(w.english)}" title="Listen">
@@ -451,16 +438,12 @@ document.getElementById('bookmark-filter-btn').addEventListener('click', () => {
   renderList(document.getElementById('search-input').value);
 });
 
-// ── Category filter bar ─────────────────────────────────────────
-document.querySelectorAll('.cat-filter-btn').forEach(btn => {
-  btn.addEventListener('click', (e) => {
-    e.stopPropagation();
-    const cat = btn.dataset.cat;
-    categoryFilter = cat === 'all' ? null : cat;
-    renderCategoryBar();
-    syncAddCategorySelects();
-    renderList(document.getElementById('search-input').value);
-  });
+// ── Category filter dropdown ───────────────────────────────────
+document.getElementById('category-filter-select').addEventListener('change', (e) => {
+  const val = e.target.value;
+  categoryFilter = val === 'all' ? null : val || null;
+  syncAddCategorySelects();
+  renderList(document.getElementById('search-input').value);
 });
 
 // ── Auto-filter library when category is selected in Add Word section ──
@@ -936,6 +919,7 @@ if (window.speechSynthesis.onvoiceschanged !== undefined) {
 
 // ── Practice mode ──────────────────────────────────────────────
 let practiceFilter = 'all'; // 'all' | 'bookmarked' | 'unbookmarked'
+let practiceCatFilter = null; // null = all categories, '' = no category, 'name' = specific category
 const PRACTICE_FILTERS = [
   { key: 'all', label: '🔖 All', title: 'Show all words' },
   { key: 'bookmarked', label: '🔖 Bookmarked', title: 'Show only bookmarked' },
@@ -959,14 +943,40 @@ function cyclePracticeFilter() {
 
 document.getElementById('practice-filter-btn').addEventListener('click', cyclePracticeFilter);
 
+// ── Practice category filter dropdown ──────────────────────────
+function updatePracticeCatFilterSelect() {
+  const sel = document.getElementById('practice-cat-filter-select');
+  if (!sel) return;
+  sel.innerHTML = '<option value="all">📁 All</option>' +
+    '<option value="">📁 No Category</option>' +
+    categories.map(c => `<option value="${escHtml(c.name)}">📁 ${escHtml(c.name)}</option>`).join('');
+  sel.value = practiceCatFilter === null ? 'all' : practiceCatFilter;
+}
+
+document.getElementById('practice-cat-filter-select').addEventListener('change', (e) => {
+  const val = e.target.value;
+  practiceCatFilter = val === 'all' ? null : val || null;
+  shuffleQueue();
+  showCard();
+});
+
 function getFilteredWords() {
-  if (practiceFilter === 'bookmarked') return words.filter(w => isBookmarked(w.english));
-  if (practiceFilter === 'unbookmarked') return words.filter(w => !isBookmarked(w.english));
-  return [...words];
+  let result = [...words];
+  if (practiceFilter === 'bookmarked') result = result.filter(w => isBookmarked(w.english));
+  else if (practiceFilter === 'unbookmarked') result = result.filter(w => !isBookmarked(w.english));
+  if (practiceCatFilter !== null) {
+    if (practiceCatFilter === '') {
+      result = result.filter(w => !w.category);
+    } else {
+      result = result.filter(w => w.category === practiceCatFilter);
+    }
+  }
+  return result;
 }
 
 function initPractice() {
   applyPracticeFilter();
+  updatePracticeCatFilterSelect();
   if (!words.length) {
     document.getElementById('practice-card-wrap').style.display = 'none';
     document.getElementById('practice-empty').style.display = 'block';
@@ -1000,6 +1010,28 @@ document.getElementById('shuffle-btn').addEventListener('click', () => {
 document.getElementById('speak-btn').addEventListener('click', (e) => {
   e.stopPropagation();
   speakCurrentWord();
+});
+
+// ── Practice move category ────────────────────────────────────
+function updatePracticeMoveCatSelect() {
+  const sel = document.getElementById('practice-move-cat');
+  if (!sel) return;
+  sel.innerHTML = '<option value="">📁 Move</option>' +
+    '<option value="__none__">No Category</option>' +
+    categories.map(c => `<option value="${escHtml(c.name)}">${escHtml(c.name)}</option>`).join('');
+  sel.value = '';
+}
+
+document.getElementById('practice-move-cat').addEventListener('change', async (e) => {
+  if (!practiceQueue.length || e.target.value === '') return;
+  const category = e.target.value === '__none__' ? null : e.target.value;
+  const idx = practiceIndex % practiceQueue.length;
+  const w = practiceQueue[idx];
+  const wordIdx = words.findIndex(word => word.english === w.english);
+  if (wordIdx === -1) return;
+  await moveWordsToCategory([wordIdx], category);
+  showCard();
+  e.target.value = '';
 });
 
 document.getElementById('bookmark-btn').addEventListener('click', (e) => {
