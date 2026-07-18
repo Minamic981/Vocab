@@ -1,0 +1,903 @@
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import Library from './nav/Library.jsx';
+import BatchImport from './nav/BatchImport.jsx';
+import Practice from './nav/Practice.jsx';
+import MultipleMeanings from './nav/MultipleMeanings.jsx';
+
+// ── Helpers ────────────────────────────────────────────────
+const RETRY_MAX = 3;
+const RETRY_DELAY = 3000;
+
+async function fetchWithRetry(url, options = {}, retries = RETRY_MAX) {
+  for (let i = 1; i <= retries; i++) {
+    try {
+      return await fetch(url, options);
+    } catch (err) {
+      if (i === retries) throw err;
+      await new Promise(r => setTimeout(r, RETRY_DELAY));
+    }
+  }
+}
+
+let toastId = 0;
+
+// ── App ────────────────────────────────────────────────────
+export default function App() {
+  // ── Core state ──
+  const [words, setWords] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // ── Navigation ──
+  const [activeTab, setActiveTab] = useState('library');
+
+  // ── Filters ──
+  const [searchQuery, setSearchQuery] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState(null);
+  const [bookmarkFilter, setBookmarkFilter] = useState('all');
+
+  // ── Select mode ──
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIndices, setSelectedIndices] = useState(new Set());
+
+  // ── Bookmarks ──
+  const [bookmarkedWords, setBookmarkedWords] = useState(() => {
+    try { return JSON.parse(localStorage.getItem('bookmarkedWords') || '[]'); }
+    catch { return []; }
+  });
+
+  // ── Add form ──
+  const [addEn, setAddEn] = useState('');
+  const [addFa, setAddFa] = useState('');
+  const [addAiGen, setAddAiGen] = useState(false);
+  const [addAlts, setAddAlts] = useState('');
+  const [addCategory, setAddCategory] = useState('');
+  const [addStyleEnabled, setAddStyleEnabled] = useState(false);
+  const [addStyle, setAddStyle] = useState('');
+  const [addCustomStyle, setAddCustomStyle] = useState('');
+  const [addAdvancedOpen, setAddAdvancedOpen] = useState(false);
+  const [addAlert, setAddAlert] = useState({ msg: '', type: 'error' });
+
+  // ── Edit modal ──
+  const [editOpen, setEditOpen] = useState(false);
+  const [editIndex, setEditIndex] = useState(null);
+  const [editEn, setEditEn] = useState('');
+  const [editFa, setEditFa] = useState('');
+  const [editAlts, setEditAlts] = useState('');
+  const [editCategory, setEditCategory] = useState('');
+  const [editAlert, setEditAlert] = useState({ msg: '', type: 'error' });
+  const [editAIGen, setEditAIGen] = useState(false);
+
+  // ── Word popup ──
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [popupWord, setPopupWord] = useState('');
+  const [popupFa, setPopupFa] = useState('');
+  const [popupCategory, setPopupCategory] = useState('');
+  const [popupAlert, setPopupAlert] = useState({ msg: '', type: 'error' });
+  const [popupLoading, setPopupLoading] = useState(false);
+
+  // ── Category modal ──
+  const [catModalOpen, setCatModalOpen] = useState(false);
+  const [catName, setCatName] = useState('');
+  const [catDesc, setCatDesc] = useState('');
+  const [catAlert, setCatAlert] = useState({ msg: '', type: 'error' });
+
+  // ── Toasts ──
+  const [toasts, setToasts] = useState([]);
+
+  // ── Floating nav ──
+  const [fnNavVisible, setFnNavVisible] = useState(true);
+  const [fnSearchOpen, setFnSearchOpen] = useState(false);
+  const [fnAddOpen, setFnAddOpen] = useState(false);
+  const [fnCatOpen, setFnCatOpen] = useState(false);
+  const [scrollToTop, setScrollToTop] = useState(false);
+  const fnSearchRef = useRef(null);
+  const fnAddEnRef = useRef(null);
+
+  // ── Floating add form ──
+  const [fnAddEn, setFnAddEn] = useState('');
+  const [fnAddFa, setFnAddFa] = useState('');
+  const [fnAddCategory, setFnAddCategory] = useState('');
+  const [fnAddAiGen, setFnAddAiGen] = useState(false);
+  const [fnAddAlts, setFnAddAlts] = useState('');
+  const [fnAddStyleEnabled, setFnAddStyleEnabled] = useState(false);
+  const [fnAddStyle, setFnAddStyle] = useState('');
+  const [fnAddCustomStyle, setFnAddCustomStyle] = useState('');
+  const [fnAddAdvancedOpen, setFnAddAdvancedOpen] = useState(false);
+  const [fnAddAlert, setFnAddAlert] = useState({ msg: '', type: 'error' });
+
+  // ── Refs ──
+  const addEnRef = useRef(null);
+  const editEnRef = useRef(null);
+  const popupFaRef = useRef(null);
+
+  // ── Toast helper ──
+  const addToast = useCallback((msg, type = 'info') => {
+    const id = ++toastId;
+    setToasts(prev => [...prev, { id, msg, type }]);
+    setTimeout(() => setToasts(prev => prev.filter(t => t.id !== id)), 3500);
+  }, []);
+
+  // ── Alert helper ──
+  const showAlert = useCallback((setter, msg, type = 'error') => {
+    setter({ msg, type });
+    setTimeout(() => setter({ msg: '', type: 'error' }), 80000);
+  }, []);
+
+  // ── Save bookmarks ──
+  useEffect(() => {
+    localStorage.setItem('bookmarkedWords', JSON.stringify(bookmarkedWords));
+  }, [bookmarkedWords]);
+
+  const isBookmarked = useCallback((english) => bookmarkedWords.includes(english), [bookmarkedWords]);
+
+  const toggleBookmark = useCallback((english) => {
+    setBookmarkedWords(prev => {
+      const i = prev.indexOf(english);
+      return i === -1 ? [...prev, english] : prev.filter((_, j) => j !== i);
+    });
+  }, []);
+
+  // ── Derived: filtered words ──
+  const filteredWords = useMemo(() => {
+    let result = words.map((w, i) => ({ word: w, idx: i }));
+
+    if (searchQuery) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(({ word: w }) =>
+        w.english.toLowerCase().includes(q) || w.persian.includes(q) ||
+        (w.category && w.category.toLowerCase().includes(q))
+      );
+    }
+
+    if (bookmarkFilter === 'bookmarked') {
+      result = result.filter(({ word: w }) => bookmarkedWords.includes(w.english));
+    } else if (bookmarkFilter === 'unbookmarked') {
+      result = result.filter(({ word: w }) => !bookmarkedWords.includes(w.english));
+    }
+
+    if (categoryFilter !== null) {
+      if (categoryFilter === '') {
+        result = result.filter(({ word: w }) => !w.category);
+      } else {
+        result = result.filter(({ word: w }) => w.category === categoryFilter);
+      }
+    }
+
+    return result;
+  }, [words, searchQuery, bookmarkFilter, categoryFilter, bookmarkedWords]);
+
+  // ── Init: fetch data ──
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/words');
+        const data = await res.json();
+        setWords((data.words ?? data).map(w =>
+          Array.isArray(w) ? { english: w[0], persian: w[1], alternatives: [], category: null }
+            : { english: w.english, persian: w.persian, alternatives: w.alternatives || [], category: w.category || null }
+        ));
+      } catch (e) { console.error('Failed to load words:', e); }
+      try {
+        const res = await fetch('/api/categories');
+        const data = await res.json();
+        setCategories(data.categories || []);
+      } catch (e) { console.error('Failed to load categories:', e); }
+      setLoading(false);
+    })();
+  }, []);
+
+  // ── Keyboard shortcuts ──
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.key === 'Escape') {
+        setEditOpen(false); setPopupOpen(false); setCatModalOpen(false);
+        setFnSearchOpen(false); setFnAddOpen(false);
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, []);
+
+  // ── Body class for floating nav ──
+  useEffect(() => {
+    document.body.classList.add('has-floating-nav');
+    return () => document.body.classList.remove('has-floating-nav');
+  }, []);
+
+  // ── API: Add word ──
+  const addWord = useCallback(async () => {
+    const en = addEn.trim();
+    const fa = addFa.trim();
+    const aiGen = addAiGen;
+    const alts = addAlts.trim();
+    const style = addStyleEnabled ? addStyle : '';
+    const customStyle = addStyleEnabled ? addCustomStyle.trim() : '';
+    const cat = addCategory || null;
+    if (!en) { showAlert(setAddAlert, 'English field is required.'); return; }
+    if (!aiGen && !fa) { showAlert(setAddAlert, 'Persian field is required.'); return; }
+
+    const placeholder = { english: en, persian: fa || '(generating…)', alternatives: [], category: cat, isGenerating: !fa };
+    setWords(prev => [...prev, placeholder]);
+    setAddEn(''); setAddFa(''); setAddAlts('');
+    addToast(`Adding "${en}"…`, 'info');
+
+    try {
+      const res = await fetchWithRetry('/api/words', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ english: en, persian: fa, aigen: aiGen, alternatives: alts, style, custom_style: customStyle, category: cat })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setWords(prev => prev.slice(0, -1));
+        showAlert(setAddAlert, data.error);
+        return;
+      }
+      setWords(prev => { const copy = [...prev]; copy[copy.length - 1] = data.word; return copy; });
+      showAlert(setAddAlert, `"${data.word.english}" added!`, 'success');
+      addToast(`Added "${data.word.english}"`, 'success');
+    } catch (e) {
+      setWords(prev => prev.slice(0, -1));
+      showAlert(setAddAlert, 'Network error — please try again.');
+      addToast('Add failed: ' + e.message, 'error');
+    }
+    addEnRef.current?.focus();
+  }, [addEn, addFa, addAiGen, addAlts, addCategory, addStyleEnabled, addStyle, addCustomStyle, showAlert, addToast]);
+
+  // ── API: Delete word ──
+  const deleteWord = useCallback((index) => {
+    const removed = words[index];
+    setWords(prev => prev.filter((_, i) => i !== index));
+    addToast(`Deleted "${removed.english}"`, 'success');
+
+    fetchWithRetry(`/api/words/${index}`, { method: 'DELETE' })
+      .then(async res => {
+        if (!res.ok) {
+          const data = await res.json();
+          setWords(prev => { const copy = [...prev]; copy.splice(index, 0, removed); return copy; });
+          addToast(data.error || 'Delete failed — word restored.', 'error');
+        }
+      })
+      .catch(() => {
+        setWords(prev => { const copy = [...prev]; copy.splice(index, 0, removed); return copy; });
+        addToast('Delete failed — word restored.', 'error');
+      });
+  }, [words, addToast]);
+
+  // ── API: Edit word ──
+  const saveEdit = useCallback(async () => {
+    const en = editEn.trim();
+    const fa = editFa.trim();
+    const alts = editAlts.trim();
+    const cat = editCategory || null;
+    if (!en || !fa) { showAlert(setEditAlert, 'Fill in both fields.'); return; }
+
+    const idx = editIndex;
+    const oldWord = { ...words[idx] };
+    const updated = { english: en, persian: fa, alternatives: alts ? alts.split('\n').map(s => s.trim()).filter(Boolean) : [], category: cat };
+
+    setWords(prev => { const copy = [...prev]; copy[idx] = updated; return copy; });
+    setEditOpen(false);
+    addToast(`Updated "${en}"`, 'success');
+
+    fetchWithRetry(`/api/words/${idx}`, {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ english: en, persian: fa, alternatives: alts, category: cat })
+    }).then(async res => {
+      if (!res.ok) {
+        const data = await res.json();
+        setWords(prev => { const copy = [...prev]; copy[idx] = oldWord; return copy; });
+        addToast(data.error || 'Edit failed — reverted.', 'error');
+      }
+    }).catch(() => {
+      setWords(prev => { const copy = [...prev]; copy[idx] = oldWord; return copy; });
+      addToast('Edit failed — reverted.', 'error');
+    });
+  }, [editEn, editFa, editAlts, editCategory, editIndex, words, showAlert, addToast]);
+
+  // ── API: AI Generate in edit modal ──
+  const editAIGenerate = useCallback(async () => {
+    setEditAIGen(true);
+    try {
+      const res = await fetchWithRetry(`/api/aigen/${editIndex}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ is_edit: true })
+      });
+      const data = await res.json();
+      if (!res.ok) { showAlert(setEditAlert, data.error || 'Generation failed.'); return; }
+
+      const wordsRes = await fetchWithRetry('/api/words');
+      if (wordsRes.ok) {
+        const wordsData = await wordsRes.json();
+        const newWords = (wordsData.words ?? wordsData).map(w =>
+          Array.isArray(w) ? { english: w[0], persian: w[1], alternatives: [], category: null }
+            : { english: w.english, persian: w.persian, alternatives: w.alternatives || [], category: w.category || null }
+        );
+        setWords(newWords);
+        setEditEn(newWords[editIndex].english);
+        setEditFa(newWords[editIndex].persian);
+        setEditAlts((newWords[editIndex].alternatives || []).join('\n'));
+        setEditCategory(newWords[editIndex].category || '');
+      }
+      showAlert(setEditAlert, 'Sentence generated!', 'success');
+      addToast('New sentence generated', 'success');
+    } catch (e) {
+      showAlert(setEditAlert, 'Network error: ' + e.message);
+      addToast('Generation failed: ' + e.message, 'error');
+    } finally { setEditAIGen(false); }
+  }, [editIndex, showAlert, addToast]);
+
+  // ── API: Category CRUD ──
+  const createCategory = useCallback(async (name, description) => {
+    try {
+      const res = await fetchWithRetry('/api/categories', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name, description })
+      });
+      const data = await res.json();
+      if (!res.ok) { showAlert(setCatAlert, data.error || 'Failed to create category.'); return false; }
+      setCategories(prev => [...prev, data.category]);
+      addToast(`Category "${name}" created`, 'success');
+      return true;
+    } catch (e) { showAlert(setCatAlert, 'Network error: ' + e.message); return false; }
+  }, [showAlert, addToast]);
+
+  const deleteCategory = useCallback(async (name) => {
+    if (!confirm(`Delete category "${name}"? Words will have no category.`)) return;
+    try {
+      const res = await fetchWithRetry(`/api/categories/${encodeURIComponent(name)}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (!res.ok) { addToast(data.error || 'Failed to delete category.', 'error'); return; }
+      setCategories(prev => prev.filter(c => c.name !== name));
+      setWords(prev => prev.map(w => w.category === name ? { ...w, category: null } : w));
+      if (categoryFilter === name) setCategoryFilter(null);
+      addToast(`Category "${name}" deleted`, 'success');
+    } catch (e) { addToast('Delete failed: ' + e.message, 'error'); }
+  }, [categoryFilter, addToast]);
+
+  // ── API: Move words ──
+  const moveWordsToCategory = useCallback(async (indices, categoryName) => {
+    const cat = categoryName || null;
+    const catLabel = cat ? `"${cat}"` : "No Category";
+
+    setWords(prev => {
+      const copy = [...prev];
+      indices.forEach(i => { copy[i] = { ...copy[i], category: cat }; });
+      return copy;
+    });
+
+    try {
+      const res = await fetchWithRetry('/api/words/move-category', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ indices, category: cat })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        addToast(data.error || 'Move failed.', 'error');
+        setWords(prev => {
+          const copy = [...prev];
+          indices.forEach(i => { copy[i] = { ...copy[i], category: copy[i].category === cat ? null : cat }; });
+          return copy;
+        });
+      } else {
+        addToast(`${indices.length} word(s) moved to ${catLabel}`, 'success');
+      }
+    } catch (e) {
+      addToast('Move failed: ' + e.message, 'error');
+      setWords(prev => {
+        const copy = [...prev];
+        indices.forEach(i => { copy[i] = { ...copy[i], category: copy[i].category === cat ? null : cat }; });
+        return copy;
+      });
+    }
+  }, [addToast]);
+
+  // ── API: Word popup generate ──
+  const popupGenerate = useCallback(async () => {
+    const en = popupWord.trim();
+    const fa = popupFa.trim();
+    if (!en) return;
+    setPopupLoading(true);
+    try {
+      const res = await fetchWithRetry('/api/words', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ english: en, persian: fa, aigen: true, category: popupCategory || null })
+      });
+      const data = await res.json();
+      if (!res.ok) { showAlert(setPopupAlert, data.error || 'Generation failed.'); return; }
+      setWords(prev => [...prev, data.word]);
+      setPopupOpen(false);
+      addToast(`Added "${data.word.english}"`, 'success');
+    } catch (e) {
+      showAlert(setPopupAlert, 'Network error — please try again.');
+    } finally { setPopupLoading(false); }
+  }, [popupWord, popupFa, popupCategory, showAlert, addToast]);
+
+  // ── Bulk actions ──
+  const bulkDelete = useCallback(async () => {
+    if (!selectedIndices.size) return;
+    const count = selectedIndices.size;
+    if (!confirm(`Delete ${count} word${count !== 1 ? 's' : ''}?`)) return;
+
+    const indices = [...selectedIndices].sort((a, b) => b - a);
+    const removed = indices.map(i => words[i]);
+
+    setWords(prev => prev.filter((_, i) => !selectedIndices.has(i)));
+    setSelectedIndices(new Set());
+    setSelectMode(false);
+    addToast(`Deleted ${count} word${count !== 1 ? 's' : ''}`, 'success');
+
+    try {
+      const res = await fetchWithRetry('/api/words/delete-multiple', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ indices })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setWords(prev => { const copy = [...prev]; removed.forEach((w, j) => copy.splice(indices[j], 0, w)); return copy; });
+        addToast(data.error || 'Delete failed — words restored.', 'error');
+      }
+    } catch (e) {
+      setWords(prev => { const copy = [...prev]; removed.forEach((w, j) => copy.splice(indices[j], 0, w)); return copy; });
+      addToast('Delete failed — words restored: ' + e.message, 'error');
+    }
+  }, [selectedIndices, words, addToast]);
+
+  const bulkMove = useCallback(async (category) => {
+    if (!selectedIndices.size) return;
+    const indices = [...selectedIndices];
+    await moveWordsToCategory(indices, category);
+    setSelectedIndices(new Set());
+    setSelectMode(false);
+  }, [selectedIndices, moveWordsToCategory]);
+
+  // ── Export ──
+  const exportWords = useCallback(() => {
+    if (!words.length) return;
+    const text = words.map(w => `${w.english} = ${w.persian}`).join('\n');
+    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'vocabulary.txt'; a.click();
+    URL.revokeObjectURL(url);
+  }, [words]);
+
+  // ── Floating nav: add word ──
+  const fnAddWord = useCallback(async () => {
+    const en = fnAddEn.trim();
+    const fa = fnAddFa.trim();
+    const aiGen = fnAddAiGen;
+    const alts = fnAddAlts.trim();
+    const style = fnAddStyleEnabled ? fnAddStyle : '';
+    const customStyle = fnAddStyleEnabled ? fnAddCustomStyle.trim() : '';
+    const cat = fnAddCategory || null;
+    if (!en) { showAlert(setFnAddAlert, 'English field is required.'); return; }
+    if (!aiGen && !fa) { showAlert(setFnAddAlert, 'Persian field is required.'); return; }
+
+    const placeholder = { english: en, persian: fa || '(generating…)', alternatives: [], category: cat, isGenerating: !fa };
+    setWords(prev => [...prev, placeholder]);
+    setFnAddEn(''); setFnAddFa(''); setFnAddAlts('');
+    addToast(`Adding "${en}"…`, 'info');
+
+    try {
+      const res = await fetchWithRetry('/api/words', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ english: en, persian: fa, aigen: aiGen, alternatives: alts, style, custom_style: customStyle, category: cat })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        setWords(prev => prev.slice(0, -1));
+        showAlert(setFnAddAlert, data.error);
+        return;
+      }
+      setWords(prev => { const copy = [...prev]; copy[copy.length - 1] = data.word; return copy; });
+      showAlert(setFnAddAlert, `"${data.word.english}" added!`, 'success');
+      addToast(`Added "${data.word.english}"`, 'success');
+    } catch (e) {
+      setWords(prev => prev.slice(0, -1));
+      showAlert(setFnAddAlert, 'Network error — please try again.');
+      addToast('Add failed: ' + e.message, 'error');
+    }
+    fnAddEnRef.current?.focus();
+  }, [fnAddEn, fnAddFa, fnAddAiGen, fnAddAlts, fnAddCategory, fnAddStyleEnabled, fnAddStyle, fnAddCustomStyle, showAlert, addToast]);
+
+  // ── Open edit modal ──
+  const openEdit = useCallback((index) => {
+    setEditIndex(index);
+    setEditEn(words[index].english);
+    setEditFa(words[index].persian);
+    setEditAlts((words[index].alternatives || []).join('\n'));
+    setEditCategory(words[index].category || '');
+    setEditOpen(true);
+    setTimeout(() => editEnRef.current?.focus(), 100);
+  }, [words]);
+
+  // ── Open word popup ──
+  const openPopup = useCallback((word) => {
+    setPopupWord(word);
+    setPopupFa('');
+    setPopupCategory(categoryFilter || '');
+    setPopupAlert({ msg: '', type: 'error' });
+    setPopupOpen(true);
+    setTimeout(() => popupFaRef.current?.focus(), 100);
+  }, [categoryFilter]);
+
+  // ── Render ──
+  return (
+    <>
+      {/* ── Header ── */}
+      <header>
+        <div>
+          <div className="wordmark">My Word<span>Book</span></div>
+          <div className="word-count">
+            {loading ? 'Loading…' : `${words.length} word${words.length !== 1 ? 's' : ''} saved`}
+          </div>
+        </div>
+      </header>
+
+      {/* ── Tabs ── */}
+      <nav className="tabs">
+        {[
+          ['library', '📚 Library'], ['import', '📋 Batch Import'],
+          ['practice', '🎯 Practice'], ['defs', '🔤 Multiple Meanings']
+        ].map(([id, label]) => (
+          <button key={id} className={`tab-btn ${activeTab === id ? 'active' : ''}`}
+            onClick={() => setActiveTab(id)}>{label}</button>
+        ))}
+      </nav>
+
+      {/* ── Library Tab ── */}
+      {activeTab === 'library' && (
+        <Library
+          words={words} setWords={setWords} categories={categories}
+          bookmarkedWords={bookmarkedWords}
+          searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+          categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter}
+          bookmarkFilter={bookmarkFilter} setBookmarkFilter={setBookmarkFilter}
+          selectMode={selectMode} setSelectMode={setSelectMode}
+          selectedIndices={selectedIndices} setSelectedIndices={setSelectedIndices}
+          filteredWords={filteredWords}
+          addWord={addWord}
+          addEn={addEn} setAddEn={setAddEn}
+          addFa={addFa} setAddFa={setAddFa}
+          addAiGen={addAiGen} setAddAiGen={setAddAiGen}
+          addAlts={addAlts} setAddAlts={setAddAlts}
+          addCategory={addCategory} setAddCategory={setAddCategory}
+          addStyleEnabled={addStyleEnabled} setAddStyleEnabled={setAddStyleEnabled}
+          addStyle={addStyle} setAddStyle={setAddStyle}
+          addCustomStyle={addCustomStyle} setAddCustomStyle={setAddCustomStyle}
+          addAdvancedOpen={addAdvancedOpen} setAddAdvancedOpen={setAddAdvancedOpen}
+          addAlert={addAlert}
+          openEdit={openEdit} deleteWord={deleteWord} openPopup={openPopup}
+          bulkDelete={bulkDelete} bulkMove={bulkMove} exportWords={exportWords}
+          setCatName={setCatName} setCatDesc={setCatDesc}
+          setCatAlert={setCatAlert} setCatModalOpen={setCatModalOpen}
+          addToast={addToast}
+        />
+      )}
+
+      {/* ── Other tabs ── */}
+      {activeTab === 'import' && (
+        <BatchImport words={words} setWords={setWords} addToast={addToast} fetchWithRetry={fetchWithRetry} />
+      )}
+      {activeTab === 'practice' && (
+        <Practice words={words} categories={categories}
+          bookmarkedWords={bookmarkedWords} isBookmarked={isBookmarked} toggleBookmark={toggleBookmark}
+          addToast={addToast} fetchWithRetry={fetchWithRetry} moveWordsToCategory={moveWordsToCategory} />
+      )}
+      {activeTab === 'defs' && <MultipleMeanings addToast={addToast} />}
+
+      {/* ── Edit Modal ── */}
+      {editOpen && (
+        <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setEditOpen(false); }}>
+          <div className="modal">
+            <div className="modal-title">Edit Word</div>
+            <div className="field" style={{ marginBottom: 12 }}>
+              <label>English</label>
+              <input ref={editEnRef} type="text" value={editEn} onChange={e => setEditEn(e.target.value)} />
+            </div>
+            <div className="field" style={{ marginBottom: 12 }}>
+              <label>Persian (فارسی)</label>
+              <input type="text" dir="rtl" value={editFa} onChange={e => setEditFa(e.target.value)} />
+            </div>
+            <div className="field">
+              <label>Alternative sentences (same meaning, one per line)</label>
+              <textarea rows="3" placeholder="Optional alternative sentences..."
+                value={editAlts} onChange={e => setEditAlts(e.target.value)} />
+            </div>
+            <div className="field" style={{ marginBottom: 12 }}>
+              <label>Category</label>
+              <select value={editCategory} onChange={e => setEditCategory(e.target.value)}>
+                <option value="">No Category</option>
+                {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+              </select>
+            </div>
+            {editAlert.msg && <div className={`alert show alert-${editAlert.type}`}>{editAlert.msg}</div>}
+            <div className="modal-actions">
+              <button className="btn btn-ghost" onClick={() => setEditOpen(false)}>Cancel</button>
+              <button className="btn btn-ai" disabled={editAIGen}
+                onClick={editAIGenerate} title="Generate a sentence using AI">
+                {editAIGen ? '⏳ Generating…' : '✨ Generate Sentence'}
+              </button>
+              <button className="btn btn-primary" onClick={saveEdit}>Save</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Word Popup ── */}
+      {popupOpen && (
+        <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setPopupOpen(false); }}>
+          <div className="modal">
+            <div className="modal-title">Generate Sentence for Word</div>
+            <div className="field" style={{ marginBottom: 12 }}>
+              <label>English</label>
+              <input type="text" readOnly value={popupWord} />
+            </div>
+            <div className="field" style={{ marginBottom: 12 }}>
+              <label>Persian (فارسی) — optional</label>
+              <input ref={popupFaRef} type="text" dir="rtl" placeholder="e.g. سخت"
+                value={popupFa} onChange={e => setPopupFa(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') popupGenerate(); }} />
+            </div>
+            <div className="field" style={{ marginBottom: 12 }}>
+              <label>Category</label>
+              <select value={popupCategory} onChange={e => setPopupCategory(e.target.value)}>
+                <option value="">No Category</option>
+                {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+              </select>
+            </div>
+            {popupAlert.msg && <div className={`alert show alert-${popupAlert.type}`}>{popupAlert.msg}</div>}
+            <div className="modal-actions">
+              <button className="btn btn-ghost" onClick={() => setPopupOpen(false)}>Cancel</button>
+              <button className="btn btn-primary" disabled={popupLoading} onClick={popupGenerate}>
+                {popupLoading ? '⏳ Generating…' : '✨ Generate'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Category Modal ── */}
+      {catModalOpen && (
+        <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setCatModalOpen(false); }}>
+          <div className="modal">
+            <div className="modal-title">Create Category</div>
+            <div className="field" style={{ marginBottom: 12 }}>
+              <label>Category Name *</label>
+              <input type="text" placeholder="e.g. Grammar" value={catName}
+                onChange={e => setCatName(e.target.value)}
+                onKeyDown={e => { if (e.key === 'Enter') document.getElementById('cat-modal-save')?.click(); }} />
+            </div>
+            <div className="field" style={{ marginBottom: 12 }}>
+              <label>Description (optional)</label>
+              <textarea rows="2" placeholder="Optional description..."
+                value={catDesc} onChange={e => setCatDesc(e.target.value)} />
+            </div>
+            {catAlert.msg && <div className={`alert show alert-${catAlert.type}`}>{catAlert.msg}</div>}
+            <div className="modal-actions">
+              <button className="btn btn-ghost" onClick={() => setCatModalOpen(false)}>Cancel</button>
+              <button id="cat-modal-save" className="btn btn-primary" onClick={async () => {
+                const name = catName.trim();
+                if (!name) { showAlert(setCatAlert, 'Category name is required.'); return; }
+                const ok = await createCategory(name, catDesc.trim());
+                if (ok) setCatModalOpen(false);
+              }}>Create</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Floating Bottom Nav Bar ── */}
+      {fnNavVisible && (
+        <div className="floating-nav" id="floating-nav">
+          {/* Main toolbar */}
+          <div className="fn-toolbar">
+            <div className="fn-brand">
+              <span className="fn-brand-text">My Word<span>Book</span></span>
+              <span className="fn-word-count">{words.length} word{words.length !== 1 ? 's' : ''}</span>
+            </div>
+            <div className="fn-tabs">
+              {[
+                ['library', '📚 Library'], ['import', '📋 Import'],
+                ['practice', '🎯 Practice'], ['defs', '🔤 Meanings']
+              ].map(([id, label]) => (
+                <button key={id} className={`fn-tab ${activeTab === id ? 'active' : ''}`}
+                  onClick={() => { setActiveTab(id); setFnSearchOpen(false); setFnAddOpen(false); }}>
+                  {label}
+                </button>
+              ))}
+            </div>
+            <div className="fn-actions">
+              <button className="fn-btn" title="Hide floating bar" onClick={() => setFnNavVisible(false)}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+                  <line x1="1" y1="1" x2="23" y2="23" />
+                </svg>
+              </button>
+              <button className="fn-btn" title={scrollToTop ? 'Scroll to bottom' : 'Scroll to top'}
+                onClick={() => { window.scrollTo({ top: scrollToTop ? document.body.scrollHeight : 0, behavior: 'instant' }); setScrollToTop(!scrollToTop); }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="5" y1="8" x2="19" y2="8" /><line x1="5" y1="16" x2="19" y2="16" />
+                </svg>
+              </button>
+              <button className={`fn-btn ${fnSearchOpen ? 'active' : ''}`} title="Search words"
+                onClick={() => { setFnSearchOpen(!fnSearchOpen); setFnAddOpen(false); setTimeout(() => fnSearchRef.current?.focus(), 100); }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+                </svg>
+              </button>
+              <button className={`fn-btn ${selectMode ? 'active' : ''}`} title="Select multiple words"
+                onClick={() => { setSelectMode(!selectMode); setSelectedIndices(new Set()); }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <polyline points="9 11 12 14 22 4" />
+                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+                </svg>
+              </button>
+              <button className={`fn-btn ${fnAddOpen ? 'active' : ''}`} title="Add a new word"
+                onClick={() => { setFnAddOpen(!fnAddOpen); setFnSearchOpen(false); setTimeout(() => fnAddEnRef.current?.focus(), 100); }}>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
+                </svg>
+              </button>
+            </div>
+          </div>
+
+          {/* Select mode bar */}
+          {selectMode && (
+            <div className="fn-select-bar open">
+              <span className="fn-select-count">{selectedIndices.size} selected</span>
+              <div className="fn-select-actions">
+                <label className="fn-select-move-label">📁 Move to:</label>
+                <select className="fn-bulk-move-select" value="" onChange={e => {
+                  if (e.target.value) bulkMove(e.target.value === '__none__' ? null : e.target.value);
+                }}>
+                  <option value="">— Select Category —</option>
+                  <option value="__none__">No Category</option>
+                  {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                </select>
+                <button className="fn-select-btn fn-select-delete" onClick={bulkDelete}>Delete</button>
+                <button className="fn-select-btn fn-select-cancel" onClick={() => { setSelectMode(false); setSelectedIndices(new Set()); }}>Cancel</button>
+              </div>
+            </div>
+          )}
+
+          {/* Search panel */}
+          {fnSearchOpen && (
+            <div className="fn-search-panel open">
+              <div className="fn-search-row">
+                <input ref={fnSearchRef} type="text" placeholder="Search words…"
+                  value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+              </div>
+              <div className="fn-search-filters">
+                <button className={`fn-chip ${bookmarkFilter === 'all' ? 'active' : ''}`}
+                  onClick={() => setBookmarkFilter('all')}>🔖 All</button>
+                <button className={`fn-chip ${bookmarkFilter === 'bookmarked' ? 'active' : ''}`}
+                  onClick={() => setBookmarkFilter('bookmarked')}>🔖 Bookmarked</button>
+                <button className={`fn-chip ${bookmarkFilter === 'unbookmarked' ? 'active' : ''}`}
+                  onClick={() => setBookmarkFilter('unbookmarked')}>🔖 Unbookmarked</button>
+                <button className={`fn-chip ${fnCatOpen ? 'active' : ''}`}
+                  onClick={() => setFnCatOpen(!fnCatOpen)}>📁 Categories</button>
+              </div>
+              {fnCatOpen && (
+                <div className="fn-categories" style={{ display: 'flex' }}>
+                  <button className={`fn-chip ${categoryFilter === null ? 'active' : ''}`}
+                    onClick={() => setCategoryFilter(null)}>All</button>
+                  <button className={`fn-chip ${categoryFilter === '' ? 'active' : ''}`}
+                    onClick={() => setCategoryFilter('')}>No Category</button>
+                  {categories.map(c => (
+                    <button key={c.name} className={`fn-chip ${categoryFilter === c.name ? 'active' : ''}`}
+                      onClick={() => setCategoryFilter(c.name)}>{c.name}</button>
+                  ))}
+                  <button className="fn-chip" onClick={() => {
+                    setCatName(''); setCatDesc(''); setCatAlert({ msg: '', type: 'error' });
+                    setCatModalOpen(true);
+                  }}>+ Create</button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Add panel */}
+          {fnAddOpen && (
+            <div className="fn-add-panel open">
+              <div className="fn-add-fields">
+                <div className="field">
+                  <label>English</label>
+                  <input ref={fnAddEnRef} type="text" placeholder="e.g. tough"
+                    value={fnAddEn} onChange={e => setFnAddEn(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') fnAddWord(); }} />
+                </div>
+                <div className="field">
+                  <label>Persian (فارسی)</label>
+                  <input type="text" placeholder="e.g. سخت" dir="rtl"
+                    value={fnAddFa} onChange={e => setFnAddFa(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter') fnAddWord(); }} />
+                </div>
+                <div className="field fn-cat-field">
+                  <label>Category</label>
+                  <select className="add-category-select" value={fnAddCategory}
+                    onChange={e => setFnAddCategory(e.target.value)}>
+                    <option value="">No Category</option>
+                    {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                  </select>
+                </div>
+                <button className="btn btn-primary fn-add-btn" onClick={fnAddWord}>Add</button>
+              </div>
+              <div className="fn-add-extras">
+                <label className="aigen-label">
+                  <input type="checkbox" checked={fnAddAiGen} onChange={e => setFnAddAiGen(e.target.checked)} />
+                  ✨ Ai Generate Sentence
+                </label>
+                <div className="fn-advanced-toggle" onClick={() => setFnAddAdvancedOpen(!fnAddAdvancedOpen)}>
+                  <span className={`fn-advanced-arrow ${fnAddAdvancedOpen ? 'open' : ''}`}></span>
+                  Advanced
+                </div>
+              </div>
+              {fnAddAdvancedOpen && (
+                <div className="fn-advanced-section open">
+                  <div className="field">
+                    <label>Alternative sentences (one per line)</label>
+                    <textarea rows="2" placeholder={"She is highly skilled in her work.\nShe does her job extremely well."}
+                      value={fnAddAlts} onChange={e => setFnAddAlts(e.target.value)} />
+                  </div>
+                  <label className="style-toggle-label">
+                    <input type="checkbox" checked={fnAddStyleEnabled} onChange={e => setFnAddStyleEnabled(e.target.checked)} />
+                    Writing Style
+                  </label>
+                  {fnAddStyleEnabled && (
+                    <div className="style-options visible">
+                      <div className="field">
+                        <label>Sentence Style</label>
+                        <select value={fnAddStyle} onChange={e => setFnAddStyle(e.target.value)}>
+                          <option value="">User Manual</option>
+                          <option value="romantic">Romantic</option>
+                          <option value="formal">Formal</option>
+                          <option value="humorous">Humorous</option>
+                          <option value="poetic">Poetic</option>
+                          <option value="minimalist">Minimalist</option>
+                          <option value="academic">Academic</option>
+                          <option value="casual">Casual</option>
+                          <option value="dramatic">Dramatic</option>
+                          <option value="simple">Simple Words</option>
+                        </select>
+                      </div>
+                      <div className="field" style={{ marginTop: 10 }}>
+                        <label>Custom Style (optional — overrides dropdown)</label>
+                        <input type="text" placeholder="e.g. romantic, include keywords: love, heart, soul"
+                          value={fnAddCustomStyle} onChange={e => setFnAddCustomStyle(e.target.value)} />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {fnAddAlert.msg && (
+                <div className={`inline-add-alert show alert-${fnAddAlert.type}`}>{fnAddAlert.msg}</div>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Show floating bar button (when hidden) */}
+      {!fnNavVisible && (
+        <button className="fn-show-nav" onClick={() => setFnNavVisible(true)}
+          style={{ position: 'fixed', bottom: 20, right: 20, zIndex: 91, display: 'inline-flex', alignItems: 'center', gap: 6, padding: '6px 14px', background: 'var(--paper-2)', border: '1px solid var(--rule)', borderRadius: 20, cursor: 'pointer', fontSize: 12 }}>
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <circle cx="12" cy="12" r="10" /><path d="M12 16v-4" /><path d="M12 8h.01" />
+          </svg>
+          <span>Floating Bar</span>
+        </button>
+      )}
+      <div id="toast-container" style={{ position: 'fixed', top: 20, right: 20, zIndex: 10000, display: 'flex', flexDirection: 'column', gap: 10, pointerEvents: 'none' }}>
+        {toasts.map(t => (
+          <div key={t.id} style={{
+            pointerEvents: 'auto', padding: '12px 20px', borderRadius: 8, fontSize: 14, fontWeight: 500, color: '#fff',
+            background: t.type === 'success' ? '#22c55e' : t.type === 'error' ? '#ef4444' : t.type === 'warn' ? '#f59e0b' : '#3b82f6',
+            boxShadow: '0 4px 12px rgba(0,0,0,.25)', maxWidth: 360, wordWrap: 'break-word'
+          }}>{t.msg}</div>
+        ))}
+      </div>
+    </>
+  );
+}
