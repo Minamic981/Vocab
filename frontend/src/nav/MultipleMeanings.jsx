@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { SegmentedEnglish } from '../common/utils';
 
 export default function MultipleMeanings({ addToast }) {
 
@@ -41,6 +42,26 @@ export default function MultipleMeanings({ addToast }) {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleWordClick = (w) => {
+    setWord(w);
+    setLoading(true);
+    setResult(null);
+    setEmpty(false);
+    setAlert({ msg: '', type: 'error' });
+
+    fetch(`/defs/${encodeURIComponent(w)}`, { method: 'POST' })
+      .then(res => res.json())
+      .then(data => {
+        if (!data.definitions || !data.definitions.length) {
+          setEmpty(true);
+        } else {
+          setResult({ mainWord: data.main_word || w, definitions: data.definitions });
+        }
+      })
+      .catch(e => setAlert({ msg: 'Network error: ' + e.message, type: 'error' }))
+      .finally(() => setLoading(false));
   };
 
   return (
@@ -91,7 +112,7 @@ export default function MultipleMeanings({ addToast }) {
                 {result.definitions.map((d, i) => (
                   <tr key={i}>
                     <td className="defs-td defs-td-num">{i + 1}</td>
-                    <td className="defs-td defs-td-en">{d.english}</td>
+                    <td className="defs-td defs-td-en"><SegmentedEnglish text={d.english} onWordClick={handleWordClick} /></td>
                     <td className="defs-td defs-td-fa">{d.persian}</td>
                   </tr>
                 ))}

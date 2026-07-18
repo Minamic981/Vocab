@@ -1,47 +1,7 @@
-import React, { useRef } from 'react';
-import speakWord from '../common/utils';
+import React, { useRef, useCallback } from 'react';
+import speakWord, { escHtml, SegmentedEnglish } from '../common/utils';
+import ExportButton from '../components/ExportButton.jsx';
 const RAINBOW = ['#FF6B6B', '#FF9F43', '#FECA57', '#48DBFB', '#0ABDE3', '#A29BFE', '#6C5CE7', '#FD79A8', '#FDCB6E', '#00CEC9', '#E17055', '#74B9FF'];
-
-function escHtml(s) {
-  if (s == null) return '';
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-const wordSegmenter = typeof Intl !== 'undefined' && Intl.Segmenter
-  ? new Intl.Segmenter('en', { granularity: 'word' }) : null;
-
-function segmentText(text) {
-  if (!wordSegmenter || !text) return [{ text, word: false }];
-  return [...wordSegmenter.segment(text)].map(s => ({ text: s.segment, word: s.isWordLike }));
-}
-
-function SegmentedEnglish({ text, onSegmentClick }) {
-  const [segmented, setSegmented] = React.useState(false);
-  const ref = useRef(null);
-
-  React.useEffect(() => {
-    const el = ref.current;
-    if (!el || segmented) return;
-    const handler = () => setSegmented(true);
-    el.addEventListener('mouseenter', handler);
-    return () => el.removeEventListener('mouseenter', handler);
-  }, [segmented]);
-
-  if (!segmented || !wordSegmenter) return <span ref={ref}>{escHtml(text)}</span>;
-
-  const segments = segmentText(text);
-  return (
-    <>
-      {segments.map((seg, i) =>
-        seg.word ? (
-          <span key={i} className="word-segment" style={{ cursor: 'pointer' }}
-            onDoubleClick={(e) => { e.stopPropagation(); onSegmentClick(seg.text); }}>
-            {escHtml(seg.text)}
-          </span>
-        ) : <span key={i}>{escHtml(seg.text)}</span>
-      )}
-    </>
-  );
-}
 
 export default function Library({
   words, categories, bookmarkedWords,
@@ -53,19 +13,17 @@ export default function Library({
   filteredWords,
   addWord, addEn, setAddEn, addFa, setAddFa,
   addAiGen, setAddAiGen, addAlts, setAddAlts,
-  addCategory, setAddCategory,
   addStyleEnabled, setAddStyleEnabled,
   addStyle, setAddStyle,
   addCustomStyle, setAddCustomStyle,
   addAdvancedOpen, setAddAdvancedOpen,
   addAlert,
   openEdit, deleteWord, openPopup,
-  bulkDelete, bulkMove, exportWords,
+  bulkDelete, bulkMove,
   setCatName, setCatDesc, setCatAlert, setCatModalOpen,
   addToast,
 }) {
   const addEnRef = useRef(null);
-
   const bookmarkFilterLabels = { all: '🔖 All', bookmarked: '🔖 Bookmarked', unbookmarked: '🔖 Unbookmarked' };
 
   const cycleBookmarkFilter = () => {
@@ -86,7 +44,7 @@ export default function Library({
           onClick={() => { setSelectMode(!selectMode); setSelectedIndices(new Set()); }}>
           {selectMode ? 'Done' : 'Select'}
         </button>
-        <button className="btn btn-ghost btn-sm" onClick={exportWords} title="Export words as text">Export</button>
+        <ExportButton words={words} categories={categories} />
       </div>
 
       {/* Category bar */}
@@ -167,7 +125,7 @@ export default function Library({
                       <span className="tribute-author">Tachiba San</span>
                     </>
                   ) : (
-                    <SegmentedEnglish text={w.english} onSegmentClick={openPopup} />
+                    <SegmentedEnglish text={w.english} onSegmentClick={openPopup} doubleClick />
                   )}
                 </span>
                 <span className="word-fa">
@@ -222,8 +180,8 @@ export default function Library({
           <div className="field add-cat-field">
             <label>Category</label>
             <div className="add-cat-row">
-              <select className="add-category-select" value={addCategory}
-                onChange={e => setAddCategory(e.target.value)}>
+              <select className="add-category-select" value={categoryFilter}
+                onChange={e => setCategoryFilter(e.target.value)}>
                 <option value="">No Category</option>
                 {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
               </select>

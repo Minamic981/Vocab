@@ -1,25 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import speakWord, { filterByCategory } from '../../common/utils';
 
 const PRACTICE_FILTERS = [
   { key: 'all', label: '🔖 All', title: 'Show all words' },
   { key: 'bookmarked', label: '🔖 Bookmarked', title: 'Show only bookmarked' },
   { key: 'unbookmarked', label: '🔖 Unbookmarked', title: 'Show only unbookmarked' },
 ];
-
-function speakWord(word) {
-  if (!word?.trim()) return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(word.trim());
-  u.lang = 'en-US';
-  u.rate = 0.8;
-  const voices = speechSynthesis.getVoices();
-  const preferred = ['Google US English', 'Samantha', 'Alex', 'Microsoft Zira'];
-  let v = null;
-  for (const p of preferred) { v = voices.find(x => x.name.includes(p)); if (v) break; }
-  if (!v) v = voices.find(x => x.lang === 'en-US') || voices.find(x => x.lang.startsWith('en'));
-  if (v) u.voice = v;
-  speechSynthesis.speak(u);
-}
 
 export default function Practice({
   words, categories, bookmarkedWords, isBookmarked, toggleBookmark,
@@ -37,13 +23,7 @@ export default function Practice({
     let result = [...words];
     if (practiceFilter === 'bookmarked') result = result.filter(w => isBookmarked(w.english));
     else if (practiceFilter === 'unbookmarked') result = result.filter(w => !isBookmarked(w.english));
-    if (practiceCatFilter !== null) {
-      if (practiceCatFilter === '') {
-        result = result.filter(w => !w.category);
-      } else {
-        result = result.filter(w => w.category === practiceCatFilter);
-      }
-    }
+    result = filterByCategory(result, practiceCatFilter);
     return result;
   }, [words, practiceFilter, practiceCatFilter, isBookmarked]);
 

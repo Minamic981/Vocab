@@ -3,6 +3,8 @@ import Library from './nav/Library.jsx';
 import BatchImport from './nav/BatchImport.jsx';
 import Practice from './nav/Practice.jsx';
 import MultipleMeanings from './nav/MultipleMeanings.jsx';
+import MobileBottomNav from './compMobile/MobileBottomNav.jsx';
+import { filterByCategory } from '../common/utils';
 
 // ── Helpers ────────────────────────────────────────────────
 const RETRY_MAX = 3;
@@ -123,15 +125,10 @@ export default function MobileApp() {
       result = result.filter(({ word: w }) => !bookmarkedWords.includes(w.english));
     }
 
-    if (categoryFilter !== null) {
-      if (categoryFilter === '') {
-        result = result.filter(({ word: w }) => !w.category);
-      } else {
-        result = result.filter(({ word: w }) => w.category === categoryFilter);
-      }
-    }
-
-    return result;
+    const wordsOnly = result.map(f => f.word);
+    const categoryFiltered = filterByCategory(wordsOnly, categoryFilter);
+    const indexMap = new Map(result.map(f => [f.word, f.idx]));
+    return categoryFiltered.map(w => ({ word: w, idx: indexMap.get(w) }));
   }, [words, searchQuery, bookmarkFilter, categoryFilter, bookmarkedWords]);
 
   // ── Init ──
@@ -399,17 +396,6 @@ export default function MobileApp() {
     setSelectMode(false);
   }, [selectedIndices, moveWordsToCategory]);
 
-  // ── Export ──
-  const exportWords = useCallback(() => {
-    if (!words.length) return;
-    const text = words.map(w => `${w.english} = ${w.persian}`).join('\n');
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'vocabulary.txt'; a.click();
-    URL.revokeObjectURL(url);
-  }, [words]);
-
   const openEdit = useCallback((index) => {
     setEditIndex(index);
     setEditEn(words[index].english);
@@ -475,7 +461,7 @@ export default function MobileApp() {
           addAdvancedOpen={addAdvancedOpen} setAddAdvancedOpen={setAddAdvancedOpen}
           addAlert={addAlert}
           openEdit={openEdit} deleteWord={deleteWord} openPopup={openPopup}
-          bulkDelete={bulkDelete} bulkMove={bulkMove} exportWords={exportWords}
+          bulkDelete={bulkDelete} bulkMove={bulkMove}
           setCatName={setCatName} setCatDesc={setCatDesc}
           setCatAlert={setCatAlert} setCatModalOpen={setCatModalOpen}
           isBookmarked={isBookmarked} toggleBookmark={toggleBookmark}
@@ -602,69 +588,17 @@ export default function MobileApp() {
       )}
 
       {/* Mobile Bottom Nav */}
-      {mbnVisible && (
-        <div className="mobile-bottom-nav">
-          <button className="mbn-btn" onClick={() => { setMbnNavOpen(!mbnNavOpen); setMbnCatOpen(false); }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-              <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
-            </svg>
-            <span>Nav</span>
-          </button>
-          <button className="mbn-btn" onClick={() => { setMbnCatOpen(!mbnCatOpen); setMbnNavOpen(false); }}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
-            </svg>
-            <span>Category</span>
-          </button>
-          <button className="mbn-btn" onClick={() => { window.scrollTo({ top: scrollToTop ? document.body.scrollHeight : 0, behavior: 'instant' }); setScrollToTop(!scrollToTop); }} title={scrollToTop ? 'Scroll to top' : 'Scroll to bottom'}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-              <line x1="4" y1="8" x2="20" y2="8" /><line x1="4" y1="16" x2="20" y2="16" />
-            </svg>
-          </button>
-          <button className="mbn-btn" onClick={() => setMbnVisible(false)}>
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-              <line x1="1" y1="1" x2="23" y2="23" />
-            </svg>
-          </button>
-        </div>
-      )}
-
-      {/* Nav popup */}
-      {mbnNavOpen && (
-        <div className="mbn-popup open">
-          {[
-            ['library', '📚 Library'], ['import', '📋 Import'],
-            ['practice', '🎯 Practice'], ['defs', '🔤 Defs']
-          ].map(([id, label]) => (
-            <button key={id} className={`mbn-popup-tab ${activeTab === id ? 'active' : ''}`}
-              onClick={() => { setActiveTab(id); setMbnNavOpen(false); }}>{label}</button>
-          ))}
-        </div>
-      )}
-
-      {/* Category popup */}
-      {mbnCatOpen && (
-        <div className="mbn-popup open">
-          <button className={`mbn-cat-chip ${categoryFilter === null ? 'active' : ''}`}
-            onClick={() => { setCategoryFilter(null); setMbnCatOpen(false); }}>All</button>
-          <button className={`mbn-cat-chip ${categoryFilter === '' ? 'active' : ''}`}
-            onClick={() => { setCategoryFilter(''); setMbnCatOpen(false); }}>No Category</button>
-          {categories.map(c => (
-            <button key={c.name} className={`mbn-cat-chip ${categoryFilter === c.name ? 'active' : ''}`}
-              onClick={() => { setCategoryFilter(c.name); setMbnCatOpen(false); }}>{c.name}</button>
-          ))}
-        </div>
-      )}
-
-      {/* Show nav button */}
-      {!mbnVisible && (
-        <button className="mbn-show-nav" onClick={() => setMbnVisible(true)}>
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
-            <line x1="3" y1="6" x2="21" y2="6" /><line x1="3" y1="12" x2="21" y2="12" /><line x1="3" y1="18" x2="21" y2="18" />
-          </svg>
-        </button>
-      )}
+      <MobileBottomNav
+        activeTab={activeTab} setActiveTab={setActiveTab}
+        categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter}
+        categories={categories}
+        mbnVisible={mbnVisible} setMbnVisible={setMbnVisible}
+        mbnNavOpen={mbnNavOpen} setMbnNavOpen={setMbnNavOpen}
+        mbnCatOpen={mbnCatOpen} setMbnCatOpen={setMbnCatOpen}
+        scrollToTop={scrollToTop} setScrollToTop={setScrollToTop}
+        setCatName={setCatName} setCatDesc={setCatDesc}
+        setCatAlert={setCatAlert} setCatModalOpen={setCatModalOpen}
+      />
 
       {/* Toasts */}
       <div id="toast-container" style={{ position: 'fixed', top: 20, right: 20, zIndex: 10000, display: 'flex', flexDirection: 'column', gap: 10, pointerEvents: 'none' }}>

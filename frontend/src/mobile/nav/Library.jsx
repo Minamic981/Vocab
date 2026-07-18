@@ -1,63 +1,8 @@
 import React, { useRef, useCallback } from 'react';
+import ExportButton from '../compMobile/ExportButton.jsx';
+import speakWord, { escHtml, SegmentedEnglish } from '../../common/utils';
 
 const RAINBOW = ['#FF6B6B', '#FF9F43', '#FECA57', '#48DBFB', '#0ABDE3', '#A29BFE', '#6C5CE7', '#FD79A8', '#FDCB6E', '#00CEC9', '#E17055', '#74B9FF'];
-
-function escHtml(s) {
-  if (s == null) return '';
-  return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-}
-
-function speakWord(word) {
-  if (!word?.trim()) return;
-  window.speechSynthesis.cancel();
-  const u = new SpeechSynthesisUtterance(word.trim());
-  u.lang = 'en-US';
-  u.rate = 0.8;
-  const voices = speechSynthesis.getVoices();
-  const preferred = ['Google US English', 'Samantha', 'Alex', 'Microsoft Zira'];
-  let v = null;
-  for (const p of preferred) { v = voices.find(x => x.name.includes(p)); if (v) break; }
-  if (!v) v = voices.find(x => x.lang === 'en-US') || voices.find(x => x.lang.startsWith('en'));
-  if (v) u.voice = v;
-  speechSynthesis.speak(u);
-}
-
-const wordSegmenter = typeof Intl !== 'undefined' && Intl.Segmenter
-  ? new Intl.Segmenter('en', { granularity: 'word' }) : null;
-
-function segmentText(text) {
-  if (!wordSegmenter || !text) return [{ text, word: false }];
-  return [...wordSegmenter.segment(text)].map(s => ({ text: s.segment, word: s.isWordLike }));
-}
-
-function SegmentedEnglish({ text, onSegmentClick }) {
-  const [segmented, setSegmented] = React.useState(false);
-  const ref = useRef(null);
-
-  React.useEffect(() => {
-    const el = ref.current;
-    if (!el || segmented) return;
-    const handler = () => setSegmented(true);
-    el.addEventListener('mouseenter', handler);
-    return () => el.removeEventListener('mouseenter', handler);
-  }, [segmented]);
-
-  if (!segmented || !wordSegmenter) return <span ref={ref}>{escHtml(text)}</span>;
-
-  const segments = segmentText(text);
-  return (
-    <>
-      {segments.map((seg, i) =>
-        seg.word ? (
-          <span key={i} className="word-segment" style={{ cursor: 'pointer' }}
-            onDoubleClick={(e) => { e.stopPropagation(); onSegmentClick(seg.text); }}>
-            {escHtml(seg.text)}
-          </span>
-        ) : <span key={i}>{escHtml(seg.text)}</span>
-      )}
-    </>
-  );
-}
 
 function WordRow({ w, idx, selectMode, isSelected, isBookmarked, alts, onEdit, onDelete, onPopup, onCheckbox, onSpeak, onCopy, revealAll }) {
   const [revealed, setRevealed] = React.useState(false);
@@ -89,7 +34,7 @@ function WordRow({ w, idx, selectMode, isSelected, isBookmarked, alts, onEdit, o
               <span className="tribute-author">Tachiba San</span>
             </>
           ) : (
-            <SegmentedEnglish text={w.english} onSegmentClick={onPopup} />
+            <SegmentedEnglish text={w.english} onSegmentClick={onPopup} doubleClick />
           )}
         </span>
         <span className={`word-fa ${showFa ? 'revealed' : ''}`}>
@@ -110,7 +55,7 @@ function WordRow({ w, idx, selectMode, isSelected, isBookmarked, alts, onEdit, o
             </svg>
           </button>
           <button className="btn btn-ghost btn-sm" title="Copy to clipboard"
-            onClick={(e) => { e.stopPropagation(); onCopy(w.english); }}>
+            onClick={(e) => { e.stopPropagation(); onCopy(w.english, w.persian); }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -146,7 +91,7 @@ export default function Library({
   addAdvancedOpen, setAddAdvancedOpen,
   addAlert,
   openEdit, deleteWord, openPopup,
-  bulkDelete, bulkMove, exportWords,
+  bulkDelete, bulkMove,
   setCatName, setCatDesc, setCatAlert, setCatModalOpen,
   isBookmarked, toggleBookmark,
   addToast, fetchWithRetry, moveWordsToCategory,
@@ -170,8 +115,9 @@ export default function Library({
     });
   }, [setSelectedIndices]);
 
-  const handleCopy = useCallback((english) => {
-    navigator.clipboard.writeText(english).then(() => {
+  const handleCopy = useCallback((english, persian) => {
+    const text = `${english} = ${persian}`;
+    navigator.clipboard.writeText(text).then(() => {
       addToast('Copied to clipboard', 'success');
     }).catch(() => {
       addToast('Failed to copy', 'error');
@@ -190,7 +136,7 @@ export default function Library({
           onClick={() => { setSelectMode(!selectMode); setSelectedIndices(new Set()); }}>
           {selectMode ? 'Done' : 'Select'}
         </button>
-        <button className="btn btn-ghost btn-sm" onClick={exportWords} title="Export words as text">Export</button>
+        <ExportButton words={words} categories={categories} />
       </div>
 
       {/* Category bar */}

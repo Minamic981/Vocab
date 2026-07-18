@@ -3,6 +3,9 @@ import Library from './nav/Library.jsx';
 import BatchImport from './nav/BatchImport.jsx';
 import Practice from './nav/Practice.jsx';
 import MultipleMeanings from './nav/MultipleMeanings.jsx';
+import FloatingNav from './components/FloatingNav.jsx';
+import ExportButton from './components/ExportButton.jsx';
+import { filterByCategory } from './common/utils';
 
 // ── Helpers ────────────────────────────────────────────────
 const RETRY_MAX = 3;
@@ -51,7 +54,6 @@ export default function App() {
   const [addFa, setAddFa] = useState('');
   const [addAiGen, setAddAiGen] = useState(false);
   const [addAlts, setAddAlts] = useState('');
-  const [addCategory, setAddCategory] = useState('');
   const [addStyleEnabled, setAddStyleEnabled] = useState(false);
   const [addStyle, setAddStyle] = useState('');
   const [addCustomStyle, setAddCustomStyle] = useState('');
@@ -97,7 +99,6 @@ export default function App() {
   // ── Floating add form ──
   const [fnAddEn, setFnAddEn] = useState('');
   const [fnAddFa, setFnAddFa] = useState('');
-  const [fnAddCategory, setFnAddCategory] = useState('');
   const [fnAddAiGen, setFnAddAiGen] = useState(false);
   const [fnAddAlts, setFnAddAlts] = useState('');
   const [fnAddStyleEnabled, setFnAddStyleEnabled] = useState(false);
@@ -156,15 +157,10 @@ export default function App() {
       result = result.filter(({ word: w }) => !bookmarkedWords.includes(w.english));
     }
 
-    if (categoryFilter !== null) {
-      if (categoryFilter === '') {
-        result = result.filter(({ word: w }) => !w.category);
-      } else {
-        result = result.filter(({ word: w }) => w.category === categoryFilter);
-      }
-    }
-
-    return result;
+    const wordsOnly = result.map(f => f.word);
+    const categoryFiltered = filterByCategory(wordsOnly, categoryFilter);
+    const indexMap = new Map(result.map(f => [f.word, f.idx]));
+    return categoryFiltered.map(w => ({ word: w, idx: indexMap.get(w) }));
   }, [words, searchQuery, bookmarkFilter, categoryFilter, bookmarkedWords]);
 
   // ── Init: fetch data ──
@@ -213,7 +209,7 @@ export default function App() {
     const alts = addAlts.trim();
     const style = addStyleEnabled ? addStyle : '';
     const customStyle = addStyleEnabled ? addCustomStyle.trim() : '';
-    const cat = addCategory || null;
+    const cat = categoryFilter || null;
     if (!en) { showAlert(setAddAlert, 'English field is required.'); return; }
     if (!aiGen && !fa) { showAlert(setAddAlert, 'Persian field is required.'); return; }
 
@@ -242,7 +238,7 @@ export default function App() {
       addToast('Add failed: ' + e.message, 'error');
     }
     addEnRef.current?.focus();
-  }, [addEn, addFa, addAiGen, addAlts, addCategory, addStyleEnabled, addStyle, addCustomStyle, showAlert, addToast]);
+  }, [addEn, addFa, addAiGen, addAlts, categoryFilter, addStyleEnabled, addStyle, addCustomStyle, showAlert, addToast]);
 
   // ── API: Delete word ──
   const deleteWord = useCallback((index) => {
@@ -451,17 +447,6 @@ export default function App() {
     setSelectMode(false);
   }, [selectedIndices, moveWordsToCategory]);
 
-  // ── Export ──
-  const exportWords = useCallback(() => {
-    if (!words.length) return;
-    const text = words.map(w => `${w.english} = ${w.persian}`).join('\n');
-    const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = 'vocabulary.txt'; a.click();
-    URL.revokeObjectURL(url);
-  }, [words]);
-
   // ── Floating nav: add word ──
   const fnAddWord = useCallback(async () => {
     const en = fnAddEn.trim();
@@ -470,7 +455,7 @@ export default function App() {
     const alts = fnAddAlts.trim();
     const style = fnAddStyleEnabled ? fnAddStyle : '';
     const customStyle = fnAddStyleEnabled ? fnAddCustomStyle.trim() : '';
-    const cat = fnAddCategory || null;
+    const cat = categoryFilter || null;
     if (!en) { showAlert(setFnAddAlert, 'English field is required.'); return; }
     if (!aiGen && !fa) { showAlert(setFnAddAlert, 'Persian field is required.'); return; }
 
@@ -499,7 +484,7 @@ export default function App() {
       addToast('Add failed: ' + e.message, 'error');
     }
     fnAddEnRef.current?.focus();
-  }, [fnAddEn, fnAddFa, fnAddAiGen, fnAddAlts, fnAddCategory, fnAddStyleEnabled, fnAddStyle, fnAddCustomStyle, showAlert, addToast]);
+  }, [fnAddEn, fnAddFa, fnAddAiGen, fnAddAlts, fnAddStyleEnabled, fnAddStyle, fnAddCustomStyle, showAlert, addToast]);
 
   // ── Open edit modal ──
   const openEdit = useCallback((index) => {
@@ -562,14 +547,13 @@ export default function App() {
           addFa={addFa} setAddFa={setAddFa}
           addAiGen={addAiGen} setAddAiGen={setAddAiGen}
           addAlts={addAlts} setAddAlts={setAddAlts}
-          addCategory={addCategory} setAddCategory={setAddCategory}
           addStyleEnabled={addStyleEnabled} setAddStyleEnabled={setAddStyleEnabled}
           addStyle={addStyle} setAddStyle={setAddStyle}
           addCustomStyle={addCustomStyle} setAddCustomStyle={setAddCustomStyle}
           addAdvancedOpen={addAdvancedOpen} setAddAdvancedOpen={setAddAdvancedOpen}
           addAlert={addAlert}
           openEdit={openEdit} deleteWord={deleteWord} openPopup={openPopup}
-          bulkDelete={bulkDelete} bulkMove={bulkMove} exportWords={exportWords}
+          bulkDelete={bulkDelete} bulkMove={bulkMove}
           setCatName={setCatName} setCatDesc={setCatDesc}
           setCatAlert={setCatAlert} setCatModalOpen={setCatModalOpen}
           addToast={addToast}
@@ -583,7 +567,7 @@ export default function App() {
       {activeTab === 'practice' && (
         <Practice words={words} categories={categories}
           bookmarkedWords={bookmarkedWords} isBookmarked={isBookmarked} toggleBookmark={toggleBookmark}
-          addToast={addToast} fetchWithRetry={fetchWithRetry} moveWordsToCategory={moveWordsToCategory} />
+          addToast={addToast} moveWordsToCategory={moveWordsToCategory} />
       )}
       {activeTab === 'defs' && <MultipleMeanings addToast={addToast} />}
 
@@ -689,195 +673,32 @@ export default function App() {
       )}
 
       {/* ── Floating Bottom Nav Bar ── */}
-      {fnNavVisible && (
-        <div className="floating-nav" id="floating-nav">
-          {/* Main toolbar */}
-          <div className="fn-toolbar">
-            <div className="fn-brand">
-              <span className="fn-brand-text">My Word<span>Book</span></span>
-              <span className="fn-word-count">{words.length} word{words.length !== 1 ? 's' : ''}</span>
-            </div>
-            <div className="fn-tabs">
-              {[
-                ['library', '📚 Library'], ['import', '📋 Import'],
-                ['practice', '🎯 Practice'], ['defs', '🔤 Meanings']
-              ].map(([id, label]) => (
-                <button key={id} className={`fn-tab ${activeTab === id ? 'active' : ''}`}
-                  onClick={() => { setActiveTab(id); setFnSearchOpen(false); setFnAddOpen(false); }}>
-                  {label}
-                </button>
-              ))}
-            </div>
-            <div className="fn-actions">
-              <button className="fn-btn" title="Hide floating bar" onClick={() => setFnNavVisible(false)}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-                  <line x1="1" y1="1" x2="23" y2="23" />
-                </svg>
-              </button>
-              <button className="fn-btn" title={scrollToTop ? 'Scroll to bottom' : 'Scroll to top'}
-                onClick={() => { window.scrollTo({ top: scrollToTop ? document.body.scrollHeight : 0, behavior: 'instant' }); setScrollToTop(!scrollToTop); }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
-                  <line x1="5" y1="8" x2="19" y2="8" /><line x1="5" y1="16" x2="19" y2="16" />
-                </svg>
-              </button>
-              <button className={`fn-btn ${fnSearchOpen ? 'active' : ''}`} title="Search words"
-                onClick={() => { setFnSearchOpen(!fnSearchOpen); setFnAddOpen(false); setTimeout(() => fnSearchRef.current?.focus(), 100); }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
-                </svg>
-              </button>
-              <button className={`fn-btn ${selectMode ? 'active' : ''}`} title="Select multiple words"
-                onClick={() => { setSelectMode(!selectMode); setSelectedIndices(new Set()); }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polyline points="9 11 12 14 22 4" />
-                  <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
-                </svg>
-              </button>
-              <button className={`fn-btn ${fnAddOpen ? 'active' : ''}`} title="Add a new word"
-                onClick={() => { setFnAddOpen(!fnAddOpen); setFnSearchOpen(false); setTimeout(() => fnAddEnRef.current?.focus(), 100); }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="12" y1="5" x2="12" y2="19" /><line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-              </button>
-            </div>
-          </div>
-
-          {/* Select mode bar */}
-          {selectMode && (
-            <div className="fn-select-bar open">
-              <span className="fn-select-count">{selectedIndices.size} selected</span>
-              <div className="fn-select-actions">
-                <label className="fn-select-move-label">📁 Move to:</label>
-                <select className="fn-bulk-move-select" value="" onChange={e => {
-                  if (e.target.value) bulkMove(e.target.value === '__none__' ? null : e.target.value);
-                }}>
-                  <option value="">— Select Category —</option>
-                  <option value="__none__">No Category</option>
-                  {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
-                </select>
-                <button className="fn-select-btn fn-select-delete" onClick={bulkDelete}>Delete</button>
-                <button className="fn-select-btn fn-select-cancel" onClick={() => { setSelectMode(false); setSelectedIndices(new Set()); }}>Cancel</button>
-              </div>
-            </div>
-          )}
-
-          {/* Search panel */}
-          {fnSearchOpen && (
-            <div className="fn-search-panel open">
-              <div className="fn-search-row">
-                <input ref={fnSearchRef} type="text" placeholder="Search words…"
-                  value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
-              </div>
-              <div className="fn-search-filters">
-                <button className={`fn-chip ${bookmarkFilter === 'all' ? 'active' : ''}`}
-                  onClick={() => setBookmarkFilter('all')}>🔖 All</button>
-                <button className={`fn-chip ${bookmarkFilter === 'bookmarked' ? 'active' : ''}`}
-                  onClick={() => setBookmarkFilter('bookmarked')}>🔖 Bookmarked</button>
-                <button className={`fn-chip ${bookmarkFilter === 'unbookmarked' ? 'active' : ''}`}
-                  onClick={() => setBookmarkFilter('unbookmarked')}>🔖 Unbookmarked</button>
-                <button className={`fn-chip ${fnCatOpen ? 'active' : ''}`}
-                  onClick={() => setFnCatOpen(!fnCatOpen)}>📁 Categories</button>
-              </div>
-              {fnCatOpen && (
-                <div className="fn-categories" style={{ display: 'flex' }}>
-                  <button className={`fn-chip ${categoryFilter === null ? 'active' : ''}`}
-                    onClick={() => setCategoryFilter(null)}>All</button>
-                  <button className={`fn-chip ${categoryFilter === '' ? 'active' : ''}`}
-                    onClick={() => setCategoryFilter('')}>No Category</button>
-                  {categories.map(c => (
-                    <button key={c.name} className={`fn-chip ${categoryFilter === c.name ? 'active' : ''}`}
-                      onClick={() => setCategoryFilter(c.name)}>{c.name}</button>
-                  ))}
-                  <button className="fn-chip" onClick={() => {
-                    setCatName(''); setCatDesc(''); setCatAlert({ msg: '', type: 'error' });
-                    setCatModalOpen(true);
-                  }}>+ Create</button>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* Add panel */}
-          {fnAddOpen && (
-            <div className="fn-add-panel open">
-              <div className="fn-add-fields">
-                <div className="field">
-                  <label>English</label>
-                  <input ref={fnAddEnRef} type="text" placeholder="e.g. tough"
-                    value={fnAddEn} onChange={e => setFnAddEn(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') fnAddWord(); }} />
-                </div>
-                <div className="field">
-                  <label>Persian (فارسی)</label>
-                  <input type="text" placeholder="e.g. سخت" dir="rtl"
-                    value={fnAddFa} onChange={e => setFnAddFa(e.target.value)}
-                    onKeyDown={e => { if (e.key === 'Enter') fnAddWord(); }} />
-                </div>
-                <div className="field fn-cat-field">
-                  <label>Category</label>
-                  <select className="add-category-select" value={fnAddCategory}
-                    onChange={e => setFnAddCategory(e.target.value)}>
-                    <option value="">No Category</option>
-                    {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
-                  </select>
-                </div>
-                <button className="btn btn-primary fn-add-btn" onClick={fnAddWord}>Add</button>
-              </div>
-              <div className="fn-add-extras">
-                <label className="aigen-label">
-                  <input type="checkbox" checked={fnAddAiGen} onChange={e => setFnAddAiGen(e.target.checked)} />
-                  ✨ Ai Generate Sentence
-                </label>
-                <div className="fn-advanced-toggle" onClick={() => setFnAddAdvancedOpen(!fnAddAdvancedOpen)}>
-                  <span className={`fn-advanced-arrow ${fnAddAdvancedOpen ? 'open' : ''}`}></span>
-                  Advanced
-                </div>
-              </div>
-              {fnAddAdvancedOpen && (
-                <div className="fn-advanced-section open">
-                  <div className="field">
-                    <label>Alternative sentences (one per line)</label>
-                    <textarea rows="2" placeholder={"She is highly skilled in her work.\nShe does her job extremely well."}
-                      value={fnAddAlts} onChange={e => setFnAddAlts(e.target.value)} />
-                  </div>
-                  <label className="style-toggle-label">
-                    <input type="checkbox" checked={fnAddStyleEnabled} onChange={e => setFnAddStyleEnabled(e.target.checked)} />
-                    Writing Style
-                  </label>
-                  {fnAddStyleEnabled && (
-                    <div className="style-options visible">
-                      <div className="field">
-                        <label>Sentence Style</label>
-                        <select value={fnAddStyle} onChange={e => setFnAddStyle(e.target.value)}>
-                          <option value="">User Manual</option>
-                          <option value="romantic">Romantic</option>
-                          <option value="formal">Formal</option>
-                          <option value="humorous">Humorous</option>
-                          <option value="poetic">Poetic</option>
-                          <option value="minimalist">Minimalist</option>
-                          <option value="academic">Academic</option>
-                          <option value="casual">Casual</option>
-                          <option value="dramatic">Dramatic</option>
-                          <option value="simple">Simple Words</option>
-                        </select>
-                      </div>
-                      <div className="field" style={{ marginTop: 10 }}>
-                        <label>Custom Style (optional — overrides dropdown)</label>
-                        <input type="text" placeholder="e.g. romantic, include keywords: love, heart, soul"
-                          value={fnAddCustomStyle} onChange={e => setFnAddCustomStyle(e.target.value)} />
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-              {fnAddAlert.msg && (
-                <div className={`inline-add-alert show alert-${fnAddAlert.type}`}>{fnAddAlert.msg}</div>
-              )}
-            </div>
-          )}
-        </div>
-      )}
+      <FloatingNav
+        words={words} categories={categories} activeTab={activeTab} setActiveTab={setActiveTab}
+        searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+        bookmarkFilter={bookmarkFilter} setBookmarkFilter={setBookmarkFilter}
+        categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter}
+        selectMode={selectMode} setSelectMode={setSelectMode}
+        selectedIndices={selectedIndices} setSelectedIndices={setSelectedIndices}
+        fnSearchOpen={fnSearchOpen} setFnSearchOpen={setFnSearchOpen}
+        fnAddOpen={fnAddOpen} setFnAddOpen={setFnAddOpen}
+        fnCatOpen={fnCatOpen} setFnCatOpen={setFnCatOpen}
+        fnNavVisible={fnNavVisible} setFnNavVisible={setFnNavVisible}
+        scrollToTop={scrollToTop} setScrollToTop={setScrollToTop}
+        fnAddEn={fnAddEn} setFnAddEn={setFnAddEn}
+        fnAddFa={fnAddFa} setFnAddFa={setFnAddFa}
+        fnAddAiGen={fnAddAiGen} setFnAddAiGen={setFnAddAiGen}
+        fnAddAlts={fnAddAlts} setFnAddAlts={setFnAddAlts}
+        fnAddStyleEnabled={fnAddStyleEnabled} setFnAddStyleEnabled={setFnAddStyleEnabled}
+        fnAddStyle={fnAddStyle} setFnAddStyle={setFnAddStyle}
+        fnAddCustomStyle={fnAddCustomStyle} setFnAddCustomStyle={setFnAddCustomStyle}
+        fnAddAdvancedOpen={fnAddAdvancedOpen} setFnAddAdvancedOpen={setFnAddAdvancedOpen}
+        fnAddAlert={fnAddAlert}
+        fnAddWord={fnAddWord}
+        bulkDelete={bulkDelete} bulkMove={bulkMove}
+        setCatName={setCatName} setCatDesc={setCatDesc}
+        setCatAlert={setCatAlert} setCatModalOpen={setCatModalOpen}
+      />
 
       {/* Show floating bar button (when hidden) */}
       {!fnNavVisible && (

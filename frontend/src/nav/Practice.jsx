@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import speakWord from '../common/utils';
+import speakWord, { filterByCategory } from '../common/utils';
 const PRACTICE_FILTERS = [
   { key: 'all', label: '🔖 All', title: 'Show all words' },
   { key: 'bookmarked', label: '🔖 Bookmarked', title: 'Show only bookmarked' },
@@ -7,7 +7,7 @@ const PRACTICE_FILTERS = [
 ];
 export default function Practice({
   words, categories, bookmarkedWords, isBookmarked, toggleBookmark,
-  addToast, fetchWithRetry, moveWordsToCategory,
+  addToast, moveWordsToCategory,
 }) {
 
   const [practiceQueue, setPracticeQueue] = useState([]);
@@ -18,15 +18,15 @@ export default function Practice({
 
   const getFilteredWords = useCallback(() => {
     let result = [...words];
-    if (practiceFilter === 'bookmarked') result = result.filter(w => isBookmarked(w.english));
-    else if (practiceFilter === 'unbookmarked') result = result.filter(w => !isBookmarked(w.english));
-    if (practiceCatFilter !== null) {
-      if (practiceCatFilter === '') {
-        result = result.filter(w => !w.category);
-      } else {
-        result = result.filter(w => w.category === practiceCatFilter);
-      }
+
+    // Filter by bookmark status
+    if (practiceFilter === 'bookmarked') {
+      result = result.filter(w => isBookmarked(w.english));
+    } else if (practiceFilter === 'unbookmarked') {
+      result = result.filter(w => !isBookmarked(w.english));
     }
+    // Filter by category
+    result = filterByCategory(result, practiceCatFilter);
     return result;
   }, [words, practiceFilter, practiceCatFilter, isBookmarked]);
 
