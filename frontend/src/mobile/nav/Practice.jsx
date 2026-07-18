@@ -137,7 +137,7 @@ export default function Practice({
             title={filterLabel?.title}>{filterLabel?.label}</button>
           <select className="practice-cat-filter-select" title="Filter by category"
             value={practiceCatFilter === null ? 'all' : practiceCatFilter}
-            onChange={e => setPracticeCatFilter(e.target.value === 'all' ? null : e.target.value || null)}>
+            onChange={e => setPracticeCatFilter(e.target.value === 'all' ? null : e.target.value || "")}>
             <option value="all">📁 All</option>
             <option value="">📁 No Category</option>
             {categories.map(c => <option key={c.name} value={c.name}>📁 {c.name}</option>)}

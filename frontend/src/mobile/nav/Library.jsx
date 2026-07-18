@@ -59,7 +59,7 @@ function SegmentedEnglish({ text, onSegmentClick }) {
   );
 }
 
-function WordRow({ w, idx, selectMode, isSelected, isBookmarked, alts, onEdit, onDelete, onPopup, onCheckbox, onSpeak, revealAll }) {
+function WordRow({ w, idx, selectMode, isSelected, isBookmarked, alts, onEdit, onDelete, onPopup, onCheckbox, onSpeak, onCopy, revealAll }) {
   const [revealed, setRevealed] = React.useState(false);
   const [altsOpen, setAltsOpen] = React.useState(false);
   const isTribute = w.english.toLowerCase().includes('tachiba san');
@@ -107,6 +107,13 @@ function WordRow({ w, idx, selectMode, isSelected, isBookmarked, alts, onEdit, o
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
               <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+            </svg>
+          </button>
+          <button className="btn btn-ghost btn-sm" title="Copy to clipboard"
+            onClick={(e) => { e.stopPropagation(); onCopy(w.english); }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
             </svg>
           </button>
           <button className="btn btn-ghost btn-sm" onClick={() => onEdit(idx)}>Edit</button>
@@ -163,6 +170,14 @@ export default function Library({
     });
   }, [setSelectedIndices]);
 
+  const handleCopy = useCallback((english) => {
+    navigator.clipboard.writeText(english).then(() => {
+      addToast('Copied to clipboard', 'success');
+    }).catch(() => {
+      addToast('Failed to copy', 'error');
+    });
+  }, [addToast]);
+
   return (
     <div className="tab-panel active">
       {/* Search bar */}
@@ -181,7 +196,7 @@ export default function Library({
       {/* Category bar */}
       <div className="category-bar">
         <select className="category-filter-select" value={categoryFilter === null ? 'all' : categoryFilter}
-          onChange={e => setCategoryFilter(e.target.value === 'all' ? null : e.target.value || null)}>
+          onChange={e => setCategoryFilter(e.target.value === 'all' ? null : e.target.value || "")}>
           <option value="all">All</option>
           <option value="">No Category</option>
           {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
@@ -231,6 +246,7 @@ export default function Library({
             onPopup={openPopup}
             onCheckbox={handleCheckbox}
             onSpeak={speakWord}
+            onCopy={handleCopy}
             revealAll={revealAll}
           />
         ))}
