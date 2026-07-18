@@ -3,7 +3,6 @@ Reducing repetition of meaning, 3rd person overall need to improving system prom
 more option for export button
 optimizing code and reduce loading time
 add automatic even when set category select in floating
-user can move category on practice section
 since the bookmark store in localstorage add new button to save bookmark persistant in kv storage (we are talk about it)
 delete button has little problem when you in queue delete
 add sort in practice library filter
