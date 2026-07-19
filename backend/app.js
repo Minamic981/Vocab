@@ -18,6 +18,15 @@ function isMobile(req) {
     return /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
 }
 
+// ── Path configuration (Vercel vs local) ─────────────────────────────────────
+const IS_VERCEL = !!process.env.VERCEL;
+const FRONTEND_DIST = IS_VERCEL
+    ? path.join(__dirname, "static")
+    : path.join(__dirname, "..", "frontend", "dist");
+const FRONTEND_PUBLIC = IS_VERCEL
+    ? path.join(__dirname, "static")
+    : path.join(__dirname, "..", "frontend", "public");
+
 // ── HTML routes (BEFORE static middleware) ────────────────────────────────────
 
 app.get("/", (req, res) => {
@@ -27,7 +36,7 @@ app.get("/", (req, res) => {
     console.log(`[Device Detection] Is Mobile: ${mobile}`);
     const file = mobile ? "mobile.html" : "index.html";
     console.log(`[Device Detection] Serving: ${file}`);
-    res.sendFile(path.join(__dirname, "..", "frontend", "dist", file));
+    res.sendFile(path.join(FRONTEND_DIST, file));
 });
 
 app.get("/lab", (req, res) => {
@@ -37,12 +46,12 @@ app.get("/lab", (req, res) => {
     console.log(`[Device Detection] Is Mobile: ${mobile}`);
     const file = mobile ? "mobile.html" : "lab.html";
     console.log(`[Device Detection] Serving: ${file}`);
-    res.sendFile(path.join(__dirname, "..", "frontend", "dist", file));
+    res.sendFile(path.join(FRONTEND_DIST, file));
 });
 
 // ── Static files (AFTER routes) ──────────────────────────────────────────────
-app.use(express.static(path.join(__dirname, "..", "frontend", "public")));
-app.use(express.static(path.join(__dirname, "..", "frontend", "dist")));
+app.use(express.static(FRONTEND_PUBLIC));
+app.use(express.static(FRONTEND_DIST));
 
 // ── Cloudflare KV Configuration ─────────────────────────────────────────────
 const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
