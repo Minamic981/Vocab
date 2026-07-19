@@ -352,10 +352,6 @@ app.put("/api/words/:index", async (req, res) => {
 
     data.categories[found.cat].words.splice(found.pos, 1);
 
-    if (found.cat !== UNCATEGORIZED_KEY && data.categories[found.cat]?.words.length === 0) {
-        delete data.categories[found.cat];
-    }
-
     if (!data.categories[newCat]) {
         data.categories[newCat] = { description: "", words: [] };
     }
@@ -379,10 +375,6 @@ app.delete("/api/words/:index", async (req, res) => {
 
     const english = found.word.english;
     data.categories[found.cat].words.splice(found.pos, 1);
-
-    if (found.cat !== UNCATEGORIZED_KEY && data.categories[found.cat]?.words.length === 0) {
-        delete data.categories[found.cat];
-    }
 
     if (!(await saveData(data))) {
         return res.status(500).json({ error: "Failed to save changes to Cloudflare KV." });
@@ -500,12 +492,6 @@ app.post("/api/words/delete-multiple", async (req, res) => {
         }
     }
 
-    for (const [k, v] of Object.entries(data.categories)) {
-        if (k !== UNCATEGORIZED_KEY && v?.words?.length === 0) {
-            delete data.categories[k];
-        }
-    }
-
     if (!(await saveData(data))) {
         return res.status(500).json({ error: "Failed to save changes to Cloudflare KV." });
     }
@@ -555,12 +541,6 @@ app.post("/api/words/move-category", async (req, res) => {
                 data.categories[newCat].words.push(word);
                 movedCount++;
             }
-        }
-    }
-
-    for (const [k, v] of Object.entries(data.categories)) {
-        if (k !== UNCATEGORIZED_KEY && v?.words?.length === 0) {
-            delete data.categories[k];
         }
     }
 
