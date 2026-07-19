@@ -162,7 +162,7 @@ export default function MobileApp() {
     if (!en) { showAlert(setAddAlert, 'English field is required.'); return; }
     if (!aiGen && !fa) { showAlert(setAddAlert, 'Persian field is required.'); return; }
 
-    const placeholder = { english: en, persian: fa || '(generating…)', alternatives: [], category: cat, isGenerating: !fa };
+    const placeholder = { english: en, persian: fa || '(generating…)', alternatives: [], category: cat, isGenerating: true };
     setWords(prev => [...prev, placeholder]);
     setAddEn(''); setAddFa(''); setAddAlts('');
     addToast(`Adding "${en}"…`, 'info');
@@ -174,15 +174,19 @@ export default function MobileApp() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setWords(prev => prev.slice(0, -1));
+        setWords(prev => prev.filter(w => !(w.english === en && w.isGenerating)));
         showAlert(setAddAlert, data.error);
         return;
       }
-      setWords(prev => { const copy = [...prev]; copy[copy.length - 1] = data.word; return copy; });
+      setWords(prev => {
+        const i = prev.findIndex(w => w.english === en && w.isGenerating);
+        if (i === -1) return [...prev, data.word];
+        const copy = [...prev]; copy[i] = data.word; return copy;
+      });
       showAlert(setAddAlert, `"${data.word.english}" added!`, 'success');
       addToast(`Added "${data.word.english}"`, 'success');
     } catch (e) {
-      setWords(prev => prev.slice(0, -1));
+      setWords(prev => prev.filter(w => !(w.english === en && w.isGenerating)));
       showAlert(setAddAlert, 'Network error — please try again.');
       addToast('Add failed: ' + e.message, 'error');
     }
