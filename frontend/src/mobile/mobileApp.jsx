@@ -45,7 +45,6 @@ export default function MobileApp() {
   const [addFa, setAddFa] = useState('');
   const [addAiGen, setAddAiGen] = useState(false);
   const [addAlts, setAddAlts] = useState('');
-  const [addCategory, setAddCategory] = useState('');
   const [addStyleEnabled, setAddStyleEnabled] = useState(false);
   const [addStyle, setAddStyle] = useState('');
   const [addCustomStyle, setAddCustomStyle] = useState('');
@@ -159,7 +158,7 @@ export default function MobileApp() {
     const alts = addAlts.trim();
     const style = addStyleEnabled ? addStyle : '';
     const customStyle = addStyleEnabled ? addCustomStyle.trim() : '';
-    const cat = addCategory || null;
+    const cat = categoryFilter || null;
     if (!en) { showAlert(setAddAlert, 'English field is required.'); return; }
     if (!aiGen && !fa) { showAlert(setAddAlert, 'Persian field is required.'); return; }
 
@@ -187,7 +186,7 @@ export default function MobileApp() {
       showAlert(setAddAlert, 'Network error — please try again.');
       addToast('Add failed: ' + e.message, 'error');
     }
-  }, [addEn, addFa, addAiGen, addAlts, addCategory, addStyleEnabled, addStyle, addCustomStyle, showAlert, addToast]);
+  }, [addEn, addFa, addAiGen, addAlts, categoryFilter, addStyleEnabled, addStyle, addCustomStyle, showAlert, addToast]);
 
   // ── API: Delete word ──
   const deleteWord = useCallback((index) => {
@@ -454,7 +453,6 @@ export default function MobileApp() {
           addFa={addFa} setAddFa={setAddFa}
           addAiGen={addAiGen} setAddAiGen={setAddAiGen}
           addAlts={addAlts} setAddAlts={setAddAlts}
-          addCategory={addCategory} setAddCategory={setAddCategory}
           addStyleEnabled={addStyleEnabled} setAddStyleEnabled={setAddStyleEnabled}
           addStyle={addStyle} setAddStyle={setAddStyle}
           addCustomStyle={addCustomStyle} setAddCustomStyle={setAddCustomStyle}

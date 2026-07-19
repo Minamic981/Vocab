@@ -55,7 +55,7 @@ function WordRow({ w, idx, selectMode, isSelected, isBookmarked, alts, onEdit, o
             </svg>
           </button>
           <button className="btn btn-ghost btn-sm" title="Copy to clipboard"
-            onClick={(e) => { e.stopPropagation(); onCopy(w.english, w.persian); }}>
+            onClick={(e) => { e.stopPropagation(); onCopy(w.english); }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
@@ -84,7 +84,6 @@ export default function Library({
   filteredWords,
   addWord, addEn, setAddEn, addFa, setAddFa,
   addAiGen, setAddAiGen, addAlts, setAddAlts,
-  addCategory, setAddCategory,
   addStyleEnabled, setAddStyleEnabled,
   addStyle, setAddStyle,
   addCustomStyle, setAddCustomStyle,
@@ -115,9 +114,8 @@ export default function Library({
     });
   }, [setSelectedIndices]);
 
-  const handleCopy = useCallback((english, persian) => {
-    const text = `${english} = ${persian}`;
-    navigator.clipboard.writeText(text).then(() => {
+  const handleCopy = useCallback((english) => {
+    navigator.clipboard.writeText(english).then(() => {
       addToast('Copied to clipboard', 'success');
     }).catch(() => {
       addToast('Failed to copy', 'error');
@@ -219,8 +217,8 @@ export default function Library({
           <div className="field add-cat-field">
             <label>Category</label>
             <div className="add-cat-row">
-              <select className="add-category-select" value={addCategory}
-                onChange={e => setAddCategory(e.target.value)}>
+              <select className="add-category-select" value={categoryFilter}
+                onChange={e => setCategoryFilter(e.target.value)}>
                 <option value="">No Category</option>
                 {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
               </select>
