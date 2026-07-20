@@ -615,7 +615,10 @@ app.get("/defs/:word", async (req, res) => {
         const definitions = await gen_definitions(word);
         res.json(definitions);
     } catch (e) {
-        res.status(500).json({ error: e.message || "Failed to get definitions" });
+        console.error(`[defs] Error for "${word}":`, e.message);
+        if (!res.headersSent) {
+            res.status(500).json({ error: e.message || "Failed to get definitions" });
+        }
     }
 });
 
@@ -623,7 +626,7 @@ app.get("/defs/:word", async (req, res) => {
 
 app.use((err, req, res, next) => {
     console.error(err.stack);
-    res.status(500).send("Something went wrong!");
+    res.status(500).json({ error: "Something went wrong!" });
 });
 
 // ── Start ────────────────────────────────────────────────────────────────────
