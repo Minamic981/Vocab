@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useState, useEffect } from 'react';
 import speakWord, { escHtml, SegmentedEnglish } from '../common/utils';
 import ExportButton from '../components/ExportButton.jsx';
 const RAINBOW = ['#FF6B6B', '#FF9F43', '#FECA57', '#48DBFB', '#0ABDE3', '#A29BFE', '#6C5CE7', '#FD79A8', '#FDCB6E', '#00CEC9', '#E17055', '#74B9FF'];
@@ -24,13 +24,52 @@ export default function Library({
   addToast,
 }) {
   const addEnRef = useRef(null);
+  const lastClickedIdx = useRef(null);
+  const shiftHeld = useRef(false);
   const bookmarkFilterLabels = { all: '🔖 All', bookmarked: '🔖 Bookmarked', unbookmarked: '🔖 Unbookmarked' };
+
+  useEffect(() => {
+    const onKeyDown = (e) => { if (e.key === 'Shift') shiftHeld.current = true; };
+    const onKeyUp = (e) => { if (e.key === 'Shift') shiftHeld.current = false; };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, []);
 
   const cycleBookmarkFilter = () => {
     const cycle = ['all', 'bookmarked', 'unbookmarked'];
     const next = cycle[(cycle.indexOf(bookmarkFilter) + 1) % cycle.length];
     setBookmarkFilter(next);
   };
+
+  const selectAll = () => {
+    setSelectedIndices(new Set(filteredWords.map(f => f.idx)));
+  };
+
+  const handleRowSelect = useCallback((idx) => {
+    if (shiftHeld.current && lastClickedIdx.current !== null) {
+      const start = Math.min(lastClickedIdx.current, idx);
+      const end = Math.max(lastClickedIdx.current, idx);
+      const shouldRemove = selectedIndices.has(idx);
+      setSelectedIndices(prev => {
+        const next = new Set(prev);
+        for (let i = start; i <= end; i++) {
+          shouldRemove ? next.delete(i) : next.add(i);
+        }
+        return next;
+      });
+    } else {
+      setSelectedIndices(prev => {
+        const next = new Set(prev);
+        next.has(idx) ? next.delete(idx) : next.add(idx);
+        return next;
+      });
+    }
+    lastClickedIdx.current = idx;
+  }, [selectedIndices, setSelectedIndices]);
 
   return (
     <div className="tab-panel active">
@@ -65,6 +104,7 @@ export default function Library({
       {selectMode && (
         <div className="bulk-actions">
           <span className="bulk-count">{selectedIndices.size} selected</span>
+          <button className="btn btn-ghost btn-sm" onClick={selectAll}>Select All</button>
           <label className="bulk-move-label">📁 Move to:</label>
           <select className="bulk-move-select" value="" onChange={e => {
             if (e.target.value) bulkMove(e.target.value === '__none__' ? null : e.target.value);
@@ -99,13 +139,7 @@ export default function Library({
               <div className={`word-row ${isSelected ? 'selected' : ''}${tributeClass}`}>
                 {selectMode && (
                   <input type="checkbox" className="word-checkbox" checked={isSelected}
-                    onChange={() => {
-                      setSelectedIndices(prev => {
-                        const next = new Set(prev);
-                        isSelected ? next.delete(idx) : next.add(idx);
-                        return next;
-                      });
-                    }} />
+                    onChange={() => handleRowSelect(idx)} />
                 )}
                 <span className="word-index">{idx + 1}</span>
                 {alts.length > 0 && (

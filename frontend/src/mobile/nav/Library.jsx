@@ -1,4 +1,4 @@
-import React, { useRef, useCallback } from 'react';
+import React, { useRef, useCallback, useEffect } from 'react';
 import ExportButton from '../compMobile/ExportButton.jsx';
 import speakWord, { escHtml, SegmentedEnglish } from '../../common/utils';
 
@@ -97,6 +97,19 @@ export default function Library({
   revealAll
 }) {
   const addEnRef = useRef(null);
+  const lastClickedIdx = useRef(null);
+  const shiftHeld = useRef(false);
+
+  useEffect(() => {
+    const onKeyDown = (e) => { if (e.key === 'Shift') shiftHeld.current = true; };
+    const onKeyUp = (e) => { if (e.key === 'Shift') shiftHeld.current = false; };
+    window.addEventListener('keydown', onKeyDown);
+    window.addEventListener('keyup', onKeyUp);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, []);
 
   const bookmarkFilterLabels = { all: '🔖 All', bookmarked: '🔖 Bookmarked', unbookmarked: '🔖 Unbookmarked' };
 
@@ -106,13 +119,31 @@ export default function Library({
     setBookmarkFilter(next);
   };
 
+  const selectAll = () => {
+    setSelectedIndices(new Set(filteredWords.map(f => f.idx)));
+  };
+
   const handleCheckbox = useCallback((idx) => {
-    setSelectedIndices(prev => {
-      const next = new Set(prev);
-      next.has(idx) ? next.delete(idx) : next.add(idx);
-      return next;
-    });
-  }, [setSelectedIndices]);
+    if (shiftHeld.current && lastClickedIdx.current !== null) {
+      const start = Math.min(lastClickedIdx.current, idx);
+      const end = Math.max(lastClickedIdx.current, idx);
+      const shouldRemove = selectedIndices.has(idx);
+      setSelectedIndices(prev => {
+        const next = new Set(prev);
+        for (let i = start; i <= end; i++) {
+          shouldRemove ? next.delete(i) : next.add(i);
+        }
+        return next;
+      });
+    } else {
+      setSelectedIndices(prev => {
+        const next = new Set(prev);
+        next.has(idx) ? next.delete(idx) : next.add(idx);
+        return next;
+      });
+    }
+    lastClickedIdx.current = idx;
+  }, [selectedIndices, setSelectedIndices]);
 
   const handleCopy = useCallback((english) => {
     navigator.clipboard.writeText(english).then(() => {
@@ -155,6 +186,7 @@ export default function Library({
       {selectMode && (
         <div className="bulk-actions">
           <span className="bulk-count">{selectedIndices.size} selected</span>
+          <button className="btn btn-ghost btn-sm" onClick={selectAll}>Select All</button>
           <label className="bulk-move-label">📁 Move to:</label>
           <select className="bulk-move-select" value="" onChange={e => {
             if (e.target.value) bulkMove(e.target.value === '__none__' ? null : e.target.value);

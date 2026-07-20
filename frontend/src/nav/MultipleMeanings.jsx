@@ -23,7 +23,9 @@ export default function MultipleMeanings({ addToast }) {
 
     try {
       const res = await fetch(`/defs/${encodeURIComponent(w)}`, { method: 'POST' });
-      const data = await res.json();
+      const text = await res.text();
+      let data;
+      try { data = JSON.parse(text); } catch { throw new Error(text.slice(0, 200)); }
 
       if (!res.ok) {
         setAlert({ msg: data.error || 'Something went wrong.', type: 'error' });
@@ -52,14 +54,16 @@ export default function MultipleMeanings({ addToast }) {
     setAlert({ msg: '', type: 'error' });
 
     fetch(`/defs/${encodeURIComponent(w)}`, { method: 'POST' })
-      .then(res => res.json())
-      .then(data => {
+      .then(res => res.text().then(text => {
+        let data;
+        try { data = JSON.parse(text); } catch { throw new Error(text.slice(0, 200)); }
+        if (!res.ok) throw new Error(data.error || 'Request failed');
         if (!data.definitions || !data.definitions.length) {
           setEmpty(true);
         } else {
           setResult({ mainWord: data.main_word || w, definitions: data.definitions });
         }
-      })
+      }))
       .catch(e => setAlert({ msg: 'Network error: ' + e.message, type: 'error' }))
       .finally(() => setLoading(false));
   };
