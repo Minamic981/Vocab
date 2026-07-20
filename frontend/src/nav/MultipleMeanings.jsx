@@ -21,7 +21,7 @@ export default function MultipleMeanings({ fetchWithRetry }) {
     setAlert({ msg: '', type: 'error' });
 
     try {
-      const res = await fetchWithRetry(`/defs/${encodeURIComponent(w)}`, { method: 'GET' });
+      const res = await fetchWithRetry(`/defs/${encodeURIComponent(w)}`, { method: 'POST' });
       const text = await res.text();
       let data;
       try { data = JSON.parse(text); } catch { data = null; }
