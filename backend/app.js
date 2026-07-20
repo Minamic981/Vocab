@@ -32,15 +32,12 @@ const FRONTEND_PUBLIC = IS_VERCEL
 app.get("/", (req, res) => {
     const ua = req.headers["user-agent"] || "";
     const mobile = isMobile(req);
-    const file = mobile ? "mobile.html" : "index.html";
-    res.sendFile(path.join(FRONTEND_DIST, file));
+    const [folder, file] = mobile ? ["mobile", "mobile.html"] : ["web", "index.html"];
+    res.sendFile(path.join(FRONTEND_DIST, folder, file));
 });
 
 app.get("/lab", (req, res) => {
-    const ua = req.headers["user-agent"] || "";
-    const mobile = isMobile(req);
-    const file = mobile ? "mobile.html" : "lab.html";
-    res.sendFile(path.join(FRONTEND_DIST, file));
+    res.sendFile(path.join(FRONTEND_DIST, "lab", "lab.html"));
 });
 
 // ── Static files (AFTER routes) ──────────────────────────────────────────────
