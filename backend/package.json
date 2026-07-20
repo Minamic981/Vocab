@@ -4,7 +4,7 @@
   "description": "",
   "main": "app.js",
   "scripts": {
-    "start": "cd ../frontend && npm run build && cd ../backend && node app.js",
+    "start": "cd ../frontend && npm run build && npm run purge && cd ../backend && node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
@@ -15,5 +15,6 @@
     "cors": "^2.8.6",
     "dotenv": "^17.4.2",
     "express": "^5.2.1"
-  }
+  },
+  "devDependencies": {}
 }

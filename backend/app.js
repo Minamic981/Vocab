@@ -22,7 +22,7 @@ function isMobile(req) {
 const IS_VERCEL = !!process.env.VERCEL;
 const FRONTEND_DIST = IS_VERCEL
     ? path.join(__dirname, "static")
-    : path.join(__dirname, "..", "frontend", "dist");
+    : path.join(__dirname, "..", "frontend", "dist", "src");
 const FRONTEND_PUBLIC = IS_VERCEL
     ? path.join(__dirname, "static")
     : path.join(__dirname, "..", "frontend", "public");
@@ -43,6 +43,8 @@ app.get("/lab", (req, res) => {
 // ── Static files (AFTER routes) ──────────────────────────────────────────────
 app.use(express.static(FRONTEND_PUBLIC));
 app.use(express.static(FRONTEND_DIST));
+// Serve dist root so /assets/* resolves to dist/assets/*
+app.use(express.static(path.join(__dirname, "..", "frontend", "dist")));
 
 // ── Cloudflare KV Configuration ─────────────────────────────────────────────
 const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
