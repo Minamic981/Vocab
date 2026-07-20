@@ -24,9 +24,12 @@ export default function MultipleMeanings({ fetchWithRetry }) {
       const res = await fetchWithRetry(`/defs/${encodeURIComponent(w)}`, { method: 'GET' });
       const text = await res.text();
       let data;
-      try { data = JSON.parse(text); } catch { throw new Error(text.slice(0, 200)); }
+      try { data = JSON.parse(text); } catch { data = null; }
 
-      if (!res.ok) throw new Error(data.error || 'Request failed');
+      if (!res.ok || !data) {
+        const msg = data?.error || text.slice(0, 200) || `Server error (${res.status})`;
+        throw new Error(msg);
+      }
 
       const defs = data.definitions || [];
       if (!defs.length) {
@@ -36,7 +39,7 @@ export default function MultipleMeanings({ fetchWithRetry }) {
 
       setResult({ mainWord: data.main_word || w, definitions: defs });
     } catch (e) {
-      setAlert({ msg: 'Network error: ' + e.message, type: 'error' });
+      setAlert({ msg: 'Error: ' + e.message, type: 'error' });
     } finally {
       setLoading(false);
     }
