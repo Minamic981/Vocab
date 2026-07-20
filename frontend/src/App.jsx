@@ -4,7 +4,6 @@ import BatchImport from './nav/BatchImport.jsx';
 import Practice from './nav/Practice.jsx';
 import MultipleMeanings from './nav/MultipleMeanings.jsx';
 import FloatingNav from './components/FloatingNav.jsx';
-import ExportButton from './components/ExportButton.jsx';
 import { filterByCategory } from './common/utils';
 
 // ── Helpers ────────────────────────────────────────────────
@@ -93,7 +92,6 @@ export default function App() {
   const [fnAddOpen, setFnAddOpen] = useState(false);
   const [fnCatOpen, setFnCatOpen] = useState(false);
   const [scrollToTop, setScrollToTop] = useState(false);
-  const fnSearchRef = useRef(null);
   const fnAddEnRef = useRef(null);
 
   // ── Floating add form ──
@@ -492,7 +490,7 @@ export default function App() {
       addToast('Add failed: ' + e.message, 'error');
     }
     fnAddEnRef.current?.focus();
-  }, [fnAddEn, fnAddFa, fnAddAiGen, fnAddAlts, fnAddStyleEnabled, fnAddStyle, fnAddCustomStyle, showAlert, addToast]);
+  }, [fnAddEn, fnAddFa, fnAddAiGen, fnAddAlts, fnAddStyleEnabled, fnAddStyle, fnAddCustomStyle, categoryFilter, showAlert, addToast]);
 
   // ── Open edit modal ──
   const openEdit = useCallback((index) => {
@@ -577,7 +575,7 @@ export default function App() {
           bookmarkedWords={bookmarkedWords} isBookmarked={isBookmarked} toggleBookmark={toggleBookmark}
           addToast={addToast} moveWordsToCategory={moveWordsToCategory} />
       )}
-      {activeTab === 'defs' && <MultipleMeanings addToast={addToast} fetchWithRetry={fetchWithRetry} />}
+      {activeTab === 'defs' && <MultipleMeanings fetchWithRetry={fetchWithRetry} />}
 
       {/* ── Edit Modal ── */}
       {editOpen && (

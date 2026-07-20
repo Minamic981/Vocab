@@ -7,10 +7,7 @@ const PRACTICE_FILTERS = [
   { key: 'unbookmarked', label: '🔖 Unbookmarked', title: 'Show only unbookmarked' },
 ];
 
-export default function Practice({
-  words, categories, bookmarkedWords, isBookmarked, toggleBookmark,
-  addToast, fetchWithRetry, moveWordsToCategory
-}) {
+export default function Practice({ words, categories, isBookmarked, toggleBookmark, moveWordsToCategory }) {
   const [practiceQueue, setPracticeQueue] = useState([]);
   const [practiceIndex, setPracticeIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);

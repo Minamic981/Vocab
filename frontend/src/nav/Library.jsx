@@ -1,10 +1,10 @@
-import React, { useRef, useCallback, useState, useEffect } from 'react';
+import React, { useRef, useCallback, useEffect } from 'react';
 import speakWord, { escHtml, SegmentedEnglish } from '../common/utils';
 import ExportButton from '../components/ExportButton.jsx';
 const RAINBOW = ['#FF6B6B', '#FF9F43', '#FECA57', '#48DBFB', '#0ABDE3', '#A29BFE', '#6C5CE7', '#FD79A8', '#FDCB6E', '#00CEC9', '#E17055', '#74B9FF'];
 
 export default function Library({
-  words, categories, bookmarkedWords,
+  words, categories,
   searchQuery, setSearchQuery,
   categoryFilter, setCategoryFilter,
   bookmarkFilter, setBookmarkFilter,
@@ -21,7 +21,6 @@ export default function Library({
   openEdit, deleteWord, openPopup,
   bulkDelete, bulkMove,
   setCatName, setCatDesc, setCatAlert, setCatModalOpen,
-  addToast,
 }) {
   const addEnRef = useRef(null);
   const lastClickedIdx = useRef(null);
@@ -128,7 +127,6 @@ export default function Library({
                   'No words yet — add one below!'}
           </div>
         ) : filteredWords.map(({ word: w, idx }) => {
-          const isBookmarked = bookmarkedWords.includes(w.english);
           const isSelected = selectedIndices.has(idx);
           const alts = w.alternatives || [];
           const isTribute = w.english.toLowerCase().includes('tachiba san');

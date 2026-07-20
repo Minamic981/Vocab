@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import speakWord, { filterByCategory } from '../common/utils';
 const PRACTICE_FILTERS = [
   { key: 'all', label: '🔖 All', title: 'Show all words' },
@@ -6,8 +6,8 @@ const PRACTICE_FILTERS = [
   { key: 'unbookmarked', label: '🔖 Unbookmarked', title: 'Show only unbookmarked' },
 ];
 export default function Practice({
-  words, categories, bookmarkedWords, isBookmarked, toggleBookmark,
-  addToast, moveWordsToCategory,
+  words, categories, isBookmarked, toggleBookmark,
+  moveWordsToCategory,
 }) {
 
   const [practiceQueue, setPracticeQueue] = useState([]);
@@ -41,10 +41,6 @@ export default function Practice({
   useEffect(() => {
     shuffleQueue();
   }, [words, practiceFilter, practiceCatFilter]);
-
-  const showCard = useCallback(() => {
-    setIsFlipped(false);
-  }, []);
 
   const currentWord = practiceQueue[practiceIndex % practiceQueue.length] || null;
 

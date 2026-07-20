@@ -4,7 +4,7 @@ import speakWord, { escHtml, SegmentedEnglish } from '../../common/utils';
 
 const RAINBOW = ['#FF6B6B', '#FF9F43', '#FECA57', '#48DBFB', '#0ABDE3', '#A29BFE', '#6C5CE7', '#FD79A8', '#FDCB6E', '#00CEC9', '#E17055', '#74B9FF'];
 
-function WordRow({ w, idx, selectMode, isSelected, isBookmarked, alts, onEdit, onDelete, onPopup, onCheckbox, onSpeak, onCopy, revealAll }) {
+function WordRow({ w, idx, selectMode, isSelected, alts, onEdit, onDelete, onPopup, onCheckbox, onSpeak, onCopy, revealAll }) {
   const [revealed, setRevealed] = React.useState(false);
   const [altsOpen, setAltsOpen] = React.useState(false);
   const isTribute = w.english.toLowerCase().includes('tachiba san');
@@ -75,7 +75,7 @@ function WordRow({ w, idx, selectMode, isSelected, isBookmarked, alts, onEdit, o
 }
 
 export default function Library({
-  words, categories, bookmarkedWords,
+  words, categories,
   searchQuery, setSearchQuery,
   categoryFilter, setCategoryFilter,
   bookmarkFilter, setBookmarkFilter,
@@ -92,8 +92,8 @@ export default function Library({
   openEdit, deleteWord, openPopup,
   bulkDelete, bulkMove,
   setCatName, setCatDesc, setCatAlert, setCatModalOpen,
-  isBookmarked, toggleBookmark,
-  addToast, fetchWithRetry, moveWordsToCategory,
+  isBookmarked,
+  addToast,
   revealAll
 }) {
   const addEnRef = useRef(null);

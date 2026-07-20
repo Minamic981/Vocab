@@ -416,8 +416,6 @@ export default function MobileApp() {
     setPopupOpen(true);
   }, [categoryFilter]);
 
-  const bookmarkFilterLabels = { all: '🔖 All', bookmarked: '🔖 Bookmarked', unbookmarked: '🔖 Unbookmarked' };
-
   // ── Render ──
   return (
     <>
