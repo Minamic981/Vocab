@@ -1,16 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import { SegmentedEnglish } from '../common/utils';
 
-export default function MultipleMeanings({ addToast }) {
-
-  const [word, setWord] = useState('');
+export default function MultipleMeanings({ fetchWithRetry }) {
+  const inputRef = useRef(null);
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState({ msg: '', type: 'error' });
   const [result, setResult] = useState(null);
   const [empty, setEmpty] = useState(false);
 
-  const handleLookup = async () => {
-    const w = word.trim();
+  const handleLookup = useCallback(async (w) => {
+    w = w?.trim() || inputRef.current?.value?.trim() || null;
     if (!w) {
       setAlert({ msg: 'Enter a word first.', type: 'error' });
       return;
@@ -22,15 +21,12 @@ export default function MultipleMeanings({ addToast }) {
     setAlert({ msg: '', type: 'error' });
 
     try {
-      const res = await fetch(`/defs/${encodeURIComponent(w)}`, { method: 'POST' });
+      const res = await fetchWithRetry(`/defs/${encodeURIComponent(w)}`, { method: 'GET' });
       const text = await res.text();
       let data;
       try { data = JSON.parse(text); } catch { throw new Error(text.slice(0, 200)); }
 
-      if (!res.ok) {
-        setAlert({ msg: data.error || 'Something went wrong.', type: 'error' });
-        return;
-      }
+      if (!res.ok) throw new Error(data.error || 'Request failed');
 
       const defs = data.definitions || [];
       if (!defs.length) {
@@ -38,35 +34,13 @@ export default function MultipleMeanings({ addToast }) {
         return;
       }
 
-      setResult({ mainWord: data.main_word || word, definitions: defs });
+      setResult({ mainWord: data.main_word || w, definitions: defs });
     } catch (e) {
       setAlert({ msg: 'Network error: ' + e.message, type: 'error' });
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleWordClick = (w) => {
-    setWord(w);
-    setLoading(true);
-    setResult(null);
-    setEmpty(false);
-    setAlert({ msg: '', type: 'error' });
-
-    fetch(`/defs/${encodeURIComponent(w)}`, { method: 'POST' })
-      .then(res => res.text().then(text => {
-        let data;
-        try { data = JSON.parse(text); } catch { throw new Error(text.slice(0, 200)); }
-        if (!res.ok) throw new Error(data.error || 'Request failed');
-        if (!data.definitions || !data.definitions.length) {
-          setEmpty(true);
-        } else {
-          setResult({ mainWord: data.main_word || w, definitions: data.definitions });
-        }
-      }))
-      .catch(e => setAlert({ msg: 'Network error: ' + e.message, type: 'error' }))
-      .finally(() => setLoading(false));
-  };
+  }, [fetchWithRetry]);
 
   return (
     <div className="tab-panel active">
@@ -79,16 +53,15 @@ export default function MultipleMeanings({ addToast }) {
           <div className="field">
             <label htmlFor="defs-en">English word</label>
             <input
+              ref={inputRef}
               type="text"
               id="defs-en"
               placeholder="e.g. light"
               autoComplete="off"
-              value={word}
-              onChange={e => setWord(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') handleLookup(); }}
+              onKeyDown={e => { if (e.key === 'Enter') handleLookup(e.target.value); }}
             />
           </div>
-          <button className="btn btn-primary" onClick={handleLookup} disabled={loading}
+          <button className="btn btn-primary" onClick={() => handleLookup()} disabled={loading}
             style={{ height: 41 }}>
             {loading ? '⏳ Looking up…' : 'Look up'}
           </button>
@@ -116,7 +89,7 @@ export default function MultipleMeanings({ addToast }) {
                 {result.definitions.map((d, i) => (
                   <tr key={i}>
                     <td className="defs-td defs-td-num">{i + 1}</td>
-                    <td className="defs-td defs-td-en"><SegmentedEnglish text={d.english} onWordClick={handleWordClick} /></td>
+                    <td className="defs-td defs-td-en"><SegmentedEnglish text={d.english} onWordClick={handleLookup} /></td>
                     <td className="defs-td defs-td-fa">{d.persian}</td>
                   </tr>
                 ))}

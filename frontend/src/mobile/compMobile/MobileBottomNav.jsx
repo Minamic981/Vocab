@@ -8,7 +8,6 @@ export default function MobileBottomNav({
   mbnNavOpen, setMbnNavOpen,
   mbnCatOpen, setMbnCatOpen,
   scrollToTop, setScrollToTop,
-  setCatName, setCatDesc, setCatAlert, setCatModalOpen,
 }) {
   return (
     <>

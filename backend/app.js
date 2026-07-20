@@ -607,7 +607,7 @@ app.delete("/api/categories/:name", async (req, res) => {
 
 // ── Definitions API ──────────────────────────────────────────────────────────
 
-app.post("/defs/:word", async (req, res) => {
+app.get("/defs/:word", async (req, res) => {
     const word = req.params.word?.trim().toLowerCase();
     if (!word) return res.status(400).json({ error: "Word is required." });
 

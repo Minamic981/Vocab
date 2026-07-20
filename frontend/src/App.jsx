@@ -577,7 +577,7 @@ export default function App() {
           bookmarkedWords={bookmarkedWords} isBookmarked={isBookmarked} toggleBookmark={toggleBookmark}
           addToast={addToast} moveWordsToCategory={moveWordsToCategory} />
       )}
-      {activeTab === 'defs' && <MultipleMeanings addToast={addToast} />}
+      {activeTab === 'defs' && <MultipleMeanings addToast={addToast} fetchWithRetry={fetchWithRetry} />}
 
       {/* ── Edit Modal ── */}
       {editOpen && (

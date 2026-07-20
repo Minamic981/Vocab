@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { SegmentedEnglish } from '../../common/utils';
 
-export default function MultipleMeanings({ addToast }) {
+export default function MultipleMeanings() {
   const [word, setWord] = useState('');
   const [loading, setLoading] = useState(false);
   const [alert, setAlert] = useState({ msg: '', type: 'error' });
