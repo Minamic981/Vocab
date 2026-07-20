@@ -227,13 +227,22 @@ export default function App() {
         showAlert(setAddAlert, data.error);
         return;
       }
-      setWords(prev => {
-        const i = prev.findIndex(w => w.english === en && w.isGenerating);
-        if (i === -1) return [...prev, data.word];
-        const copy = [...prev]; copy[i] = data.word; return copy;
-      });
-      showAlert(setAddAlert, `"${data.word.english}" added!`, 'success');
-      addToast(`Added "${data.word.english}"`, 'success');
+      if (data.action === 'merged') {
+        setWords(prev => {
+          const filtered = prev.filter(w => !(w.english === en && w.isGenerating));
+          return filtered.map(w => w.english === en ? data.word : w);
+        });
+        showAlert(setAddAlert, `"${en}" already exists — Persian meaning merged!`, 'success');
+        addToast(`Merged meaning into "${en}"`, 'success');
+      } else {
+        setWords(prev => {
+          const i = prev.findIndex(w => w.english === en && w.isGenerating);
+          if (i === -1) return [...prev, data.word];
+          const copy = [...prev]; copy[i] = data.word; return copy;
+        });
+        showAlert(setAddAlert, `"${data.word.english}" added!`, 'success');
+        addToast(`Added "${data.word.english}"`, 'success');
+      }
     } catch (e) {
       setWords(prev => prev.filter(w => !(w.english === en && w.isGenerating)));
       showAlert(setAddAlert, 'Network error — please try again.');
@@ -403,9 +412,15 @@ export default function App() {
       });
       const data = await res.json();
       if (!res.ok) { showAlert(setPopupAlert, data.error || 'Generation failed.'); return; }
-      setWords(prev => [...prev, data.word]);
+      if (data.action === 'merged') {
+        setWords(prev => prev.map(w => w.english === en ? data.word : w));
+        showAlert(setPopupAlert, `"${en}" already exists — meaning merged!`, 'success');
+        addToast(`Merged meaning into "${en}"`, 'success');
+      } else {
+        setWords(prev => [...prev, data.word]);
+        addToast(`Added "${data.word.english}"`, 'success');
+      }
       setPopupOpen(false);
-      addToast(`Added "${data.word.english}"`, 'success');
     } catch (e) {
       showAlert(setPopupAlert, 'Network error — please try again.');
     } finally { setPopupLoading(false); }
@@ -477,13 +492,22 @@ export default function App() {
         showAlert(setFnAddAlert, data.error);
         return;
       }
-      setWords(prev => {
-        const i = prev.findIndex(w => w.english === en && w.isGenerating);
-        if (i === -1) return [...prev, data.word];
-        const copy = [...prev]; copy[i] = data.word; return copy;
-      });
-      showAlert(setFnAddAlert, `"${data.word.english}" added!`, 'success');
-      addToast(`Added "${data.word.english}"`, 'success');
+      if (data.action === 'merged') {
+        setWords(prev => {
+          const filtered = prev.filter(w => !(w.english === en && w.isGenerating));
+          return filtered.map(w => w.english === en ? data.word : w);
+        });
+        showAlert(setFnAddAlert, `"${en}" already exists — Persian meaning merged!`, 'success');
+        addToast(`Merged meaning into "${en}"`, 'success');
+      } else {
+        setWords(prev => {
+          const i = prev.findIndex(w => w.english === en && w.isGenerating);
+          if (i === -1) return [...prev, data.word];
+          const copy = [...prev]; copy[i] = data.word; return copy;
+        });
+        showAlert(setFnAddAlert, `"${data.word.english}" added!`, 'success');
+        addToast(`Added "${data.word.english}"`, 'success');
+      }
     } catch (e) {
       setWords(prev => prev.filter(w => !(w.english === en && w.isGenerating)));
       showAlert(setFnAddAlert, 'Network error — please try again.');

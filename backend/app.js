@@ -32,20 +32,14 @@ const FRONTEND_PUBLIC = IS_VERCEL
 app.get("/", (req, res) => {
     const ua = req.headers["user-agent"] || "";
     const mobile = isMobile(req);
-    console.log(`[Device Detection] User-Agent: ${ua}`);
-    console.log(`[Device Detection] Is Mobile: ${mobile}`);
     const file = mobile ? "mobile.html" : "index.html";
-    console.log(`[Device Detection] Serving: ${file}`);
     res.sendFile(path.join(FRONTEND_DIST, file));
 });
 
 app.get("/lab", (req, res) => {
     const ua = req.headers["user-agent"] || "";
     const mobile = isMobile(req);
-    console.log(`[Device Detection] User-Agent: ${ua}`);
-    console.log(`[Device Detection] Is Mobile: ${mobile}`);
     const file = mobile ? "mobile.html" : "lab.html";
-    console.log(`[Device Detection] Serving: ${file}`);
     res.sendFile(path.join(FRONTEND_DIST, file));
 });
 
@@ -243,6 +237,20 @@ function englishExists(data, english, excludeCat = null, excludePos = null) {
     return false;
 }
 
+function findExistingWord(data, english) {
+    english = english.toLowerCase();
+    const cats = data.categories || {};
+    for (const [catName, catObj] of Object.entries(cats)) {
+        const words = catObj?.words || [];
+        for (let pos = 0; pos < words.length; pos++) {
+            if (words[pos].english?.toLowerCase() === english) {
+                return { cat: catName, pos, word: words[pos] };
+            }
+        }
+    }
+    return null;
+}
+
 function totalWords(data) {
     return Object.values(data.categories || {}).reduce((sum, c) => sum + (c?.words?.length || 0), 0);
 }
@@ -292,8 +300,25 @@ app.post("/api/words", async (req, res) => {
 
     const data = await loadData();
 
-    if (englishExists(data, english)) {
-        return res.status(409).json({ error: `"${english}" already exists.` });
+    const existing = findExistingWord(data, english);
+    if (existing) {
+        const oldPersian = existing.word.persian || '';
+        const mergedPersian = oldPersian + '/' + newWord.persian;
+        existing.word.persian = mergedPersian;
+        if (newWord.alternatives?.length) {
+            existing.word.alternatives = [...(existing.word.alternatives || []), ...newWord.alternatives];
+        }
+
+        if (!(await saveData(data))) {
+            return res.status(500).json({ error: "Failed to save to Cloudflare KV." });
+        }
+
+        const wordCat = existing.cat === UNCATEGORIZED_KEY ? null : existing.cat;
+        return res.status(200).json({
+            action: "merged",
+            message: `"${english}" already exists. Persian meaning merged.`,
+            word: { english: existing.word.english, persian: mergedPersian, alternatives: existing.word.alternatives, category: wordCat }
+        });
     }
 
     const catKey = category || UNCATEGORIZED_KEY;
@@ -327,19 +352,7 @@ app.put("/api/words/:index", async (req, res) => {
 
     const data = await loadData();
 
-    let found = null;
-    for (const [catName, catObj] of Object.entries(data.categories || {})) {
-        const words = catObj?.words || [];
-        for (let pos = 0; pos < words.length; pos++) {
-            if (words[pos].english?.toLowerCase() === english) {
-                found = { cat: catName, pos };
-                break;
-            }
-        }
-        if (found) break;
-    }
-
-    if (!found) found = locateWordByIndex(data, index);
+    const found = locateWordByIndex(data, index);
 
     if (!found) return res.status(404).json({ error: "Word not found." });
 
