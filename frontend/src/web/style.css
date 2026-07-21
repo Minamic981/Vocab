@@ -7,6 +7,10 @@
   padding: 0;
 }
 
+html {
+  overflow-y: scroll;
+}
+
 :root {
   --ink: #1a1a1a;
   --ink-light: #555;
