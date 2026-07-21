@@ -32,6 +32,9 @@ const FRONTEND_PUBLIC = IS_VERCEL
 app.get("/", (req, res) => {
     const ua = req.headers["user-agent"] || "";
     const mobile = isMobile(req);
+    console.log(`[DEBUG] User-Agent: ${ua}`);
+    console.log(`[DEBUG] Is mobile: ${mobile}`);
+    console.log(`[DEBUG] Serving: ${mobile ? "mobile.html" : "index.html"}`);
     const [folder, file] = mobile ? ["mobile", "mobile.html"] : ["web", "index.html"];
     // Prevent Vercel edge caching so device detection works
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
