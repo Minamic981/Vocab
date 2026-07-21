@@ -20,10 +20,20 @@ function isMobile(req) {
 
 // ── Path configuration (Vercel vs local) ─────────────────────────────────────
 const IS_VERCEL = !!process.env.VERCEL;
-const FRONTEND_DIST = IS_VERCEL
+
+// Local:  frontend/dist/src/web/index.html  |  frontend/dist/src/mobile/mobile.html
+// Vercel: backend/static/src/web/index.html | backend/static/src/mobile/mobile.html
+const HTML_DIR = IS_VERCEL
     ? path.join(__dirname, "static", "src")
     : path.join(__dirname, "..", "frontend", "dist", "src");
-const FRONTEND_PUBLIC = IS_VERCEL
+
+// Local:  frontend/dist/assets/*  |  Vercel: backend/static/assets/*
+const ASSETS_DIR = IS_VERCEL
+    ? path.join(__dirname, "static")
+    : path.join(__dirname, "..", "frontend", "dist");
+
+// Local:  frontend/public/*  |  Vercel: backend/static/*
+const PUBLIC_DIR = IS_VERCEL
     ? path.join(__dirname, "static")
     : path.join(__dirname, "..", "frontend", "public");
 
@@ -33,21 +43,17 @@ app.get("/", (req, res) => {
     const ua = req.headers["user-agent"] || "";
     const mobile = isMobile(req);
     const [folder, file] = mobile ? ["mobile", "mobile.html"] : ["web", "index.html"];
-    res.sendFile(path.join(FRONTEND_DIST, folder, file));
+    res.sendFile(path.join(HTML_DIR, folder, file));
 });
 
 app.get("/lab", (req, res) => {
-    res.sendFile(path.join(FRONTEND_DIST, "lab", "lab.html"));
+    res.sendFile(path.join(HTML_DIR, "lab", "lab.html"));
 });
 
 // ── Static files (AFTER routes) ──────────────────────────────────────────────
-app.use(express.static(FRONTEND_PUBLIC));
-app.use(express.static(FRONTEND_DIST));
-// Serve dist root so /assets/* resolves to dist/assets/*
-const DIST_ROOT = IS_VERCEL
-    ? path.join(__dirname, "static")
-    : path.join(__dirname, "..", "frontend", "dist");
-app.use(express.static(DIST_ROOT));
+app.use(express.static(PUBLIC_DIR));
+app.use(express.static(ASSETS_DIR));
+app.use(express.static(HTML_DIR));
 
 // ── Cloudflare KV Configuration ─────────────────────────────────────────────
 const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
