@@ -49,9 +49,9 @@ export default function BatchImport({ words, setWords, addToast, fetchWithRetry 
     <div className="tab-panel active">
       <div className="card">
         <div className="card-title">Paste Words from Clipboard</div>
-        <p style={{ fontSize: 13, color: 'var(--ink-light)', marginBottom: 14 }}>
+        <p className="batch-instruction">
           One word per line in the format:
-          <code style={{ background: 'var(--paper-2)', padding: '2px 6px', borderRadius: 4 }}>
+          <code className="batch-code">
             English = فارسی
           </code>
         </p>
@@ -65,7 +65,7 @@ export default function BatchImport({ words, setWords, addToast, fetchWithRetry 
             onChange={e => setImportText(e.target.value)}
           />
         </div>
-        <div style={{ marginTop: 14 }}>
+        <div className="batch-btn-row">
           <button className="btn btn-primary" onClick={handleImport} disabled={importing}>
             {importing ? 'Importing…' : 'Import All'}
           </button>

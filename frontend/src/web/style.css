@@ -1740,6 +1740,141 @@ textarea {
   background: var(--paper-2);
 }
 
+/* ── Modal field spacing ──────────────────────────────────── */
+.modal .field {
+  margin-bottom: 12px;
+}
+
+/* ── Floating bar show button (fixed) ────────────────────── */
+.fn-show-nav-fixed {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 91;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: var(--paper-2);
+  border: 1px solid var(--rule);
+  border-radius: 20px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+/* ── Toast notifications ─────────────────────────────────── */
+.toast-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 10000;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  pointer-events: none;
+}
+
+.toast-item {
+  pointer-events: auto;
+  padding: 12px 20px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.25);
+  max-width: 360px;
+  word-wrap: break-word;
+}
+
+/* ── Practice mode ───────────────────────────────────────── */
+.practice-title {
+  font-family: "Lora", serif;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.practice-subtitle {
+  font-size: 13px;
+  color: var(--ink-faint);
+  margin-top: 2px;
+}
+
+/* ── Batch import / Export instruction ───────────────────── */
+.batch-instruction {
+  font-size: 13px;
+  color: var(--ink-light);
+  margin-bottom: 14px;
+}
+
+.batch-code {
+  background: var(--paper-2);
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.batch-btn-row {
+  margin-top: 14px;
+}
+
+/* ── Style options field spacing ─────────────────────────── */
+.style-options .field {
+  margin-top: 10px;
+}
+
+/* ── Multiple Meanings ───────────────────────────────────── */
+.defs-btn {
+  height: 41px;
+}
+
+.defs-results {
+  margin-top: 24px;
+}
+
+.no-words-block {
+  display: block;
+}
+
+/* ── Export modal ────────────────────────────────────────── */
+.export-btn-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.export-cat-count {
+  font-size: 12px;
+  color: var(--ink-faint);
+  align-self: center;
+}
+
+.export-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.export-cat-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid var(--rule);
+  font-size: 13px;
+  background: var(--paper-2);
+}
+
+.export-cat-label.selected {
+  background: var(--accent-lt);
+  border-color: var(--accent);
+}
+
+.checkbox-input {
+  margin: 0;
+}
+
 /* ── Segmented words (clickable words in sentences) ─────── */
 .word-segment {
   display: inline;

@@ -4,7 +4,7 @@ import BatchImport from './nav/BatchImport.jsx';
 import Practice from './nav/Practice.jsx';
 import MultipleMeanings from './nav/MultipleMeanings.jsx';
 import MobileBottomNav from './compMobile/MobileBottomNav.jsx';
-import { filterByCategory } from '../common/utils';
+import { filterByCategory } from '../common/utils.jsx';
 
 // ── Helpers ────────────────────────────────────────────────
 const RETRY_MAX = 3;
@@ -505,11 +505,11 @@ export default function MobileApp() {
         <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setEditOpen(false); }}>
           <div className="modal">
             <div className="modal-title">Edit Word</div>
-            <div className="field" style={{ marginBottom: 12 }}>
+            <div className="field">
               <label>English</label>
               <input type="text" value={editEn} onChange={e => setEditEn(e.target.value)} />
             </div>
-            <div className="field" style={{ marginBottom: 12 }}>
+            <div className="field">
               <label>Persian (فارسی)</label>
               <input type="text" dir="rtl" value={editFa} onChange={e => setEditFa(e.target.value)} />
             </div>
@@ -518,7 +518,7 @@ export default function MobileApp() {
               <textarea rows="3" placeholder="Optional alternative sentences..."
                 value={editAlts} onChange={e => setEditAlts(e.target.value)} />
             </div>
-            <div className="field" style={{ marginBottom: 12 }}>
+            <div className="field">
               <label>Category</label>
               <select value={editCategory} onChange={e => setEditCategory(e.target.value)}>
                 <option value="">No Category</option>
@@ -542,17 +542,17 @@ export default function MobileApp() {
         <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setPopupOpen(false); }}>
           <div className="modal">
             <div className="modal-title">Generate Sentence for Word</div>
-            <div className="field" style={{ marginBottom: 12 }}>
+            <div className="field">
               <label>English</label>
               <input type="text" readOnly value={popupWord} />
             </div>
-            <div className="field" style={{ marginBottom: 12 }}>
+            <div className="field">
               <label>Persian (فارسی) — optional</label>
               <input type="text" dir="rtl" placeholder="e.g. سخت"
                 value={popupFa} onChange={e => setPopupFa(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') popupGenerate(); }} />
             </div>
-            <div className="field" style={{ marginBottom: 12 }}>
+            <div className="field">
               <label>Category</label>
               <select value={popupCategory} onChange={e => setPopupCategory(e.target.value)}>
                 <option value="">No Category</option>
@@ -575,13 +575,13 @@ export default function MobileApp() {
         <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setCatModalOpen(false); }}>
           <div className="modal">
             <div className="modal-title">Create Category</div>
-            <div className="field" style={{ marginBottom: 12 }}>
+            <div className="field">
               <label>Category Name *</label>
               <input type="text" placeholder="e.g. Grammar" value={catName}
                 onChange={e => setCatName(e.target.value)}
                 onKeyDown={e => { if (e.key === 'Enter') document.getElementById('cat-modal-save')?.click(); }} />
             </div>
-            <div className="field" style={{ marginBottom: 12 }}>
+            <div className="field">
               <label>Description (optional)</label>
               <textarea rows="2" placeholder="Optional description..."
                 value={catDesc} onChange={e => setCatDesc(e.target.value)} />
@@ -614,12 +614,10 @@ export default function MobileApp() {
       />
 
       {/* Toasts */}
-      <div id="toast-container" style={{ position: 'fixed', top: 20, right: 20, zIndex: 10000, display: 'flex', flexDirection: 'column', gap: 10, pointerEvents: 'none' }}>
+      <div className="toast-container">
         {toasts.map(t => (
-          <div key={t.id} style={{
-            pointerEvents: 'auto', padding: '12px 20px', borderRadius: 8, fontSize: 14, fontWeight: 500, color: '#fff',
+          <div key={t.id} className="toast-item" style={{
             background: t.type === 'success' ? '#22c55e' : t.type === 'error' ? '#ef4444' : t.type === 'warn' ? '#f59e0b' : '#3b82f6',
-            boxShadow: '0 4px 12px rgba(0,0,0,.25)', maxWidth: 360, wordWrap: 'break-word'
           }}>{t.msg}</div>
         ))}
       </div>

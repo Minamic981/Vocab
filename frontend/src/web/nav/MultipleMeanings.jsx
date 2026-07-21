@@ -1,5 +1,5 @@
 import React, { useState, useRef, useCallback } from 'react';
-import { SegmentedEnglish } from '../common/utils';
+import { SegmentedEnglish } from '../../common/utils.jsx';
 
 export default function MultipleMeanings({ fetchWithRetry }) {
   const inputRef = useRef(null);
@@ -64,8 +64,7 @@ export default function MultipleMeanings({ fetchWithRetry }) {
               onKeyDown={e => { if (e.key === 'Enter') handleLookup(e.target.value); }}
             />
           </div>
-          <button className="btn btn-primary" onClick={() => handleLookup()} disabled={loading}
-            style={{ height: 41 }}>
+          <button className="btn btn-primary defs-btn" onClick={() => handleLookup()} disabled={loading}>
             {loading ? '⏳ Looking up…' : 'Look up'}
           </button>
         </div>
@@ -77,7 +76,7 @@ export default function MultipleMeanings({ fetchWithRetry }) {
       </div>
 
       {result && (
-        <div style={{ marginTop: 24 }}>
+        <div className="defs-results">
           <div className="defs-word-title">{result.mainWord}</div>
           <div className="defs-table-wrap">
             <table className="defs-table">
@@ -103,7 +102,7 @@ export default function MultipleMeanings({ fetchWithRetry }) {
       )}
 
       {empty && (
-        <div className="no-words" style={{ display: 'block' }}>
+        <div className="no-words no-words-block">
           No definitions found for that word.
         </div>
       )}

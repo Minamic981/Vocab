@@ -66,44 +66,32 @@ export default function ExportButton({ words, categories }) {
         <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setOpen(false); }}>
           <div className="modal">
             <div className="modal-title">Export Words</div>
-            <p style={{ fontSize: 13, color: 'var(--ink-light)', marginBottom: 14 }}>
+            <p className="batch-instruction">
               Select categories to export. Format:
-              <code style={{ background: 'var(--paper-2)', padding: '2px 6px', borderRadius: 4, display: 'block', marginTop: 6, whiteSpace: 'pre' }}>
+              <code className="batch-code" style={{ display: 'block', marginTop: 6, whiteSpace: 'pre' }}>
                 {`(Category Name)\nEnglish sentence = Persian translation`}
               </code>
             </p>
 
-            <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+            <div className="export-btn-row">
               <button className="btn btn-ghost btn-sm" onClick={selectAll}>Select All</button>
               <button className="btn btn-ghost btn-sm" onClick={selectNone}>None</button>
-              <span style={{ fontSize: 12, color: 'var(--ink-faint)', alignSelf: 'center' }}>
+              <span className="export-cat-count">
                 {selectedCats.size === 0 ? 'All categories' : `${selectedCats.size} selected`}
               </span>
             </div>
 
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 16 }}>
+            <div className="export-cats">
               {categories.map(c => (
-                <label key={c.name} style={{
-                  display: 'flex', alignItems: 'center', gap: 6,
-                  padding: '6px 12px', borderRadius: 6, cursor: 'pointer',
-                  border: '1px solid var(--rule)', fontSize: 13,
-                  background: selectedCats.has(c.name) ? 'var(--accent-subtle)' : 'var(--paper-2)',
-                  borderColor: selectedCats.has(c.name) ? 'var(--accent)' : 'var(--rule)',
-                }}>
+                <label key={c.name} className={`export-cat-label ${selectedCats.has(c.name) ? 'selected' : ''}`}>
                   <input type="checkbox" checked={selectedCats.has(c.name)}
-                    onChange={() => toggleCat(c.name)} style={{ margin: 0 }} />
+                    onChange={() => toggleCat(c.name)} className="checkbox-input" />
                   {c.name}
                 </label>
               ))}
-              <label style={{
-                display: 'flex', alignItems: 'center', gap: 6,
-                padding: '6px 12px', borderRadius: 6, cursor: 'pointer',
-                border: '1px solid var(--rule)', fontSize: 13,
-                background: selectedCats.has('__none__') ? 'var(--accent-subtle)' : 'var(--paper-2)',
-                borderColor: selectedCats.has('__none__') ? 'var(--accent)' : 'var(--rule)',
-              }}>
+              <label className={`export-cat-label ${selectedCats.has('__none__') ? 'selected' : ''}`}>
                 <input type="checkbox" checked={selectedCats.has('__none__')}
-                  onChange={() => toggleCat('__none__')} style={{ margin: 0 }} />
+                  onChange={() => toggleCat('__none__')} className="checkbox-input" />
                 No Category
               </label>
             </div>

@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect } from 'react';
-import speakWord, { escHtml, SegmentedEnglish } from '../common/utils';
+import speakWord, { escHtml, SegmentedEnglish } from '../../common/utils.jsx';
 import ExportButton from '../components/ExportButton.jsx';
 const RAINBOW = ['#FF6B6B', '#FF9F43', '#FECA57', '#48DBFB', '#0ABDE3', '#A29BFE', '#6C5CE7', '#FD79A8', '#FDCB6E', '#00CEC9', '#E17055', '#74B9FF'];
 
@@ -259,7 +259,7 @@ export default function Library({
                     <option value="simple">Simple Words</option>
                   </select>
                 </div>
-                <div className="field" style={{ marginTop: 10 }}>
+                <div className="field">
                   <label>Custom Style (optional — overrides dropdown)</label>
                   <input type="text" placeholder="e.g. romantic, include keywords: love, heart, soul"
                     value={addCustomStyle} onChange={e => setAddCustomStyle(e.target.value)} />

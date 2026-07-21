@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import speakWord, { filterByCategory } from '../../common/utils';
+import speakWord, { filterByCategory } from '../../common/utils.jsx';
 
 const PRACTICE_FILTERS = [
   { key: 'all', label: '🔖 All', title: 'Show all words' },
@@ -101,10 +101,10 @@ export default function Practice({ words, categories, isBookmarked, toggleBookma
     <div className="tab-panel active">
       <div className="practice-header">
         <div>
-          <div style={{ fontFamily: '"Lora", serif', fontSize: 18, fontWeight: 600 }}>
+          <div className="practice-title">
             Practice Mode
           </div>
-          <div style={{ fontSize: 13, color: 'var(--ink-faint)', marginTop: 2 }}>
+          <div className="practice-subtitle">
             Tap the card to reveal the Persian meaning
           </div>
         </div>

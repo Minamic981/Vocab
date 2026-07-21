@@ -8,11 +8,13 @@ description: Vocab app project rules — PC vs mobile separation, code quality s
 ## PC vs Mobile Separation
 
 When the user says **"on PC"**, target **only** the desktop codebase:
-- `frontend/src/App.jsx` — main PC app
-- `frontend/src/nav/` — PC navbar components
-- `frontend/src/components/` — shared PC components
+- `frontend/src/web/main.jsx` — PC entry point
+- `frontend/src/web/App.jsx` — main PC app
+- `frontend/src/web/nav/` — PC navbar components
+- `frontend/src/web/components/` — PC components
 
 When the user says **"on mobile"**, target **only** the mobile codebase:
+- `frontend/src/mobile/mobile.jsx` — mobile entry point
 - `frontend/src/mobile/mobileApp.jsx` — main mobile app
 - `frontend/src/mobile/nav/` — mobile navbar components
 - `frontend/src/mobile/compMobile/` — mobile-specific components
@@ -33,7 +35,7 @@ If the user says **"both"** or doesn't specify platform, apply changes to **both
 
 Reusable functions and components go in:
 - `frontend/src/common/` — shared utilities (e.g., `utils.jsx`)
-- `frontend/src/components/` — shared PC components
+- `frontend/src/web/components/` — shared PC components
 - `frontend/src/mobile/compMobile/` — shared mobile components
 
 **Never duplicate** logic across PC and mobile when it can be shared.
@@ -42,25 +44,30 @@ Reusable functions and components go in:
 
 ```
 frontend/src/
-├── App.jsx                    # PC main
-├── common/                    # Shared utils
+├── common/                        # Shared utils
 │   └── utils.jsx
-├── components/                # Shared PC components
-│   ├── FloatingNav.jsx
-│   └── ExportButton.jsx
-├── nav/                       # PC navbar tabs
-│   ├── Library.jsx
-│   ├── BatchImport.jsx
-│   ├── Practice.jsx
-│   └── MultipleMeanings.jsx
-├── mobile/
-│   ├── mobileApp.jsx          # Mobile main
-│   ├── nav/                   # Mobile navbar tabs
+├── web/                           # PC (web) codebase
+│   ├── index.html                 # PC entry HTML
+│   ├── main.jsx                   # PC entry point
+│   ├── App.jsx                    # PC main app
+│   ├── nav/                       # PC navbar tabs
 │   │   ├── Library.jsx
 │   │   ├── BatchImport.jsx
 │   │   ├── Practice.jsx
 │   │   └── MultipleMeanings.jsx
-│   └── compMobile/            # Mobile-specific components
+│   └── components/                # PC components
+│       ├── FloatingNav.jsx
+│       └── ExportButton.jsx
+├── mobile/                        # Mobile codebase
+│   ├── mobile.html                # Mobile entry HTML
+│   ├── mobile.jsx                 # Mobile entry point
+│   ├── mobileApp.jsx              # Mobile main app
+│   ├── nav/                       # Mobile navbar tabs
+│   │   ├── Library.jsx
+│   │   ├── BatchImport.jsx
+│   │   ├── Practice.jsx
+│   │   └── MultipleMeanings.jsx
+│   └── compMobile/                # Mobile-specific components
 │       ├── ExportButton.jsx
 │       └── MobileBottomNav.jsx
 ```
