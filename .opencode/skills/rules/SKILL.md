@@ -30,6 +30,7 @@ If the user says **"both"** or doesn't specify platform, apply changes to **both
 - Use `useCallback` for functions passed as props
 - Use `useMemo` for expensive derived computations
 - Prefer prop drilling over context for this project (context was reverted)
+- **All CSS must live in `.css` files** — no inline `style` attributes or `className`-embedded styles in JSX
 
 ## Shared Code
 
