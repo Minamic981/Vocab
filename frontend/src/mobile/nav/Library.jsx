@@ -22,7 +22,7 @@ function WordRow({ w, idx, selectMode, isSelected, alts, onEdit, onDelete, onPop
           <input type="checkbox" className="word-checkbox" checked={isSelected}
             onChange={() => onCheckbox(idx)} />
         )}
-        <span className="word-index">{idx + 1}</span>
+        <span className="word-index">{w.index}</span>
         {alts.length > 0 && (
           <span className={`word-alt-arrow ${altsOpen ? 'open' : ''}`}
             title="Show alternatives" onClick={() => setAltsOpen(!altsOpen)} />
@@ -127,12 +127,17 @@ export default function Library({
     if (shiftHeld.current && lastClickedIdx.current !== null) {
       const start = Math.min(lastClickedIdx.current, idx);
       const end = Math.max(lastClickedIdx.current, idx);
+
+      const indicesInRange = filteredWords
+        .filter(f => f.idx >= start && f.idx <= end)
+        .map(f => f.idx);
+
       const shouldRemove = selectedIndices.has(idx);
       setSelectedIndices(prev => {
         const next = new Set(prev);
-        for (let i = start; i <= end; i++) {
+        indicesInRange.forEach(i => {
           shouldRemove ? next.delete(i) : next.add(i);
-        }
+        });
         return next;
       });
     } else {
@@ -143,7 +148,7 @@ export default function Library({
       });
     }
     lastClickedIdx.current = idx;
-  }, [selectedIndices, setSelectedIndices]);
+  }, [selectedIndices, setSelectedIndices, filteredWords]);
 
   const handleCopy = useCallback((english) => {
     navigator.clipboard.writeText(english).then(() => {

@@ -62,9 +62,9 @@ export default function Practice({ words, categories, isBookmarked, toggleBookma
   const handleMoveCategory = async (category) => {
     if (!currentWord) return;
     const cat = category === '__none__' ? null : category;
-    const wordIdx = words.findIndex(w => w.english === currentWord.english);
-    if (wordIdx === -1) return;
-    await moveWordsToCategory([wordIdx], cat);
+    const wordIndex = currentWord.index;
+    if (wordIndex === undefined) return;
+    await moveWordsToCategory([wordIndex], cat);
   };
 
   const cycleFilter = () => {
