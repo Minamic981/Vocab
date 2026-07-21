@@ -33,6 +33,10 @@ app.get("/", (req, res) => {
     const ua = req.headers["user-agent"] || "";
     const mobile = isMobile(req);
     const [folder, file] = mobile ? ["mobile", "mobile.html"] : ["web", "index.html"];
+    // Prevent Vercel edge caching so device detection works
+    res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
+    res.setHeader("Pragma", "no-cache");
+    res.setHeader("Expires", "0");
     res.sendFile(path.join(FRONTEND_DIST, folder, file));
 });
 
