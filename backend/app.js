@@ -21,7 +21,7 @@ function isMobile(req) {
 // ── Path configuration (Vercel vs local) ─────────────────────────────────────
 const IS_VERCEL = !!process.env.VERCEL;
 const FRONTEND_DIST = IS_VERCEL
-    ? path.join(__dirname, "static")
+    ? path.join(__dirname, "static", "src")
     : path.join(__dirname, "..", "frontend", "dist", "src");
 const FRONTEND_PUBLIC = IS_VERCEL
     ? path.join(__dirname, "static")
@@ -32,11 +32,7 @@ const FRONTEND_PUBLIC = IS_VERCEL
 app.get("/", (req, res) => {
     const ua = req.headers["user-agent"] || "";
     const mobile = isMobile(req);
-    console.log(`[DEBUG] User-Agent: ${ua}`);
-    console.log(`[DEBUG] Is mobile: ${mobile}`);
-    console.log(`[DEBUG] Serving: ${mobile ? "mobile.html" : "index.html"}`);
     const [folder, file] = mobile ? ["mobile", "mobile.html"] : ["web", "index.html"];
-    // Prevent Vercel edge caching so device detection works
     res.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, proxy-revalidate");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Expires", "0");
@@ -51,7 +47,10 @@ app.get("/lab", (req, res) => {
 app.use(express.static(FRONTEND_PUBLIC));
 app.use(express.static(FRONTEND_DIST));
 // Serve dist root so /assets/* resolves to dist/assets/*
-app.use(express.static(path.join(__dirname, "..", "frontend", "dist")));
+const DIST_ROOT = IS_VERCEL
+    ? path.join(__dirname, "static")
+    : path.join(__dirname, "..", "frontend", "dist");
+app.use(express.static(DIST_ROOT));
 
 // ── Cloudflare KV Configuration ─────────────────────────────────────────────
 const ACCOUNT_ID = process.env.CLOUDFLARE_ACCOUNT_ID;
