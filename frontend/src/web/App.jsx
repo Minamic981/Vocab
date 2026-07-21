@@ -4,7 +4,7 @@ import BatchImport from './nav/BatchImport.jsx';
 import Practice from './nav/Practice.jsx';
 import MultipleMeanings from './nav/MultipleMeanings.jsx';
 import FloatingNav from './components/FloatingNav.jsx';
-import { filterByCategory } from '../common/utils.jsx';
+import { filterByCategory, sortByIndex } from '../common/utils.jsx';
 
 // ── Helpers ────────────────────────────────────────────────
 const RETRY_MAX = 3;
@@ -23,12 +23,35 @@ async function fetchWithRetry(url, options = {}, retries = RETRY_MAX) {
 
 let toastId = 0;
 
+// ── Parse new KV structure ─────────────────────────────────
+function parseKVData(data) {
+  const words = [];
+  const cats = data.categories || {};
+  for (const [catName, catObj] of Object.entries(cats)) {
+    for (const word of catObj?.words || []) {
+      words.push({
+        ...word,
+        category: catName === 'uncategorized' ? null : catName
+      });
+    }
+  }
+  return words;
+}
+
+function parseCategories(data) {
+  const cats = data.categories || {};
+  return Object.entries(cats)
+    .filter(([name]) => name !== 'uncategorized')
+    .map(([name, obj]) => ({ name, description: obj?.description || '' }));
+}
+
 // ── App ────────────────────────────────────────────────────
 export default function App() {
   // ── Core state ──
   const [words, setWords] = useState([]);
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [wordcount, setWordcount] = useState(0);
 
   // ── Navigation ──
   const [activeTab, setActiveTab] = useState('library');
@@ -42,7 +65,7 @@ export default function App() {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIndices, setSelectedIndices] = useState(new Set());
 
-  // ── Bookmarks ──
+  // ── Bookmarks (localStorage for now, bypass isBookmarked from backend) ──
   const [bookmarkedWords, setBookmarkedWords] = useState(() => {
     try { return JSON.parse(localStorage.getItem('bookmarkedWords') || '[]'); }
     catch { return []; }
@@ -137,9 +160,9 @@ export default function App() {
     });
   }, []);
 
-  // ── Derived: filtered words ──
+  // ── Derived: filtered words (using word.index as idx) ──
   const filteredWords = useMemo(() => {
-    let result = words.map((w, i) => ({ word: w, idx: i }));
+    let result = words.map(w => ({ word: w, idx: w.index }));
 
     if (searchQuery) {
       const q = searchQuery.toLowerCase().trim();
@@ -157,9 +180,15 @@ export default function App() {
 
     const wordsOnly = result.map(f => f.word);
     const categoryFiltered = filterByCategory(wordsOnly, categoryFilter);
-    const indexMap = new Map(result.map(f => [f.word, f.idx]));
-    return categoryFiltered.map(w => ({ word: w, idx: indexMap.get(w) }));
+    const sorted = sortByIndex(categoryFiltered);
+    const indexMap = new Map(sorted.map(w => [w, w.index]));
+    return sorted.map(w => ({ word: w, idx: indexMap.get(w) }));
   }, [words, searchQuery, bookmarkFilter, categoryFilter, bookmarkedWords]);
+
+  // ── Find word by index ──
+  const findWordByIndex = useCallback((index) => {
+    return words.find(w => w.index === index);
+  }, [words]);
 
   // ── Init: fetch data ──
   useEffect(() => {
@@ -167,10 +196,8 @@ export default function App() {
       try {
         const res = await fetch('/api/words');
         const data = await res.json();
-        setWords((data.words ?? data).map(w =>
-          Array.isArray(w) ? { english: w[0], persian: w[1], alternatives: [], category: null }
-            : { english: w.english, persian: w.persian, alternatives: w.alternatives || [], category: w.category || null }
-        ));
+        setWords(parseKVData(data));
+        setWordcount(data.wordcount || 0);
       } catch (e) { console.error('Failed to load words:', e); }
       try {
         const res = await fetch('/api/categories');
@@ -211,7 +238,7 @@ export default function App() {
     if (!en) { showAlert(setAddAlert, 'English field is required.'); return; }
     if (!aiGen && !fa) { showAlert(setAddAlert, 'Persian field is required.'); return; }
 
-    const placeholder = { english: en, persian: fa || '(generating…)', alternatives: [], category: cat, isGenerating: true };
+    const placeholder = { english: en, persian: fa || '(generating…)', alternatives: [], category: cat, index: wordcount, isGenerating: true };
     setWords(prev => [...prev, placeholder]);
     setAddEn(''); setAddFa(''); setAddAlts('');
     addToast(`Adding "${en}"…`, 'info');
@@ -230,7 +257,7 @@ export default function App() {
       if (data.action === 'merged') {
         setWords(prev => {
           const filtered = prev.filter(w => !(w.english === en && w.isGenerating));
-          return filtered.map(w => w.english === en ? data.word : w);
+          return filtered.map(w => w.english === en ? { ...data.word, category: w.category } : w);
         });
         showAlert(setAddAlert, `"${en}" already exists — Persian meaning merged!`, 'success');
         addToast(`Merged meaning into "${en}"`, 'success');
@@ -240,6 +267,7 @@ export default function App() {
           if (i === -1) return [...prev, data.word];
           const copy = [...prev]; copy[i] = data.word; return copy;
         });
+        setWordcount(prev => prev + 1);
         showAlert(setAddAlert, `"${data.word.english}" added!`, 'success');
         addToast(`Added "${data.word.english}"`, 'success');
       }
@@ -249,29 +277,30 @@ export default function App() {
       addToast('Add failed: ' + e.message, 'error');
     }
     addEnRef.current?.focus();
-  }, [addEn, addFa, addAiGen, addAlts, categoryFilter, addStyleEnabled, addStyle, addCustomStyle, showAlert, addToast]);
+  }, [addEn, addFa, addAiGen, addAlts, categoryFilter, addStyleEnabled, addStyle, addCustomStyle, wordcount, showAlert, addToast]);
 
-  // ── API: Delete word ──
-  const deleteWord = useCallback((index) => {
-    const removed = words[index];
-    setWords(prev => prev.filter((_, i) => i !== index));
+  // ── API: Delete word (by index) ──
+  const deleteWord = useCallback((wordIndex) => {
+    const removed = words.find(w => w.index === wordIndex);
+    if (!removed) return;
+    setWords(prev => prev.filter(w => w.index !== wordIndex));
     addToast(`Deleted "${removed.english}"`, 'success');
 
-    fetchWithRetry(`/api/words/${index}`, { method: 'DELETE' })
+    fetchWithRetry(`/api/words/${wordIndex}`, { method: 'DELETE' })
       .then(async res => {
         if (!res.ok) {
           const data = await res.json();
-          setWords(prev => { const copy = [...prev]; copy.splice(index, 0, removed); return copy; });
+          setWords(prev => [...prev, removed]);
           addToast(data.error || 'Delete failed — word restored.', 'error');
         }
       })
       .catch(() => {
-        setWords(prev => { const copy = [...prev]; copy.splice(index, 0, removed); return copy; });
+        setWords(prev => [...prev, removed]);
         addToast('Delete failed — word restored.', 'error');
       });
   }, [words, addToast]);
 
-  // ── API: Edit word ──
+  // ── API: Edit word (by index) ──
   const saveEdit = useCallback(async () => {
     const en = editEn.trim();
     const fa = editFa.trim();
@@ -279,25 +308,27 @@ export default function App() {
     const cat = editCategory || null;
     if (!en || !fa) { showAlert(setEditAlert, 'Fill in both fields.'); return; }
 
-    const idx = editIndex;
-    const oldWord = { ...words[idx] };
-    const updated = { english: en, persian: fa, alternatives: alts ? alts.split('\n').map(s => s.trim()).filter(Boolean) : [], category: cat };
+    const wordIndex = editIndex;
+    const oldWord = words.find(w => w.index === wordIndex);
+    if (!oldWord) return;
 
-    setWords(prev => { const copy = [...prev]; copy[idx] = updated; return copy; });
+    const updated = { ...oldWord, english: en, persian: fa, alternatives: alts ? alts.split('\n').map(s => s.trim()).filter(Boolean) : [], category: cat };
+
+    setWords(prev => prev.map(w => w.index === wordIndex ? updated : w));
     setEditOpen(false);
     addToast(`Updated "${en}"`, 'success');
 
-    fetchWithRetry(`/api/words/${idx}`, {
+    fetchWithRetry(`/api/words/${wordIndex}`, {
       method: 'PUT', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ english: en, persian: fa, alternatives: alts, category: cat })
     }).then(async res => {
       if (!res.ok) {
         const data = await res.json();
-        setWords(prev => { const copy = [...prev]; copy[idx] = oldWord; return copy; });
+        setWords(prev => prev.map(w => w.index === wordIndex ? oldWord : w));
         addToast(data.error || 'Edit failed — reverted.', 'error');
       }
     }).catch(() => {
-      setWords(prev => { const copy = [...prev]; copy[idx] = oldWord; return copy; });
+      setWords(prev => prev.map(w => w.index === wordIndex ? oldWord : w));
       addToast('Edit failed — reverted.', 'error');
     });
   }, [editEn, editFa, editAlts, editCategory, editIndex, words, showAlert, addToast]);
@@ -316,15 +347,15 @@ export default function App() {
       const wordsRes = await fetchWithRetry('/api/words');
       if (wordsRes.ok) {
         const wordsData = await wordsRes.json();
-        const newWords = (wordsData.words ?? wordsData).map(w =>
-          Array.isArray(w) ? { english: w[0], persian: w[1], alternatives: [], category: null }
-            : { english: w.english, persian: w.persian, alternatives: w.alternatives || [], category: w.category || null }
-        );
+        const newWords = parseKVData(wordsData);
         setWords(newWords);
-        setEditEn(newWords[editIndex].english);
-        setEditFa(newWords[editIndex].persian);
-        setEditAlts((newWords[editIndex].alternatives || []).join('\n'));
-        setEditCategory(newWords[editIndex].category || '');
+        const updated = newWords.find(w => w.index === editIndex);
+        if (updated) {
+          setEditEn(updated.english);
+          setEditFa(updated.persian);
+          setEditAlts((updated.alternatives || []).join('\n'));
+          setEditCategory(updated.category || '');
+        }
       }
       showAlert(setEditAlert, 'Sentence generated!', 'success');
       addToast('New sentence generated', 'success');
@@ -362,16 +393,17 @@ export default function App() {
     } catch (e) { addToast('Delete failed: ' + e.message, 'error'); }
   }, [categoryFilter, addToast]);
 
-  // ── API: Move words ──
+  // ── API: Move words (by index) ──
   const moveWordsToCategory = useCallback(async (indices, categoryName) => {
     const cat = categoryName || null;
     const catLabel = cat ? `"${cat}"` : "No Category";
 
-    setWords(prev => {
-      const copy = [...prev];
-      indices.forEach(i => { copy[i] = { ...copy[i], category: cat }; });
-      return copy;
-    });
+    setWords(prev => prev.map(w => {
+      if (indices.includes(w.index)) {
+        return { ...w, category: cat };
+      }
+      return w;
+    }));
 
     try {
       const res = await fetchWithRetry('/api/words/move-category', {
@@ -381,21 +413,23 @@ export default function App() {
       const data = await res.json();
       if (!res.ok) {
         addToast(data.error || 'Move failed.', 'error');
-        setWords(prev => {
-          const copy = [...prev];
-          indices.forEach(i => { copy[i] = { ...copy[i], category: copy[i].category === cat ? null : cat }; });
-          return copy;
-        });
+        setWords(prev => prev.map(w => {
+          if (indices.includes(w.index)) {
+            return { ...w, category: w.category === cat ? null : cat };
+          }
+          return w;
+        }));
       } else {
         addToast(`${indices.length} word(s) moved to ${catLabel}`, 'success');
       }
     } catch (e) {
       addToast('Move failed: ' + e.message, 'error');
-      setWords(prev => {
-        const copy = [...prev];
-        indices.forEach(i => { copy[i] = { ...copy[i], category: copy[i].category === cat ? null : cat }; });
-        return copy;
-      });
+      setWords(prev => prev.map(w => {
+        if (indices.includes(w.index)) {
+          return { ...w, category: w.category === cat ? null : cat };
+        }
+        return w;
+      }));
     }
   }, [addToast]);
 
@@ -413,11 +447,12 @@ export default function App() {
       const data = await res.json();
       if (!res.ok) { showAlert(setPopupAlert, data.error || 'Generation failed.'); return; }
       if (data.action === 'merged') {
-        setWords(prev => prev.map(w => w.english === en ? data.word : w));
+        setWords(prev => prev.map(w => w.english === en ? { ...data.word, category: w.category } : w));
         showAlert(setPopupAlert, `"${en}" already exists — meaning merged!`, 'success');
         addToast(`Merged meaning into "${en}"`, 'success');
       } else {
         setWords(prev => [...prev, data.word]);
+        setWordcount(prev => prev + 1);
         addToast(`Added "${data.word.english}"`, 'success');
       }
       setPopupOpen(false);
@@ -432,10 +467,10 @@ export default function App() {
     const count = selectedIndices.size;
     if (!confirm(`Delete ${count} word${count !== 1 ? 's' : ''}?`)) return;
 
-    const indices = [...selectedIndices].sort((a, b) => b - a);
-    const removed = indices.map(i => words[i]);
+    const indices = [...selectedIndices];
+    const removed = words.filter(w => indices.includes(w.index));
 
-    setWords(prev => prev.filter((_, i) => !selectedIndices.has(i)));
+    setWords(prev => prev.filter(w => !indices.includes(w.index)));
     setSelectedIndices(new Set());
     setSelectMode(false);
     addToast(`Deleted ${count} word${count !== 1 ? 's' : ''}`, 'success');
@@ -447,11 +482,11 @@ export default function App() {
       });
       const data = await res.json();
       if (!res.ok) {
-        setWords(prev => { const copy = [...prev]; removed.forEach((w, j) => copy.splice(indices[j], 0, w)); return copy; });
+        setWords(prev => [...prev, ...removed]);
         addToast(data.error || 'Delete failed — words restored.', 'error');
       }
     } catch (e) {
-      setWords(prev => { const copy = [...prev]; removed.forEach((w, j) => copy.splice(indices[j], 0, w)); return copy; });
+      setWords(prev => [...prev, ...removed]);
       addToast('Delete failed — words restored: ' + e.message, 'error');
     }
   }, [selectedIndices, words, addToast]);
@@ -476,7 +511,7 @@ export default function App() {
     if (!en) { showAlert(setFnAddAlert, 'English field is required.'); return; }
     if (!aiGen && !fa) { showAlert(setFnAddAlert, 'Persian field is required.'); return; }
 
-    const placeholder = { english: en, persian: fa || '(generating…)', alternatives: [], category: cat, isGenerating: true };
+    const placeholder = { english: en, persian: fa || '(generating…)', alternatives: [], category: cat, index: wordcount, isGenerating: true };
     setWords(prev => [...prev, placeholder]);
     setFnAddEn(''); setFnAddFa(''); setFnAddAlts('');
     addToast(`Adding "${en}"…`, 'info');
@@ -495,7 +530,7 @@ export default function App() {
       if (data.action === 'merged') {
         setWords(prev => {
           const filtered = prev.filter(w => !(w.english === en && w.isGenerating));
-          return filtered.map(w => w.english === en ? data.word : w);
+          return filtered.map(w => w.english === en ? { ...data.word, category: w.category } : w);
         });
         showAlert(setFnAddAlert, `"${en}" already exists — Persian meaning merged!`, 'success');
         addToast(`Merged meaning into "${en}"`, 'success');
@@ -505,6 +540,7 @@ export default function App() {
           if (i === -1) return [...prev, data.word];
           const copy = [...prev]; copy[i] = data.word; return copy;
         });
+        setWordcount(prev => prev + 1);
         showAlert(setFnAddAlert, `"${data.word.english}" added!`, 'success');
         addToast(`Added "${data.word.english}"`, 'success');
       }
@@ -514,15 +550,17 @@ export default function App() {
       addToast('Add failed: ' + e.message, 'error');
     }
     fnAddEnRef.current?.focus();
-  }, [fnAddEn, fnAddFa, fnAddAiGen, fnAddAlts, fnAddStyleEnabled, fnAddStyle, fnAddCustomStyle, categoryFilter, showAlert, addToast]);
+  }, [fnAddEn, fnAddFa, fnAddAiGen, fnAddAlts, fnAddStyleEnabled, fnAddStyle, fnAddCustomStyle, categoryFilter, wordcount, showAlert, addToast]);
 
   // ── Open edit modal ──
-  const openEdit = useCallback((index) => {
-    setEditIndex(index);
-    setEditEn(words[index].english);
-    setEditFa(words[index].persian);
-    setEditAlts((words[index].alternatives || []).join('\n'));
-    setEditCategory(words[index].category || '');
+  const openEdit = useCallback((wordIndex) => {
+    const word = words.find(w => w.index === wordIndex);
+    if (!word) return;
+    setEditIndex(wordIndex);
+    setEditEn(word.english);
+    setEditFa(word.persian);
+    setEditAlts((word.alternatives || []).join('\n'));
+    setEditCategory(word.category || '');
     setEditOpen(true);
     setTimeout(() => editEnRef.current?.focus(), 100);
   }, [words]);
@@ -545,7 +583,7 @@ export default function App() {
         <div>
           <div className="wordmark">My Word<span>Book</span></div>
           <div className="word-count">
-            {loading ? 'Loading…' : `${words.length} word${words.length !== 1 ? 's' : ''} saved`}
+            {loading ? 'Loading…' : `${wordcount} word${wordcount !== 1 ? 's' : ''} saved`}
           </div>
         </div>
       </header>

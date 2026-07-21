@@ -10,6 +10,10 @@ export function filterByCategory(words, categoryFilter) {
   }
 }
 
+export function sortByIndex(words) {
+  return [...words].sort((a, b) => (a.index ?? 0) - (b.index ?? 0));
+}
+
 export function escHtml(s) {
   if (s == null) return '';
   return String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');

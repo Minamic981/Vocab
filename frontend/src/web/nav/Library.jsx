@@ -53,11 +53,16 @@ export default function Library({
       const start = Math.min(lastClickedIdx.current, idx);
       const end = Math.max(lastClickedIdx.current, idx);
       const shouldRemove = selectedIndices.has(idx);
+
+      const indicesInRange = filteredWords
+        .filter(f => f.idx >= start && f.idx <= end)
+        .map(f => f.idx);
+
       setSelectedIndices(prev => {
         const next = new Set(prev);
-        for (let i = start; i <= end; i++) {
+        indicesInRange.forEach(i => {
           shouldRemove ? next.delete(i) : next.add(i);
-        }
+        });
         return next;
       });
     } else {
@@ -68,7 +73,7 @@ export default function Library({
       });
     }
     lastClickedIdx.current = idx;
-  }, [selectedIndices, setSelectedIndices]);
+  }, [selectedIndices, setSelectedIndices, filteredWords]);
 
   return (
     <div className="tab-panel active">
@@ -126,7 +131,7 @@ export default function Library({
                 bookmarkFilter === 'unbookmarked' ? 'All words are bookmarked.' :
                   'No words yet — add one below!'}
           </div>
-        ) : filteredWords.map(({ word: w, idx }) => {
+        ) : filteredWords.map(({ word: w, idx }, displayIndex) => {
           const isSelected = selectedIndices.has(idx);
           const alts = w.alternatives || [];
           const isTribute = w.english.toLowerCase().includes('tachiba san');
@@ -139,7 +144,7 @@ export default function Library({
                   <input type="checkbox" className="word-checkbox" checked={isSelected}
                     onChange={() => handleRowSelect(idx)} />
                 )}
-                <span className="word-index">{idx + 1}</span>
+                <span className="word-index">{w.index}</span>
                 {alts.length > 0 && (
                   <span className={`word-alt-arrow`}
                     title="Show alternatives" onClick={(e) => {
