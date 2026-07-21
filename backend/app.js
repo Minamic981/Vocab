@@ -21,26 +21,21 @@ function isMobile(req) {
 // ── Path configuration (Vercel vs local) ─────────────────────────────────────
 const IS_VERCEL = !!process.env.VERCEL;
 
-// Local:  frontend/dist/src/web/index.html  |  frontend/dist/src/mobile/mobile.html
-// Vercel: backend/static/src/web/index.html | backend/static/src/mobile/mobile.html
 const HTML_DIR = IS_VERCEL
     ? path.join(__dirname, "static", "src")
     : path.join(__dirname, "..", "frontend", "dist", "src");
 
-// Local:  frontend/dist/assets/*  |  Vercel: backend/static/assets/*
 const ASSETS_DIR = IS_VERCEL
     ? path.join(__dirname, "static")
     : path.join(__dirname, "..", "frontend", "dist");
 
-// Local:  frontend/public/*  |  Vercel: backend/static/*
 const PUBLIC_DIR = IS_VERCEL
     ? path.join(__dirname, "static")
     : path.join(__dirname, "..", "frontend", "public");
 
-// ── HTML routes (BEFORE static middleware) ────────────────────────────────────
+// ── HTML routes ──────────────────────────────────────────────────────────────
 
 app.get("/", (req, res) => {
-    const ua = req.headers["user-agent"] || "";
     const mobile = isMobile(req);
     const [folder, file] = mobile ? ["mobile", "mobile.html"] : ["web", "index.html"];
     res.sendFile(path.join(HTML_DIR, folder, file));
@@ -50,7 +45,7 @@ app.get("/lab", (req, res) => {
     res.sendFile(path.join(HTML_DIR, "lab", "lab.html"));
 });
 
-// ── Static files (AFTER routes) ──────────────────────────────────────────────
+// ── Static files ─────────────────────────────────────────────────────────────
 app.use(express.static(PUBLIC_DIR));
 app.use(express.static(ASSETS_DIR));
 app.use(express.static(HTML_DIR));
@@ -92,6 +87,7 @@ function _kvOk() {
 
 function _emptyData() {
     return {
+        wordcount: 0,
         categories: {
             [UNCATEGORIZED_KEY]: {
                 description: "Items without a category",
@@ -137,6 +133,7 @@ async function loadData() {
         try {
             const data = await loadKV(DATA_KEY);
             if (data && data.categories) {
+                if (data.wordcount === undefined) data.wordcount = 0;
                 _cacheSet(data);
                 return data;
             }
@@ -159,6 +156,7 @@ async function saveData(data) {
     if (!data.categories[UNCATEGORIZED_KEY]) {
         data.categories[UNCATEGORIZED_KEY] = { description: "Items without a category", words: [] };
     }
+    if (data.wordcount === undefined) data.wordcount = 0;
 
     for (let attempt = 1; attempt <= KV_RETRIES; attempt++) {
         try {
@@ -179,67 +177,37 @@ async function saveData(data) {
     return false;
 }
 
-// ── Word access helpers ───────────────────────────────────────────────────────
+// ── Word helpers (new structure: index-based) ────────────────────────────────
 
-function flattenWords(data) {
-    const result = [];
+function findByIndex(data, index) {
     const cats = data.categories || {};
     for (const [catName, catObj] of Object.entries(cats)) {
         const words = catObj?.words || [];
-        for (const word of words) {
-            result.push({ ...word, category: catName === UNCATEGORIZED_KEY ? null : catName });
+        for (let pos = 0; pos < words.length; pos++) {
+            if (words[pos].index === index) {
+                return { cat: catName, pos, word: words[pos] };
+            }
         }
-    }
-    return result;
-}
-
-function deflatWords(words) {
-    const cats = {};
-    for (const word of words) {
-        const cat = word.category || UNCATEGORIZED_KEY;
-        const { category, ...w } = word;
-        if (!cats[cat]) cats[cat] = { description: "", words: [] };
-        cats[cat].words.push(w);
-    }
-    if (!cats[UNCATEGORIZED_KEY]) {
-        cats[UNCATEGORIZED_KEY] = { description: "Items without a category", words: [] };
-    }
-    return { categories: cats };
-}
-
-function locateWordByIndex(data, index) {
-    const cats = data.categories || {};
-    let running = 0;
-    for (const [catName, catObj] of Object.entries(cats)) {
-        const words = catObj?.words || [];
-        if (index < running + words.length) {
-            return { cat: catName, pos: index - running, word: words[index - running] };
-        }
-        running += words.length;
     }
     return null;
 }
 
-function buildIndexMap(data) {
-    const result = [];
-    const cats = data.categories || {};
-    for (const [catName, catObj] of Object.entries(cats)) {
-        const words = catObj?.words || [];
-        for (let pos = 0; pos < words.length; pos++) {
-            result.push({ cat: catName, pos });
-        }
+function findByIndices(data, indices) {
+    const results = [];
+    for (const index of indices) {
+        const found = findByIndex(data, index);
+        if (found) results.push({ index, ...found });
     }
-    return result;
+    return results;
 }
 
-function englishExists(data, english, excludeCat = null, excludePos = null) {
+function englishExists(data, english, excludeIndex = null) {
     english = english.toLowerCase();
     const cats = data.categories || {};
-    for (const [catName, catObj] of Object.entries(cats)) {
-        const words = catObj?.words || [];
-        for (let pos = 0; pos < words.length; pos++) {
-            if (catName === excludeCat && pos === excludePos) continue;
-            if (words[pos].english?.toLowerCase() === english) return true;
+    for (const catObj of Object.values(cats)) {
+        for (const word of catObj?.words || []) {
+            if (word.index === excludeIndex) continue;
+            if (word.english?.toLowerCase() === english) return true;
         }
     }
     return false;
@@ -249,18 +217,13 @@ function findExistingWord(data, english) {
     english = english.toLowerCase();
     const cats = data.categories || {};
     for (const [catName, catObj] of Object.entries(cats)) {
-        const words = catObj?.words || [];
-        for (let pos = 0; pos < words.length; pos++) {
-            if (words[pos].english?.toLowerCase() === english) {
-                return { cat: catName, pos, word: words[pos] };
+        for (const word of catObj?.words || []) {
+            if (word.english?.toLowerCase() === english) {
+                return { cat: catName, word };
             }
         }
     }
     return null;
-}
-
-function totalWords(data) {
-    return Object.values(data.categories || {}).reduce((sum, c) => sum + (c?.words?.length || 0), 0);
 }
 
 function getCategoriesList(data) {
@@ -274,8 +237,7 @@ function getCategoriesList(data) {
 
 app.get("/api/words", async (req, res) => {
     const data = await loadData();
-    const words = flattenWords(data);
-    res.json({ words, count: words.length });
+    res.json(data);
 });
 
 app.post("/api/words", async (req, res) => {
@@ -325,7 +287,7 @@ app.post("/api/words", async (req, res) => {
         return res.status(200).json({
             action: "merged",
             message: `"${english}" already exists. Persian meaning merged.`,
-            word: { english: existing.word.english, persian: mergedPersian, alternatives: existing.word.alternatives, category: wordCat }
+            word: { ...existing.word, category: wordCat }
         });
     }
 
@@ -333,6 +295,11 @@ app.post("/api/words", async (req, res) => {
     if (!data.categories[catKey]) {
         data.categories[catKey] = { description: "", words: [] };
     }
+
+    newWord.index = data.wordcount;
+    newWord.isBookmarked = false;
+    data.wordcount++;
+
     data.categories[catKey].words.push(newWord);
 
     if (!(await saveData(data))) {
@@ -359,13 +326,11 @@ app.put("/api/words/:index", async (req, res) => {
     let category = rawCat?.trim() || null;
 
     const data = await loadData();
-
-    const found = locateWordByIndex(data, index);
+    const found = findByIndex(data, index);
 
     if (!found) return res.status(404).json({ error: "Word not found." });
 
-    const oldEnglish = data.categories[found.cat].words[found.pos].english?.toLowerCase();
-    if (english !== oldEnglish && englishExists(data, english, found.cat, found.pos)) {
+    if (english !== found.word.english?.toLowerCase() && englishExists(data, english, index)) {
         return res.status(409).json({ error: `"${english}" already exists.` });
     }
 
@@ -377,7 +342,7 @@ app.put("/api/words/:index", async (req, res) => {
         data.categories[newCat] = { description: "", words: [] };
     }
 
-    const updatedWord = { english, persian, alternatives };
+    const updatedWord = { english, persian, alternatives, index, isBookmarked: found.word.isBookmarked || false };
     data.categories[newCat].words.push(updatedWord);
 
     if (!(await saveData(data))) {
@@ -390,7 +355,7 @@ app.put("/api/words/:index", async (req, res) => {
 app.delete("/api/words/:index", async (req, res) => {
     const index = parseInt(req.params.index);
     const data = await loadData();
-    const found = locateWordByIndex(data, index);
+    const found = findByIndex(data, index);
 
     if (!found) return res.status(404).json({ error: "Word not found." });
 
@@ -407,16 +372,18 @@ app.delete("/api/words/:index", async (req, res) => {
 app.put("/api/aigen/:index", async (req, res) => {
     const index = parseInt(req.params.index);
     const data = await loadData();
-    const found = locateWordByIndex(data, index);
+    const found = findByIndex(data, index);
 
     if (!found) return res.status(404).json({ error: "Word not found." });
 
-    const { english, persian, alternatives } = found.word;
+    const { english, persian, alternatives, isBookmarked } = found.word;
     const { is_edit, style, custom_style } = req.body || {};
 
     try {
         const [newEnglish, newPersian] = await generate_sentence(english, persian, { is_edit, style, custom_style });
-        data.categories[found.cat].words[found.pos] = { english: newEnglish, persian: newPersian, alternatives };
+        data.categories[found.cat].words[found.pos] = {
+            english: newEnglish, persian: newPersian, alternatives, index, isBookmarked
+        };
 
         if (!(await saveData(data))) {
             return res.status(500).json({ error: "Failed to save changes to Cloudflare KV." });
@@ -424,7 +391,7 @@ app.put("/api/aigen/:index", async (req, res) => {
 
         res.json({
             message: "Sentence generated.",
-            word: { english: newEnglish, persian: newPersian, alternatives, category: found.cat === UNCATEGORIZED_KEY ? null : found.cat }
+            word: { english: newEnglish, persian: newPersian, alternatives, index, isBookmarked, category: found.cat === UNCATEGORIZED_KEY ? null : found.cat }
         });
     } catch (e) {
         res.status(500).json({ error: e.message || "AI generation failed" });
@@ -468,17 +435,25 @@ app.post("/api/words/batch", async (req, res) => {
             continue;
         }
 
-        const newWord = { english: eng, persian, alternatives: [] };
+        const newWord = {
+            english: eng,
+            persian,
+            alternatives: [],
+            index: data.wordcount,
+            isBookmarked: false
+        };
+        data.wordcount++;
+
         data.categories[UNCATEGORIZED_KEY].words.push(newWord);
         existing.add(eng);
-        added.push({ ...newWord });
+        added.push({ ...newWord, category: null });
     }
 
     if (added.length && !(await saveData(data))) {
         return res.status(500).json({ error: "Failed to save batch to Cloudflare KV." });
     }
 
-    res.json({ added, added_count: added.length, duplicates, errors, total: totalWords(data) });
+    res.json({ added, added_count: added.length, duplicates, errors, total: data.wordcount });
 });
 
 app.post("/api/words/delete-multiple", async (req, res) => {
@@ -488,23 +463,19 @@ app.post("/api/words/delete-multiple", async (req, res) => {
     }
 
     const data = await loadData();
-    const indexMap = buildIndexMap(data);
-    const maxIdx = indexMap.length - 1;
+    const found = findByIndices(data, indices);
 
-    for (const i of indices) {
-        if (typeof i !== "number" || i < 0 || i > maxIdx) {
-            return res.status(400).json({ error: `Invalid index: ${i}` });
-        }
-    }
-
-    const byCat = {};
-    for (const i of new Set(indices)) {
-        const { cat, pos } = indexMap[i];
-        if (!byCat[cat]) byCat[cat] = [];
-        byCat[cat].push(pos);
+    if (found.length !== indices.length) {
+        return res.status(400).json({ error: "One or more indices not found." });
     }
 
     let deletedCount = 0;
+    const byCat = {};
+    for (const f of found) {
+        if (!byCat[f.cat]) byCat[f.cat] = [];
+        byCat[f.cat].push(f.pos);
+    }
+
     for (const [catName, positions] of Object.entries(byCat)) {
         const words = data.categories[catName].words;
         for (const pos of positions.sort((a, b) => b - a)) {
@@ -517,7 +488,7 @@ app.post("/api/words/delete-multiple", async (req, res) => {
         return res.status(500).json({ error: "Failed to save changes to Cloudflare KV." });
     }
 
-    res.json({ message: `${deletedCount} word(s) deleted.`, deleted_count: deletedCount, total: totalWords(data) });
+    res.json({ message: `${deletedCount} word(s) deleted.`, deleted_count: deletedCount, total: data.wordcount });
 });
 
 app.post("/api/words/move-category", async (req, res) => {
@@ -530,34 +501,27 @@ app.post("/api/words/move-category", async (req, res) => {
     const newCat = cat || UNCATEGORIZED_KEY;
 
     const data = await loadData();
-    const indexMap = buildIndexMap(data);
-    const maxIdx = indexMap.length - 1;
+    const found = findByIndices(data, indices);
 
-    for (const i of indices) {
-        if (typeof i !== "number" || i < 0 || i > maxIdx) {
-            return res.status(400).json({ error: `Invalid index: ${i}` });
-        }
+    if (found.length !== indices.length) {
+        return res.status(400).json({ error: "One or more indices not found." });
     }
 
     if (!data.categories[newCat]) {
         data.categories[newCat] = { description: "", words: [] };
     }
 
+    let movedCount = 0;
     const byCat = {};
-    const seen = new Set();
-    for (const i of indices) {
-        if (seen.has(i)) continue;
-        seen.add(i);
-        const { cat: catName, pos } = indexMap[i];
-        if (!byCat[catName]) byCat[catName] = [];
-        byCat[catName].push(pos);
+    for (const f of found) {
+        if (!byCat[f.cat]) byCat[f.cat] = [];
+        byCat[f.cat].push(f);
     }
 
-    let movedCount = 0;
-    for (const [oldCat, positions] of Object.entries(byCat)) {
+    for (const [oldCat, entries] of Object.entries(byCat)) {
         const words = data.categories[oldCat].words;
-        for (const pos of positions.sort((a, b) => b - a)) {
-            const word = words.splice(pos, 1)[0];
+        for (const entry of entries.sort((a, b) => b.pos - a.pos)) {
+            const word = words.splice(entry.pos, 1)[0];
             if (oldCat !== newCat) {
                 data.categories[newCat].words.push(word);
                 movedCount++;
