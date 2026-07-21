@@ -2,6 +2,7 @@
   "version": 2,
   "buildCommand": "cd frontend && npm install && npm run build && cd .. && mkdir -p backend/static && cp -r frontend/dist/* backend/static/",
   "installCommand": "npm install --prefix backend",
+  "outputDirectory": "backend/static",
   "functions": {
     "api/index.js": {
       "maxDuration": 30
