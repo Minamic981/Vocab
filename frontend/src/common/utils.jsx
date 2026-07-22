@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 
 export function filterByCategory(words, categoryFilter) {
   if (categoryFilter === null) {
-    return words.filter(w => w.category !== "Adult");
+    return words.filter(w => !["Adult", "test"].includes(w.category));
   } else if (categoryFilter === '') {
     return words.filter(w => !w.category);
   } else {
