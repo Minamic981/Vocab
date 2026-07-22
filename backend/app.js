@@ -412,10 +412,21 @@ app.post("/api/words/batch", async (req, res) => {
 
     const added = [], duplicates = [], errors = [];
     const lines = text.trim().split("\n");
+    let currentCategory = null;
 
     for (let i = 0; i < lines.length; i++) {
         const line = lines[i].trim();
         if (!line) continue;
+
+        const catMatch = line.match(/^\((.+)\)$/);
+        if (catMatch) {
+            currentCategory = catMatch[1];
+            if (!data.categories[currentCategory]) {
+                data.categories[currentCategory] = { description: `${currentCategory} Category`, words: [] };
+            }
+            continue;
+        }
+
         if (!line.includes("=")) {
             errors.push(`Line ${i + 1}: invalid format — "${line}"`);
             continue;
@@ -444,9 +455,13 @@ app.post("/api/words/batch", async (req, res) => {
         };
         data.wordcount++;
 
-        data.categories[UNCATEGORIZED_KEY].words.push(newWord);
+        const catKey = currentCategory || UNCATEGORIZED_KEY;
+        if (!data.categories[catKey]) {
+            data.categories[catKey] = { description: `${catKey} Category`, words: [] };
+        }
+        data.categories[catKey].words.push(newWord);
         existing.add(eng);
-        added.push({ ...newWord, category: null });
+        added.push({ ...newWord, category: currentCategory });
     }
 
     if (added.length && !(await saveData(data))) {

@@ -518,7 +518,7 @@ export default function MobileApp() {
 
       {/* Batch Import Tab */}
       {activeTab === 'import' && (
-        <BatchImport words={words} setWords={setWords} addToast={addToast} fetchWithRetry={fetchWithRetry} />
+        <BatchImport words={words} setWords={setWords} categories={categories} setCategories={setCategories} addToast={addToast} fetchWithRetry={fetchWithRetry} />
       )}
 
       {/* Practice Tab */}

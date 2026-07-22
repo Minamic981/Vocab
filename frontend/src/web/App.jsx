@@ -630,7 +630,7 @@ export default function App() {
 
       {/* ── Other tabs ── */}
       {activeTab === 'import' && (
-        <BatchImport words={words} setWords={setWords} categories={categories} addToast={addToast} fetchWithRetry={fetchWithRetry} />
+        <BatchImport words={words} setWords={setWords} categories={categories} setCategories={setCategories} addToast={addToast} fetchWithRetry={fetchWithRetry} />
       )}
       {activeTab === 'practice' && (
         <Practice words={words} categories={categories}

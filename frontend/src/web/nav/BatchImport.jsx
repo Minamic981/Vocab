@@ -28,7 +28,7 @@ function parseImportText(text) {
   return items;
 }
 
-export default function BatchImport({ words, setWords, categories, addToast, fetchWithRetry }) {
+export default function BatchImport({ words, setWords, categories, setCategories, addToast, fetchWithRetry }) {
   const [importText, setImportText] = useState('');
   const [importAlert, setImportAlert] = useState({ msg: '', type: 'error' });
   const [importing, setImporting] = useState(false);
@@ -107,6 +107,18 @@ export default function BatchImport({ words, setWords, categories, addToast, fet
       setWords(prev => [...prev, ...data.added]);
       setImportText('');
       setSelectedCats(new Set());
+
+      if (setCategories && data.added_count > 0) {
+        const newCats = new Set(data.added.map(w => w.category).filter(Boolean));
+        if (newCats.size > 0) {
+          setCategories(prev => {
+            const existingNames = new Set(prev.map(c => c.name));
+            const toAdd = [...newCats].filter(name => !existingNames.has(name));
+            if (toAdd.length === 0) return prev;
+            return [...prev, ...toAdd.map(name => ({ name, description: `${name} Category` }))];
+          });
+        }
+      }
 
       let msg = `Added ${data.added_count} word${data.added_count !== 1 ? 's' : ''}.`;
       let type = 'success';
