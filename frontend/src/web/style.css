@@ -1903,6 +1903,80 @@ textarea {
   margin-top: 14px;
 }
 
+/* ── Import category selection ───────────────────────────── */
+.import-cat-section {
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--rule);
+}
+
+.import-cat-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+
+.import-cat-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--ink-light);
+}
+
+.import-cat-actions {
+  display: flex;
+  gap: 6px;
+}
+
+.import-cats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.import-cat-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  border: 1px solid var(--rule);
+  font-size: 13px;
+  background: var(--paper-2);
+  transition: all 0.15s;
+}
+
+.import-cat-label:hover {
+  background: var(--accent-lt);
+  border-color: var(--accent);
+}
+
+.import-cat-label.selected {
+  background: var(--accent-lt);
+  border-color: var(--accent);
+}
+
+.import-cat-hint {
+  font-size: 12px;
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+.import-preview {
+  margin-top: 12px;
+  padding: 8px 12px;
+  background: var(--paper-2);
+  border-radius: var(--radius);
+  font-size: 13px;
+  color: var(--ink-light);
+}
+
+.import-preview-count {
+  font-weight: 500;
+}
+
 /* ── Style options field spacing ─────────────────────────── */
 .style-options .field {
   margin-top: 10px;

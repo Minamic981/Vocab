@@ -1,0 +1,43 @@
+{
+    "categories": {
+        "Law": {
+            "description": "Items Law Category",
+            "words": [
+                {
+                    "english": "English Sentence",
+                    "persian": "ترجمه فارسی",
+                    "alternatives": [],
+                    "index": 1,
+                    "isBookmarked": false
+                },
+                {
+                    "english": "English Sentence",
+                    "persian": "ترجمه فارسی",
+                    "alternatives": [],
+                    "index": 3,
+                    "isBookmarked": false
+                }
+            ]
+        },
+        "news": {
+            "description": "Item News Category",
+            "words": [
+                {
+                    "english": "English Sentence",
+                    "persian": "ترجمه فارسی",
+                    "alternatives": [],
+                    "index": 363,
+                    "isBookmarked": false
+                },
+                {
+                    "english": "English Sentence",
+                    "persian": "ترجمه فارسی",
+                    "alternatives": [],
+                    "index": 364,
+                    "isBookmarked": false
+                }
+            ]
+        }
+    },
+    "wordcount": 532
+}
