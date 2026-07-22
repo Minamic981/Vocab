@@ -620,7 +620,7 @@ export default function App() {
           addCustomStyle={addCustomStyle} setAddCustomStyle={setAddCustomStyle}
           addAdvancedOpen={addAdvancedOpen} setAddAdvancedOpen={setAddAdvancedOpen}
           addAlert={addAlert}
-          openEdit={openEdit} deleteWord={deleteWord} openPopup={openPopup}
+          openEdit={openEdit} deleteWord={deleteWord} deleteCategory={deleteCategory} openPopup={openPopup}
           bulkDelete={bulkDelete} bulkMove={bulkMove}
           setCatName={setCatName} setCatDesc={setCatDesc}
           setCatAlert={setCatAlert} setCatModalOpen={setCatModalOpen}

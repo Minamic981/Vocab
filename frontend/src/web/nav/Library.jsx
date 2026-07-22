@@ -18,7 +18,7 @@ export default function Library({
   addCustomStyle, setAddCustomStyle,
   addAdvancedOpen, setAddAdvancedOpen,
   addAlert,
-  openEdit, deleteWord, openPopup,
+  openEdit, deleteWord, deleteCategory, openPopup,
   bulkDelete, bulkMove,
   setCatName, setCatDesc, setCatAlert, setCatModalOpen,
 }) {
@@ -98,6 +98,9 @@ export default function Library({
           <option value="">No Category</option>
           {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
         </select>
+        {categoryFilter && categoryFilter !== '' && (
+          <button className="btn btn-danger btn-sm" onClick={() => deleteCategory(categoryFilter)}>Delete</button>
+        )}
         <button className="btn btn-ghost btn-sm" onClick={() => {
           setCatName(''); setCatDesc(''); setCatAlert({ msg: '', type: 'error' });
           setCatModalOpen(true);

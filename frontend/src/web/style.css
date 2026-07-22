@@ -377,7 +377,6 @@ textarea {
 }
 
 .btn-danger {
-  height: 25px;
   background: var(--danger);
   color: #fff;
 }

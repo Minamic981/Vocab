@@ -295,7 +295,7 @@ textarea {
 
 .btn-primary { background: var(--accent); color: #fff; }
 .btn-ghost { background: transparent; border: 1px solid var(--rule); color: var(--ink-light); }
-.btn-danger { height: 25px; background: var(--danger); color: #fff; }
+.btn-danger { background: var(--danger); color: #fff; }
 .btn-sm { padding: 5px 12px; font-size: 12px; }
 
 .btn-ai { background: var(--warn-lt); color: var(--warn); border: 1px solid #e6c96a; }
