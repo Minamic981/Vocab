@@ -734,19 +734,20 @@ textarea {
 .bulk-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   padding: 10px 16px;
   margin-bottom: 12px;
   background: var(--danger-lt);
   border: 1px solid var(--danger);
   border-radius: var(--radius);
+  flex-wrap: wrap;
 }
 
 .bulk-count {
   font-size: 13px;
   font-weight: 600;
   color: var(--danger);
-  flex: 1;
+  flex-shrink: 0;
 }
 
 .bulk-move-label {

@@ -20,7 +20,7 @@ export default function Library({
   addAlert,
   openEdit, deleteWord, deleteCategory, openPopup,
   toggleBookmark,
-  bulkDelete, bulkMove,
+  bulkDelete, bulkMove, bulkBookmark,
   setCatName, setCatDesc, setCatAlert, setCatModalOpen,
 }) {
   const addEnRef = useRef(null);
@@ -121,6 +121,8 @@ export default function Library({
             <option value="__none__">No Category</option>
             {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
           </select>
+          <button className="btn btn-ghost btn-sm" onClick={() => bulkBookmark(true)}>🔖 Bookmark</button>
+          <button className="btn btn-ghost btn-sm" onClick={() => bulkBookmark(false)}>🔖 Unbookmark</button>
           <button className="btn btn-danger btn-sm" onClick={bulkDelete}>Delete Selected</button>
           <button className="btn btn-ghost btn-sm" onClick={() => { setSelectMode(false); setSelectedIndices(new Set()); }}>Cancel</button>
         </div>
@@ -156,9 +158,10 @@ export default function Library({
                 {alts.length > 0 && (
                   <span className={`word-alt-arrow`}
                     title="Show alternatives" onClick={(e) => {
-                      const el = e.currentTarget.nextElementSibling;
-                      if (el) {
-                        const open = el.classList.toggle('open');
+                      const wrap = e.currentTarget.closest('.word-row-wrap');
+                      const altsEl = wrap?.querySelector('.word-alts');
+                      if (altsEl) {
+                        const open = altsEl.classList.toggle('open');
                         e.currentTarget.classList.toggle('open', open);
                       }
                     }} />

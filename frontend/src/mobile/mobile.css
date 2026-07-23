@@ -528,7 +528,7 @@ textarea {
   flex-wrap: wrap;
 }
 
-.bulk-count { font-size: 13px; font-weight: 600; color: var(--danger); flex: 1; }
+.bulk-count { font-size: 13px; font-weight: 600; color: var(--danger); flex-shrink: 0; }
 
 .bulk-move-label {
   font-size: 12px;

@@ -540,6 +540,24 @@ export default function App() {
     setSelectMode(false);
   }, [selectedIndices, moveWordsToCategory]);
 
+  const bulkBookmark = useCallback((bookmark) => {
+    if (!selectedIndices.size) return;
+    const indices = [...selectedIndices];
+    for (const idx of indices) {
+      const word = words.find(w => w.index === idx);
+      if (!word) continue;
+      if (bookmark) {
+        bookmarkAdd(idx);
+      } else {
+        bookmarkRemove(idx);
+      }
+    }
+    setPendingCount(bookmarkHasPending() ? Date.now() : 0);
+    setSelectedIndices(new Set());
+    setSelectMode(false);
+    handlePersistBookmarks();
+  }, [selectedIndices, words, handlePersistBookmarks]);
+
   // ── Floating nav: add word ──
   const fnAddWord = useCallback(async () => {
     const en = fnAddEn.trim();
@@ -662,7 +680,7 @@ export default function App() {
           addAlert={addAlert}
           openEdit={openEdit} deleteWord={deleteWord} deleteCategory={deleteCategory} openPopup={openPopup}
           toggleBookmark={toggleBookmark}
-          bulkDelete={bulkDelete} bulkMove={bulkMove}
+          bulkDelete={bulkDelete} bulkMove={bulkMove} bulkBookmark={bulkBookmark}
           setCatName={setCatName} setCatDesc={setCatDesc}
           setCatAlert={setCatAlert} setCatModalOpen={setCatModalOpen}
           addToast={addToast}
