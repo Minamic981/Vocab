@@ -4,7 +4,11 @@ import BatchImport from './nav/BatchImport.jsx';
 import Practice from './nav/Practice.jsx';
 import MultipleMeanings from './nav/MultipleMeanings.jsx';
 import FloatingNav from './components/FloatingNav.jsx';
-import { filterByCategory, sortByIndex } from '../common/utils.jsx';
+import {
+  filterByCategory, sortByIndex,
+  bookmarkAdd, bookmarkRemove, bookmarkIsBookmarked,
+  bookmarkHasPending, bookmarkPersist,
+} from '../common/utils.jsx';
 
 // ── Helpers ────────────────────────────────────────────────
 const RETRY_MAX = 3;
@@ -65,11 +69,7 @@ export default function App() {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIndices, setSelectedIndices] = useState(new Set());
 
-  // ── Bookmarks (localStorage for now, bypass isBookmarked from backend) ──
-  const [bookmarkedWords, setBookmarkedWords] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('bookmarkedWords') || '[]'); }
-    catch { return []; }
-  });
+  // ── Bookmark filter (bookmarks live in word.isBookmarked via DB) ──
 
   // ── Add form ──
   const [addEn, setAddEn] = useState('');
@@ -132,6 +132,7 @@ export default function App() {
   const addEnRef = useRef(null);
   const editEnRef = useRef(null);
   const popupFaRef = useRef(null);
+  const isSyncingRef = useRef(false);
 
   // ── Toast helper ──
   const addToast = useCallback((msg, type = 'info') => {
@@ -146,19 +147,50 @@ export default function App() {
     setTimeout(() => setter({ msg: '', type: 'error' }), 80000);
   }, []);
 
-  // ── Save bookmarks ──
-  useEffect(() => {
-    localStorage.setItem('bookmarkedWords', JSON.stringify(bookmarkedWords));
-  }, [bookmarkedWords]);
+  const isBookmarked = useCallback((english) => {
+    const word = words.find(w => w.english === english);
+    if (!word) return false;
+    return bookmarkIsBookmarked(word);
+  }, [words]);
 
-  const isBookmarked = useCallback((english) => bookmarkedWords.includes(english), [bookmarkedWords]);
+  const [pendingCount, setPendingCount] = useState(0);
 
   const toggleBookmark = useCallback((english) => {
-    setBookmarkedWords(prev => {
-      const i = prev.indexOf(english);
-      return i === -1 ? [...prev, english] : prev.filter((_, j) => j !== i);
-    });
-  }, []);
+    const word = words.find(w => w.english === english);
+    if (!word) return;
+    const now = bookmarkIsBookmarked(word);
+    if (now) {
+      bookmarkRemove(word.index);
+    } else {
+      bookmarkAdd(word.index);
+    }
+    setPendingCount(bookmarkHasPending() ? Date.now() : 0);
+  }, [words]);
+
+  const handlePersistBookmarks = useCallback(async () => {
+    if (isSyncingRef.current) return;
+    isSyncingRef.current = true;
+    try {
+      const result = await bookmarkPersist();
+      if (result.synced) {
+        const bkSet = new Set(result.bookmarks);
+        const unbkSet = new Set(result.unbookmarks);
+        setWords(prev => prev.map(w => {
+          if (bkSet.has(w.index)) return { ...w, isBookmarked: true };
+          if (unbkSet.has(w.index)) return { ...w, isBookmarked: false };
+          return w;
+        }));
+        addToast(`Bookmarks synced (${result.bookmarks.length} saved, ${result.unbookmarks.length} unsaved)`, 'success');
+      } else {
+        addToast('No pending bookmarks to sync.', 'info');
+      }
+    } catch {
+      addToast('Failed to sync bookmarks.', 'error');
+    } finally {
+      isSyncingRef.current = false;
+    }
+    setPendingCount(bookmarkHasPending() ? Date.now() : 0);
+  }, [addToast]);
 
   // ── Derived: filtered words (using word.index as idx) ──
   const filteredWords = useMemo(() => {
@@ -173,9 +205,9 @@ export default function App() {
     }
 
     if (bookmarkFilter === 'bookmarked') {
-      result = result.filter(({ word: w }) => bookmarkedWords.includes(w.english));
+      result = result.filter(({ word: w }) => bookmarkIsBookmarked(w));
     } else if (bookmarkFilter === 'unbookmarked') {
-      result = result.filter(({ word: w }) => !bookmarkedWords.includes(w.english));
+      result = result.filter(({ word: w }) => !bookmarkIsBookmarked(w));
     }
 
     const wordsOnly = result.map(f => f.word);
@@ -183,7 +215,7 @@ export default function App() {
     const sorted = sortByIndex(categoryFiltered);
     const indexMap = new Map(sorted.map(w => [w, w.index]));
     return sorted.map(w => ({ word: w, idx: indexMap.get(w) }));
-  }, [words, searchQuery, bookmarkFilter, categoryFilter, bookmarkedWords]);
+  }, [words, searchQuery, bookmarkFilter, categoryFilter, pendingCount]);
 
   // ── Find word by index ──
   const findWordByIndex = useCallback((index) => {
@@ -219,6 +251,15 @@ export default function App() {
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
   }, []);
+
+  // ── Auto-sync bookmarks on tab switch ──
+  const prevTabRef = useRef(activeTab);
+  useEffect(() => {
+    if (prevTabRef.current !== activeTab && bookmarkHasPending()) {
+      handlePersistBookmarks();
+    }
+    prevTabRef.current = activeTab;
+  }, [activeTab, handlePersistBookmarks]);
 
   // ── Body class for floating nav ──
   useEffect(() => {
@@ -603,7 +644,6 @@ export default function App() {
       {activeTab === 'library' && (
         <Library
           words={words} setWords={setWords} categories={categories}
-          bookmarkedWords={bookmarkedWords}
           searchQuery={searchQuery} setSearchQuery={setSearchQuery}
           categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter}
           bookmarkFilter={bookmarkFilter} setBookmarkFilter={setBookmarkFilter}
@@ -621,6 +661,7 @@ export default function App() {
           addAdvancedOpen={addAdvancedOpen} setAddAdvancedOpen={setAddAdvancedOpen}
           addAlert={addAlert}
           openEdit={openEdit} deleteWord={deleteWord} deleteCategory={deleteCategory} openPopup={openPopup}
+          toggleBookmark={toggleBookmark}
           bulkDelete={bulkDelete} bulkMove={bulkMove}
           setCatName={setCatName} setCatDesc={setCatDesc}
           setCatAlert={setCatAlert} setCatModalOpen={setCatModalOpen}
@@ -634,7 +675,8 @@ export default function App() {
       )}
       {activeTab === 'practice' && (
         <Practice words={words} categories={categories}
-          bookmarkedWords={bookmarkedWords} isBookmarked={isBookmarked} toggleBookmark={toggleBookmark}
+          isBookmarked={isBookmarked} toggleBookmark={toggleBookmark}
+          persistBookmarks={handlePersistBookmarks} pendingCount={pendingCount}
           addToast={addToast} moveWordsToCategory={moveWordsToCategory} />
       )}
       {activeTab === 'defs' && <MultipleMeanings fetchWithRetry={fetchWithRetry} />}

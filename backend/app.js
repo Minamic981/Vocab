@@ -309,6 +309,37 @@ app.post("/api/words", async (req, res) => {
     res.status(201).json({ message: "Word added successfully.", word: { ...newWord, category } });
 });
 
+app.put("/api/words/bookmark", async (req, res) => {
+    const { bookmarks = [], unbookmarks = [] } = req.body;
+    if (!Array.isArray(bookmarks) || !Array.isArray(unbookmarks)) {
+        return res.status(400).json({ error: "bookmarks and unbookmarks must be arrays." });
+    }
+
+    const data = await loadData();
+    const catMap = {};
+    for (const [catName, catObj] of Object.entries(data.categories || {})) {
+        for (const word of catObj?.words || []) {
+            catMap[word.index] = word;
+        }
+    }
+
+    let changed = 0;
+    for (const idx of bookmarks) {
+        const word = catMap[idx];
+        if (word && !word.isBookmarked) { word.isBookmarked = true; changed++; }
+    }
+    for (const idx of unbookmarks) {
+        const word = catMap[idx];
+        if (word && word.isBookmarked) { word.isBookmarked = false; changed++; }
+    }
+
+    if (changed && !(await saveData(data))) {
+        return res.status(500).json({ error: "Failed to save bookmarks to Cloudflare KV." });
+    }
+
+    res.json({ synced: true, changed, bookmarks, unbookmarks });
+});
+
 app.put("/api/words/:index", async (req, res) => {
     const index = parseInt(req.params.index);
     const { english: rawEnglish, persian: rawPersian, alternatives: rawAlts, category: rawCat } = req.body;

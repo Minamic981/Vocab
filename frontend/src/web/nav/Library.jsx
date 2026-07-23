@@ -1,5 +1,5 @@
 import React, { useRef, useCallback, useEffect } from 'react';
-import speakWord, { escHtml, SegmentedEnglish } from '../../common/utils.jsx';
+import speakWord, { escHtml, SegmentedEnglish, bookmarkIsBookmarked } from '../../common/utils.jsx';
 import ExportButton from '../components/ExportButton.jsx';
 const RAINBOW = ['#FF6B6B', '#FF9F43', '#FECA57', '#48DBFB', '#0ABDE3', '#A29BFE', '#6C5CE7', '#FD79A8', '#FDCB6E', '#00CEC9', '#E17055', '#74B9FF'];
 
@@ -19,6 +19,7 @@ export default function Library({
   addAdvancedOpen, setAddAdvancedOpen,
   addAlert,
   openEdit, deleteWord, deleteCategory, openPopup,
+  toggleBookmark,
   bulkDelete, bulkMove,
   setCatName, setCatDesc, setCatAlert, setCatModalOpen,
 }) {
@@ -147,7 +148,11 @@ export default function Library({
                   <input type="checkbox" className="word-checkbox" checked={isSelected}
                     onChange={() => handleRowSelect(idx)} />
                 )}
-                <span className="word-index">{w.index}</span>
+                <span
+                  className={`word-index${bookmarkIsBookmarked(w) ? ' bookmarked' : ''}`}
+                  onDoubleClick={(e) => { e.stopPropagation(); toggleBookmark(w.english); }}
+                  title="Double-click to toggle bookmark"
+                >{w.index}</span>
                 {alts.length > 0 && (
                   <span className={`word-alt-arrow`}
                     title="Show alternatives" onClick={(e) => {

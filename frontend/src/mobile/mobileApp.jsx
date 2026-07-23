@@ -4,7 +4,11 @@ import BatchImport from './nav/BatchImport.jsx';
 import Practice from './nav/Practice.jsx';
 import MultipleMeanings from './nav/MultipleMeanings.jsx';
 import MobileBottomNav from './compMobile/MobileBottomNav.jsx';
-import { filterByCategory, sortByIndex } from '../common/utils.jsx';
+import {
+  filterByCategory, sortByIndex,
+  bookmarkAdd, bookmarkRemove, bookmarkIsBookmarked,
+  bookmarkHasPending, bookmarkPersist,
+} from '../common/utils.jsx';
 
 // ── Helpers ────────────────────────────────────────────────
 const RETRY_MAX = 3;
@@ -59,10 +63,7 @@ export default function MobileApp() {
   const [selectMode, setSelectMode] = useState(false);
   const [selectedIndices, setSelectedIndices] = useState(new Set());
 
-  const [bookmarkedWords, setBookmarkedWords] = useState(() => {
-    try { return JSON.parse(localStorage.getItem('bookmarkedWords') || '[]'); }
-    catch { return []; }
-  });
+  // ── Bookmark filter (bookmarks live in word.isBookmarked via DB) ──
 
   const [addEn, setAddEn] = useState('');
   const [addFa, setAddFa] = useState('');
@@ -114,19 +115,52 @@ export default function MobileApp() {
     setTimeout(() => setter({ msg: '', type: 'error' }), 80000);
   }, []);
 
-  // ── Bookmarks ──
-  useEffect(() => {
-    localStorage.setItem('bookmarkedWords', JSON.stringify(bookmarkedWords));
-  }, [bookmarkedWords]);
+  const isBookmarked = useCallback((english) => {
+    const word = words.find(w => w.english === english);
+    if (!word) return false;
+    return bookmarkIsBookmarked(word);
+  }, [words]);
 
-  const isBookmarked = useCallback((english) => bookmarkedWords.includes(english), [bookmarkedWords]);
+  const [pendingCount, setPendingCount] = useState(0);
 
   const toggleBookmark = useCallback((english) => {
-    setBookmarkedWords(prev => {
-      const i = prev.indexOf(english);
-      return i === -1 ? [...prev, english] : prev.filter((_, j) => j !== i);
-    });
-  }, []);
+    const word = words.find(w => w.english === english);
+    if (!word) return;
+    const now = bookmarkIsBookmarked(word);
+    if (now) {
+      bookmarkRemove(word.index);
+    } else {
+      bookmarkAdd(word.index);
+    }
+    setPendingCount(bookmarkHasPending() ? Date.now() : 0);
+  }, [words]);
+
+  const isSyncingRef = React.useRef(false);
+
+  const handlePersistBookmarks = useCallback(async () => {
+    if (isSyncingRef.current) return;
+    isSyncingRef.current = true;
+    try {
+      const result = await bookmarkPersist();
+      if (result.synced) {
+        const bkSet = new Set(result.bookmarks);
+        const unbkSet = new Set(result.unbookmarks);
+        setWords(prev => prev.map(w => {
+          if (bkSet.has(w.index)) return { ...w, isBookmarked: true };
+          if (unbkSet.has(w.index)) return { ...w, isBookmarked: false };
+          return w;
+        }));
+        addToast(`Bookmarks synced (${result.bookmarks.length} saved, ${result.unbookmarks.length} unsaved)`, 'success');
+      } else {
+        addToast('No pending bookmarks to sync.', 'info');
+      }
+    } catch {
+      addToast('Failed to sync bookmarks.', 'error');
+    } finally {
+      isSyncingRef.current = false;
+    }
+    setPendingCount(bookmarkHasPending() ? Date.now() : 0);
+  }, [addToast]);
 
   // ── Filtered words (using word.index as idx, sorted by index) ──
   const filteredWords = useMemo(() => {
@@ -141,9 +175,9 @@ export default function MobileApp() {
     }
 
     if (bookmarkFilter === 'bookmarked') {
-      result = result.filter(({ word: w }) => bookmarkedWords.includes(w.english));
+      result = result.filter(({ word: w }) => bookmarkIsBookmarked(w));
     } else if (bookmarkFilter === 'unbookmarked') {
-      result = result.filter(({ word: w }) => !bookmarkedWords.includes(w.english));
+      result = result.filter(({ word: w }) => !bookmarkIsBookmarked(w));
     }
 
     const wordsOnly = result.map(f => f.word);
@@ -151,7 +185,7 @@ export default function MobileApp() {
     const sorted = sortByIndex(categoryFiltered);
     const indexMap = new Map(sorted.map(w => [w, w.index]));
     return sorted.map(w => ({ word: w, idx: indexMap.get(w) }));
-  }, [words, searchQuery, bookmarkFilter, categoryFilter, bookmarkedWords]);
+  }, [words, searchQuery, bookmarkFilter, categoryFilter, pendingCount]);
 
   // ── Init ──
   useEffect(() => {
@@ -170,6 +204,15 @@ export default function MobileApp() {
       setLoading(false);
     })();
   }, []);
+
+  // ── Auto-sync bookmarks on tab switch ──
+  const prevTabRef = React.useRef(activeTab);
+  useEffect(() => {
+    if (prevTabRef.current !== activeTab && bookmarkHasPending()) {
+      handlePersistBookmarks();
+    }
+    prevTabRef.current = activeTab;
+  }, [activeTab, handlePersistBookmarks]);
 
   // ── API: Add word ──
   const addWord = useCallback(async () => {
@@ -489,7 +532,7 @@ export default function MobileApp() {
       {/* Library Tab */}
       {activeTab === 'library' && (
         <Library
-          words={words} categories={categories} bookmarkedWords={bookmarkedWords}
+          words={words} categories={categories}
           searchQuery={searchQuery} setSearchQuery={setSearchQuery}
           categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter}
           bookmarkFilter={bookmarkFilter} setBookmarkFilter={setBookmarkFilter}
@@ -507,6 +550,7 @@ export default function MobileApp() {
           addAdvancedOpen={addAdvancedOpen} setAddAdvancedOpen={setAddAdvancedOpen}
           addAlert={addAlert}
           openEdit={openEdit} deleteWord={deleteWord} deleteCategory={deleteCategory} openPopup={openPopup}
+          toggleBookmark={toggleBookmark}
           bulkDelete={bulkDelete} bulkMove={bulkMove}
           setCatName={setCatName} setCatDesc={setCatDesc}
           setCatAlert={setCatAlert} setCatModalOpen={setCatModalOpen}
@@ -524,7 +568,8 @@ export default function MobileApp() {
       {/* Practice Tab */}
       {activeTab === 'practice' && (
         <Practice words={words} categories={categories}
-          bookmarkedWords={bookmarkedWords} isBookmarked={isBookmarked} toggleBookmark={toggleBookmark}
+          isBookmarked={isBookmarked} toggleBookmark={toggleBookmark}
+          persistBookmarks={handlePersistBookmarks} pendingCount={pendingCount}
           addToast={addToast} fetchWithRetry={fetchWithRetry} moveWordsToCategory={moveWordsToCategory} />
       )}
 

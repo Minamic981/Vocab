@@ -7,7 +7,7 @@ const PRACTICE_FILTERS = [
   { key: 'unbookmarked', label: '🔖 Unbookmarked', title: 'Show only unbookmarked' },
 ];
 
-export default function Practice({ words, categories, isBookmarked, toggleBookmark, moveWordsToCategory }) {
+export default function Practice({ words, categories, isBookmarked, toggleBookmark, persistBookmarks, pendingCount, moveWordsToCategory }) {
   const [practiceQueue, setPracticeQueue] = useState([]);
   const [practiceIndex, setPracticeIndex] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
@@ -57,6 +57,10 @@ export default function Practice({ words, categories, isBookmarked, toggleBookma
   const handleBookmark = () => {
     if (!currentWord) return;
     toggleBookmark(currentWord.english);
+  };
+
+  const handlePersist = () => {
+    persistBookmarks();
   };
 
   const handleMoveCategory = async (category) => {
@@ -119,6 +123,14 @@ export default function Practice({ words, categories, isBookmarked, toggleBookma
             <option value="">📁 No Category</option>
             {categories.map(c => <option key={c.name} value={c.name}>📁 {c.name}</option>)}
           </select>
+          <button className="btn btn-persist-bk" onClick={handlePersist}
+            title="Persist bookmarks to database">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+              strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 21l-7-5-7 5V5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2z" />
+            </svg>
+            <span>Sync</span>
+          </button>
         </div>
       </div>
 

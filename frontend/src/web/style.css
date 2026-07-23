@@ -460,6 +460,26 @@ textarea {
   fill: var(--warn);
 }
 
+.btn-persist-bk {
+  background: transparent;
+  color: var(--ink-faint);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.2s, border-color 0.2s;
+}
+
+.btn-persist-bk:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+}
+
 
 
 /* ── Labels ──────────────────────────────────────────────── */
@@ -926,6 +946,11 @@ textarea {
   text-align: right;
   flex-shrink: 0;
   letter-spacing: 0.03em;
+  cursor: pointer;
+}
+
+.word-index.bookmarked {
+  color: #eab308;
 }
 
 .word-en {
@@ -994,7 +1019,8 @@ textarea {
 .practice-header-btns {
   display: flex;
   gap: 8px;
-  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .progress-bar-wrap {

@@ -1,10 +1,10 @@
 import React, { useRef, useCallback, useEffect } from 'react';
 import ExportButton from '../compMobile/ExportButton.jsx';
-import speakWord, { escHtml, SegmentedEnglish } from '../../common/utils.jsx';
+import speakWord, { escHtml, SegmentedEnglish, bookmarkIsBookmarked } from '../../common/utils.jsx';
 
 const RAINBOW = ['#FF6B6B', '#FF9F43', '#FECA57', '#48DBFB', '#0ABDE3', '#A29BFE', '#6C5CE7', '#FD79A8', '#FDCB6E', '#00CEC9', '#E17055', '#74B9FF'];
 
-function WordRow({ w, idx, selectMode, isSelected, alts, onEdit, onDelete, onPopup, onCheckbox, onSpeak, onCopy, revealAll }) {
+function WordRow({ w, idx, selectMode, isSelected, alts, onEdit, onDelete, onPopup, onCheckbox, onSpeak, onCopy, revealAll, onToggleBookmark }) {
   const [revealed, setRevealed] = React.useState(false);
   const [altsOpen, setAltsOpen] = React.useState(false);
   const isTribute = w.english.toLowerCase().includes('tachiba san');
@@ -22,7 +22,11 @@ function WordRow({ w, idx, selectMode, isSelected, alts, onEdit, onDelete, onPop
           <input type="checkbox" className="word-checkbox" checked={isSelected}
             onChange={() => onCheckbox(idx)} />
         )}
-        <span className="word-index">{w.index}</span>
+        <span
+          className={`word-index${bookmarkIsBookmarked(w) ? ' bookmarked' : ''}`}
+          onDoubleClick={(e) => { e.stopPropagation(); onToggleBookmark(w.english); }}
+          title="Double-tap to toggle bookmark"
+        >{w.index}</span>
         {alts.length > 0 && (
           <span className={`word-alt-arrow ${altsOpen ? 'open' : ''}`}
             title="Show alternatives" onClick={() => setAltsOpen(!altsOpen)} />
@@ -90,6 +94,7 @@ export default function Library({
   addAdvancedOpen, setAddAdvancedOpen,
   addAlert,
   openEdit, deleteWord, deleteCategory, openPopup,
+  toggleBookmark,
   bulkDelete, bulkMove,
   setCatName, setCatDesc, setCatAlert, setCatModalOpen,
   isBookmarked,
@@ -232,6 +237,7 @@ export default function Library({
             onSpeak={speakWord}
             onCopy={handleCopy}
             revealAll={revealAll}
+            onToggleBookmark={toggleBookmark}
           />
         ))}
       </div>
