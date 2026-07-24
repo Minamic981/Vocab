@@ -137,7 +137,7 @@ async function generate_sentence(english, persian, { is_edit = false, style = ''
             'X-Title': 'Vocab Site',
         },
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(50000),
+        signal: AbortSignal.timeout(25000),
     });
 
     if (!response.ok) {
@@ -205,7 +205,7 @@ Respond ONLY with valid JSON in this exact format — no extra text, no markdown
             'X-Title': 'Vocab Site',
         },
         body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(50000),
+        signal: AbortSignal.timeout(25000),
     });
 
     if (!response.ok) {
