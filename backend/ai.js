@@ -176,7 +176,7 @@ Respond ONLY with valid JSON in this exact format — no extra text, no markdown
 `
 
     const payload = {
-        model: MODEL_NAME,
+        model: "deepseek/deepseek-v4-flash",
         messages: [
             {
                 role: "system",
@@ -195,6 +195,8 @@ Respond ONLY with valid JSON in this exact format — no extra text, no markdown
             { role: "user", content: prompt }
         ],
         temperature: 0.3,
+        max_tokens: 350,
+        top_p: 0.9
     };
 
     const response = await fetch(OPENROUTER_URL, {
