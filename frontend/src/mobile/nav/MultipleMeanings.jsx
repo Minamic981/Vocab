@@ -34,7 +34,7 @@ export default function MultipleMeanings({ addToast }) {
     setAlert({ msg: '', type: 'error' });
 
     try {
-      const res = await fetch(`/defs/${encodeURIComponent(w)}`);
+      const res = await fetch(`/defs/${encodeURIComponent(w)}`, { method: 'POST' });
       const text = await res.text();
       let data;
       try { data = JSON.parse(text); } catch { data = null; }
