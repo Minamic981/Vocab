@@ -145,8 +145,9 @@ async function generate_sentence(english, persian, { is_edit = false, style = ''
     }
 
     const data = await response.json();
-    let raw = data.choices[0].message.content.trim();
-    raw = raw.replace(/```json/g, '').replace(/```/g, '').trim();
+    let raw = data.choices?.[0]?.message?.content;
+    if (!raw) throw new Error("AI returned empty response");
+    raw = raw.trim().replace(/```json/g, '').replace(/```/g, '').trim();
     const result = JSON.parse(raw);
 
     return [result.english, result.persian];
@@ -215,8 +216,9 @@ Respond ONLY with valid JSON in this exact format — no extra text, no markdown
     }
 
     const data = await response.json();
-    let raw = data.choices[0].message.content.trim();
-    raw = raw.replace(/```json/g, '').replace(/```/g, '').trim();
+    let raw = data.choices?.[0]?.message?.content;
+    if (!raw) throw new Error("AI returned empty response");
+    raw = raw.trim().replace(/```json/g, '').replace(/```/g, '').trim();
     const result = JSON.parse(raw);
     return result;
 }
