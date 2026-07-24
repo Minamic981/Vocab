@@ -260,6 +260,9 @@ app.post("/api/words", async (req, res) => {
     if (aigen) {
         try {
             const [newEnglish, newPersian] = await generate_sentence(english, persian, { style, custom_style });
+            if (!newEnglish || !newPersian) {
+                return res.status(500).json({ error: "AI generation returned invalid data" });
+            }
             newWord = { english: newEnglish, persian: newPersian, alternatives };
         } catch (e) {
             return res.status(500).json({ error: e.message || "AI generation failed" });

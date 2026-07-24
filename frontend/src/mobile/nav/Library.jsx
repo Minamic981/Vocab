@@ -7,7 +7,7 @@ const RAINBOW = ['#FF6B6B', '#FF9F43', '#FECA57', '#48DBFB', '#0ABDE3', '#A29BFE
 function WordRow({ w, idx, selectMode, isSelected, alts, onEdit, onDelete, onPopup, onCheckbox, onSpeak, onCopy, revealAll, onToggleBookmark }) {
   const [revealed, setRevealed] = React.useState(false);
   const [altsOpen, setAltsOpen] = React.useState(false);
-  const isTribute = w.english.toLowerCase().includes('tachiba san');
+  const isTribute = w.index === 329
   const tributeClass = isTribute ? ' word-row-tribute' : '';
   const showFa = revealAll || revealed;
 
@@ -24,7 +24,7 @@ function WordRow({ w, idx, selectMode, isSelected, alts, onEdit, onDelete, onPop
         )}
         <span
           className={`word-index${bookmarkIsBookmarked(w) ? ' bookmarked' : ''}`}
-          onDoubleClick={(e) => { e.stopPropagation(); onToggleBookmark(w.english); }}
+          onDoubleClick={(e) => { e.stopPropagation(); onToggleBookmark(w.english || ''); }}
           title="Double-tap to toggle bookmark"
         >{w.index}</span>
         {alts.length > 0 && (
@@ -34,11 +34,11 @@ function WordRow({ w, idx, selectMode, isSelected, alts, onEdit, onDelete, onPop
         <span className="word-en" onClick={handleEnglishClick}>
           {isTribute ? (
             <>
-              {escHtml(w.english.slice(0, w.english.toLowerCase().lastIndexOf('tachiba san')))}
+              {escHtml(w.english?.slice(0, w.english.toLowerCase().lastIndexOf('tachiba san')) || '')}
               <span className="tribute-author">Tachiba San</span>
             </>
           ) : (
-            <SegmentedEnglish text={w.english} onSegmentClick={onPopup} doubleClick />
+            <SegmentedEnglish text={w.english || ''} onSegmentClick={onPopup} doubleClick />
           )}
         </span>
         <span className={`word-fa ${showFa ? 'revealed' : ''}`}>
@@ -52,14 +52,14 @@ function WordRow({ w, idx, selectMode, isSelected, alts, onEdit, onDelete, onPop
         </span>
         <div className="word-actions">
           <button className="btn btn-ghost btn-sm" title="Copy to clipboard"
-            onClick={(e) => { e.stopPropagation(); onCopy(w.english); }}>
+            onClick={(e) => { e.stopPropagation(); onCopy(w.english || ''); }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <rect x="9" y="9" width="13" height="13" rx="2" ry="2" />
               <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
             </svg>
           </button>
           <button className="btn btn-speak-row btn-sm" title="Listen"
-            onClick={(e) => { e.stopPropagation(); onSpeak(w.english); }}>
+            onClick={(e) => { e.stopPropagation(); onSpeak(w.english || ''); }}>
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
               <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
@@ -230,7 +230,7 @@ export default function Library({
             w={w} idx={idx}
             selectMode={selectMode}
             isSelected={selectedIndices.has(idx)}
-            isBookmarked={isBookmarked(w.english)}
+            isBookmarked={isBookmarked(w.english || '')}
             alts={w.alternatives || []}
             onEdit={openEdit}
             onDelete={deleteWord}

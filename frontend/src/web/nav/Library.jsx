@@ -140,7 +140,7 @@ export default function Library({
         ) : filteredWords.map(({ word: w, idx }, displayIndex) => {
           const isSelected = selectedIndices.has(idx);
           const alts = w.alternatives || [];
-          const isTribute = w.english.toLowerCase().includes('tachiba san');
+          const isTribute = w.index === 329
           const tributeClass = isTribute ? ' word-row-tribute' : '';
 
           return (
@@ -152,7 +152,7 @@ export default function Library({
                 )}
                 <span
                   className={`word-index${bookmarkIsBookmarked(w) ? ' bookmarked' : ''}`}
-                  onDoubleClick={(e) => { e.stopPropagation(); toggleBookmark(w.english); }}
+                  onDoubleClick={(e) => { e.stopPropagation(); toggleBookmark(w.english || ''); }}
                   title="Double-click to toggle bookmark"
                 >{w.index}</span>
                 {alts.length > 0 && (
@@ -169,11 +169,11 @@ export default function Library({
                 <span className="word-en">
                   {isTribute ? (
                     <>
-                      {escHtml(w.english.slice(0, w.english.toLowerCase().lastIndexOf('tachiba san')))}
+                      {escHtml(w.english?.slice(0, w.english.toLowerCase().lastIndexOf('tachiba san')) || '')}
                       <span className="tribute-author">Tachiba San</span>
                     </>
                   ) : (
-                    <SegmentedEnglish text={w.english} onSegmentClick={openPopup} doubleClick />
+                    <SegmentedEnglish text={w.english || ''} onSegmentClick={openPopup} doubleClick />
                   )}
                 </span>
                 <span className="word-fa">
@@ -187,7 +187,7 @@ export default function Library({
                 </span>
                 <div className="word-actions">
                   <button className="btn btn-speak-row btn-sm" title="Listen"
-                    onClick={(e) => { e.stopPropagation(); speakWord(w.english); }}>
+                    onClick={(e) => { e.stopPropagation(); speakWord(w.english || ''); }}>
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                       <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
                       <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />

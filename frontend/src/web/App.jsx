@@ -33,8 +33,11 @@ function parseKVData(data) {
   const cats = data.categories || {};
   for (const [catName, catObj] of Object.entries(cats)) {
     for (const word of catObj?.words || []) {
+      // Skip corrupted words missing required properties
+      if (!word.english) continue;
       words.push({
         ...word,
+        persian: word.persian || '',
         category: catName === 'uncategorized' ? null : catName
       });
     }
@@ -194,12 +197,12 @@ export default function App() {
 
   // ── Derived: filtered words (using word.index as idx) ──
   const filteredWords = useMemo(() => {
-    let result = words.map(w => ({ word: w, idx: w.index }));
+    let result = words.filter(w => w.english).map(w => ({ word: w, idx: w.index }));
 
     if (searchQuery) {
       const q = searchQuery.toLowerCase().trim();
       result = result.filter(({ word: w }) =>
-        w.english.toLowerCase().includes(q) || w.persian.includes(q) ||
+        w.english.toLowerCase().includes(q) || w.persian?.includes(q) ||
         (w.category && w.category.toLowerCase().includes(q))
       );
     }

@@ -164,12 +164,12 @@ export default function MobileApp() {
 
   // ── Filtered words (using word.index as idx, sorted by index) ──
   const filteredWords = useMemo(() => {
-    let result = words.map(w => ({ word: w, idx: w.index }));
+    let result = words.filter(w => w.english).map(w => ({ word: w, idx: w.index }));
 
     if (searchQuery) {
       const q = searchQuery.toLowerCase().trim();
       result = result.filter(({ word: w }) =>
-        w.english.toLowerCase().includes(q) || w.persian.includes(q) ||
+        w.english.toLowerCase().includes(q) || w.persian?.includes(q) ||
         (w.category && w.category.toLowerCase().includes(q))
       );
     }
