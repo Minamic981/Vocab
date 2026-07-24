@@ -277,11 +277,6 @@ header {
   display: block;
 }
 
-.inline-add-alert.alert-success {
-  background: var(--accent-lt);
-  color: #1b5e38;
-}
-
 .inline-add-alert.alert-error {
   background: var(--danger-lt);
   color: var(--danger);
@@ -1970,6 +1965,7 @@ textarea {
   cursor: pointer;
   border: 1px solid var(--rule);
   font-size: 13px;
+  text-transform: none;
   background: var(--paper-2);
   transition: all 0.15s;
 }

@@ -592,7 +592,7 @@ export default function MobileApp() {
       )}
 
       {/* Multiple Meanings Tab */}
-      {activeTab === 'defs' && (<MultipleMeanings fetchWithRetry={fetchWithRetry} />)}
+      {activeTab === 'defs' && (<MultipleMeanings fetchWithRetry={fetchWithRetry} addToast={addToast} />)}
 
       {/* Edit Modal */}
       {editOpen && (

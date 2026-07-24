@@ -303,7 +303,6 @@ export default function App() {
           const filtered = prev.filter(w => !(w.english === en && w.isGenerating));
           return filtered.map(w => w.english === en ? { ...data.word, category: w.category } : w);
         });
-        showAlert(setAddAlert, `"${en}" already exists — Persian meaning merged!`, 'success');
         addToast(`Merged meaning into "${en}"`, 'success');
       } else {
         setWords(prev => {
@@ -312,7 +311,6 @@ export default function App() {
           const copy = [...prev]; copy[i] = data.word; return copy;
         });
         setWordcount(prev => prev + 1);
-        showAlert(setAddAlert, `"${data.word.english}" added!`, 'success');
         addToast(`Added "${data.word.english}"`, 'success');
       }
     } catch (e) {
@@ -594,7 +592,6 @@ export default function App() {
           const filtered = prev.filter(w => !(w.english === en && w.isGenerating));
           return filtered.map(w => w.english === en ? { ...data.word, category: w.category } : w);
         });
-        showAlert(setFnAddAlert, `"${en}" already exists — Persian meaning merged!`, 'success');
         addToast(`Merged meaning into "${en}"`, 'success');
       } else {
         setWords(prev => {
@@ -603,7 +600,6 @@ export default function App() {
           const copy = [...prev]; copy[i] = data.word; return copy;
         });
         setWordcount(prev => prev + 1);
-        showAlert(setFnAddAlert, `"${data.word.english}" added!`, 'success');
         addToast(`Added "${data.word.english}"`, 'success');
       }
     } catch (e) {
@@ -700,7 +696,7 @@ export default function App() {
           persistBookmarks={handlePersistBookmarks} pendingCount={pendingCount}
           addToast={addToast} moveWordsToCategory={moveWordsToCategory} />
       )}
-      {activeTab === 'defs' && <MultipleMeanings fetchWithRetry={fetchWithRetry} />}
+      {activeTab === 'defs' && <MultipleMeanings fetchWithRetry={fetchWithRetry} addToast={addToast} />}
 
       {/* ── Edit Modal ── */}
       {editOpen && (

@@ -45,8 +45,14 @@ export default function Library({
     setBookmarkFilter(next);
   };
 
-  const selectAll = () => {
-    setSelectedIndices(new Set(filteredWords.map(f => f.idx)));
+  const allSelected = filteredWords.length > 0 && filteredWords.every(f => selectedIndices.has(f.idx));
+
+  const toggleSelectAll = () => {
+    if (allSelected) {
+      setSelectedIndices(new Set());
+    } else {
+      setSelectedIndices(new Set(filteredWords.map(f => f.idx)));
+    }
   };
 
   const handleRowSelect = useCallback((idx) => {
@@ -112,7 +118,7 @@ export default function Library({
       {selectMode && (
         <div className="bulk-actions">
           <span className="bulk-count">{selectedIndices.size} selected</span>
-          <button className="btn btn-ghost btn-sm" onClick={selectAll}>Select All</button>
+          <button className="btn btn-ghost btn-sm" onClick={toggleSelectAll}>{allSelected ? 'Deselect All' : 'Select All'}</button>
           <label className="bulk-move-label">📁 Move to:</label>
           <select className="bulk-move-select" value="" onChange={e => {
             if (e.target.value) bulkMove(e.target.value === '__none__' ? null : e.target.value);
