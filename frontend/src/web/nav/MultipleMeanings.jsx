@@ -36,8 +36,6 @@ export default function MultipleMeanings({ fetchWithRetry, addToast }) {
     const MAX_RETRIES = 3;
     for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
       try {
-        if (attempt > 1) addToast(`Retrying... (${attempt}/${MAX_RETRIES})`, 'warn');
-
         const res = await fetch(`/defs/${encodeURIComponent(w)}`, { method: 'POST' });
         const text = await res.text();
         let data;

@@ -31,25 +31,22 @@ IMPORTANT: Example sentences MUST be:
 
 Respond ONLY in this exact JSON format:
 {"english":"...", "persian":"..."}
-    `
-
-SYSTEM_PROMPT_M = `
-You are a vocabulary assistant. The user gives a single English word. 
-Write ONE natural and clear English example sentence using that exact word.
-
-IMPORTANT: Example sentences MUST be:
-- Unambiguous: the meaning should be obvious from the context
-- Natural: sound like something a native speaker would say
-- Varied: each sentence should be different in structure and context
-- Sentence length: 12-20 words.
-
-Respond ONLY in this exact JSON format:
-{"english":"...", "persian":"..."}
-    `
-
+`
 
 const word = "light"
-const prompt = `
+const def_sys_prompt = `
+You are a precise bilingual English-Persian dictionary assistant.
+Your task is to return only real, distinct meanings of a word.
+Never duplicate meanings or create artificial ones just to reach a number.
+- If the word has only 2-3 real meanings, return exactly those.
+- If it has many (e.g. 'run', 'bank', 'light'), return up to 5 of the most useful/common ones.
+- All example sentences must be natural, creative, unambiguous, and clearly demonstrate the meaning.
+- Avoid sentences with ambiguous time references (like 'later', 'then') unless the context is crystal clear.
+- Persian translations must be idiomatic, natural, and fluent.
+Return clean JSON only. No extra text.
+`
+
+const def_usr_prompt = `
 Give me all distinct meanings of the English word "${word}".
 Limit to maximum 10 meanings. If the word has fewer real distinct meanings, return only those.
 Do NOT invent, repeat, or stretch meanings. Only include genuinely different senses 
@@ -87,26 +84,17 @@ async function test() {
             messages: [
                 {
                     role: 'system',
-                    content: `
-                    You are a precise bilingual English-Persian dictionary assistant.
-                    Your task is to return only real, distinct meanings of a word.
-                    Never duplicate meanings or create artificial ones just to reach a number.
-                    - If the word has only 2-3 real meanings, return exactly those.
-                    - If it has many (e.g. 'run', 'bank', 'light'), return up to 5 of the most useful/common ones.
-                    - All example sentences must be natural, creative, unambiguous, and clearly demonstrate the meaning.
-                    - Avoid sentences with ambiguous time references (like 'later', 'then') unless the context is crystal clear.
-                    - Persian translations must be idiomatic, natural, and fluent.
-                    Return clean JSON only. No extra text.
-                    `
+                    content: def_sys_prompt
                 },
                 {
                     role: 'user',
-                    content: prompt
+                    content: def_usr_prompt
                 }
             ],
             temperature: 0.3,
-            max_tokens: 500,
-            top_p: 0.9
+            max_tokens: 800,
+            top_p: 0.9,
+            reasoning_effort: 'none',
         }),
     });
 

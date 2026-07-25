@@ -100,6 +100,43 @@ function getSystemPrompt(style, custom_style) {
     return SYSTEM_PROMPTS[promptKey] || SYSTEM_PROMPTS.EN_WORD;
 }
 
+function cleanAIResponse(raw) {
+    return raw.trim().replace(/```json/g, '').replace(/```/g, '').trim();
+}
+
+function extractJSON(raw) {
+    const match = raw.match(/\{[\s\S]*\}/);
+    return match ? match[0] : raw;
+}
+
+async function callAI(payload, timeoutMs = 15000) {
+    const response = await fetch(OPENROUTER_URL, {
+        method: 'POST',
+        headers: {
+            Authorization: `Bearer ${OPEN_TOKEN}`,
+            'Content-Type': 'application/json',
+            'X-Title': 'Vocab Site',
+        },
+        body: JSON.stringify(payload),
+        signal: AbortSignal.timeout(timeoutMs),
+    });
+
+    if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    const raw = data.choices?.[0]?.message?.content;
+    if (!raw) throw new Error("AI returned empty response");
+    return raw;
+}
+
+function parseAIJson(raw) {
+    let cleaned = cleanAIResponse(raw);
+    cleaned = extractJSON(cleaned);
+    return JSON.parse(cleaned);
+}
+
 async function generate_sentence(english, persian, { is_edit = false, style = '', custom_style = '' } = {}) {
     let promptKey;
     if (is_edit) {
@@ -128,30 +165,21 @@ async function generate_sentence(english, persian, { is_edit = false, style = ''
         ],
         temperature: 0.7,
         max_tokens: 350,
+        reasoning_effort: 'none',
     };
 
-    const response = await fetch(OPENROUTER_URL, {
-        method: 'POST',
-        headers: {
-            Authorization: `Bearer ${OPEN_TOKEN}`,
-            'Content-Type': 'application/json',
-            'X-Title': 'Vocab Site',
-        },
-        body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(8000),
-    });
-
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+    let lastError;
+    for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+            const raw = await callAI(payload, 12000);
+            const result = parseAIJson(raw);
+            return [result.english, result.persian];
+        } catch (e) {
+            lastError = e;
+            if (attempt === 0) continue;
+        }
     }
-
-    const data = await response.json();
-    let raw = data.choices?.[0]?.message?.content;
-    if (!raw) throw new Error("AI returned empty response");
-    raw = raw.trim().replace(/```json/g, '').replace(/```/g, '').trim();
-    const result = JSON.parse(raw);
-
-    return [result.english, result.persian];
+    throw new Error(lastError?.message || "AI generation failed");
 }
 
 async function gen_definitions(word) {
@@ -183,7 +211,7 @@ Respond ONLY with valid JSON in this exact format — no extra text, no markdown
             {
                 role: "system",
                 content: `
-                    You are a precise bilingual English–Persian dictionary assistant.
+                    You are a precise bilingual English-Persian dictionary assistant.
                     Your task is to return only real, distinct meanings of a word.
                     Never duplicate meanings or create artificial ones just to reach a number.
                     - If the word has only 2-3 real meanings, return exactly those.
@@ -197,31 +225,23 @@ Respond ONLY with valid JSON in this exact format — no extra text, no markdown
             { role: "user", content: prompt }
         ],
         temperature: 0.3,
-        max_tokens: 500,
-        top_p: 0.9
+        max_tokens: 800,
+        top_p: 0.9,
+        reasoning_effort: 'none',
     };
 
-    const response = await fetch(OPENROUTER_URL, {
-        method: 'POST',
-        headers: {
-            Authorization: `Bearer ${OPEN_TOKEN}`,
-            'Content-Type': 'application/json',
-            'X-Title': 'Vocab Site',
-        },
-        body: JSON.stringify(payload),
-        signal: AbortSignal.timeout(8000),
-    });
-
-    if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+    let lastError;
+    for (let attempt = 0; attempt < 2; attempt++) {
+        try {
+            const raw = await callAI(payload, 20000);
+            const result = parseAIJson(raw);
+            return result;
+        } catch (e) {
+            lastError = e;
+            if (attempt === 0) continue;
+        }
     }
-
-    const data = await response.json();
-    let raw = data.choices?.[0]?.message?.content;
-    if (!raw) throw new Error("AI returned empty response");
-    raw = raw.trim().replace(/```json/g, '').replace(/```/g, '').trim();
-    const result = JSON.parse(raw);
-    return result;
+    throw new Error(lastError?.message || "AI definitions generation failed");
 }
 
 module.exports = { generate_sentence, gen_definitions };
