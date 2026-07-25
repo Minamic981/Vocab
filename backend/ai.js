@@ -34,7 +34,7 @@ Rules:
 - Use the exact word given. Do NOT replace it with synonyms.
 - Use the most common meaning.
 - Keep sentences realistic and engaging.
-- Sentence length: 12–20 words.
+- Sentence length: 12-20 words.
 - The sentence MUST clearly demonstrate the meaning. Avoid ambiguity.
 - Avoid vague time references like 'later' or 'then'.
 - Provide a natural Persian translation that is idiomatic and fluent.
@@ -127,6 +127,7 @@ async function generate_sentence(english, persian, { is_edit = false, style = ''
             { role: 'user', content: userContent }
         ],
         temperature: 0.7,
+        max_tokens: 350,
     };
 
     const response = await fetch(OPENROUTER_URL, {
@@ -177,7 +178,7 @@ Respond ONLY with valid JSON in this exact format — no extra text, no markdown
 `
 
     const payload = {
-        model: "deepseek/deepseek-v4-flash",
+        model: MODEL_NAME,
         messages: [
             {
                 role: "system",
@@ -196,7 +197,7 @@ Respond ONLY with valid JSON in this exact format — no extra text, no markdown
             { role: "user", content: prompt }
         ],
         temperature: 0.3,
-        max_tokens: 350,
+        max_tokens: 500,
         top_p: 0.9
     };
 
