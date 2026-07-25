@@ -33,30 +33,39 @@ export default function MultipleMeanings({ addToast }) {
     setEmpty(false);
     setAlert({ msg: '', type: 'error' });
 
-    try {
-      const res = await fetch(`/defs/${encodeURIComponent(w)}`, { method: 'POST' });
-      const text = await res.text();
-      let data;
-      try { data = JSON.parse(text); } catch { data = null; }
+    const MAX_RETRIES = 3;
+    for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        if (attempt > 1) addToast(`Retrying... (${attempt}/${MAX_RETRIES})`, 'warn');
 
-      if (!res.ok || !data) {
-        const msg = data?.error || text.slice(0, 200) || `Server error (${res.status})`;
-        throw new Error(msg);
-      }
+        const res = await fetch(`/defs/${encodeURIComponent(w)}`, { method: 'POST' });
+        const text = await res.text();
+        let data;
+        try { data = JSON.parse(text); } catch { data = null; }
 
-      const defs = data.definitions || [];
-      if (!defs.length) {
-        setEmpty(true);
+        if (!res.ok || !data) {
+          const msg = data?.error || text.slice(0, 200) || `Server error (${res.status})`;
+          throw new Error(msg);
+        }
+
+        const defs = data.definitions || [];
+        if (!defs.length) {
+          setEmpty(true);
+          setLoading(false);
+          return;
+        }
+
+        setResult({ mainWord: data.main_word || w, definitions: defs });
+        setLoading(false);
         return;
+      } catch (e) {
+        if (attempt === MAX_RETRIES) {
+          setAlert({ msg: 'Error: ' + e.message, type: 'error' });
+        }
       }
-
-      setResult({ mainWord: data.main_word || w, definitions: defs });
-    } catch (e) {
-      setAlert({ msg: 'Error: ' + e.message, type: 'error' });
-    } finally {
-      setLoading(false);
     }
-  }, []);
+    setLoading(false);
+  }, [addToast]);
 
   const openAddPopup = useCallback((word) => {
     setAddEn(word || '');
