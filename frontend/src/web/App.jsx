@@ -105,6 +105,7 @@ export default function App() {
 
   // ── Category modal ──
   const [catModalOpen, setCatModalOpen] = useState(false);
+  const [catEditTarget, setCatEditTarget] = useState(null);
   const [catName, setCatName] = useState('');
   const [catDesc, setCatDesc] = useState('');
   const [catAlert, setCatAlert] = useState({ msg: '', type: 'error' });
@@ -147,7 +148,7 @@ export default function App() {
   // ── Alert helper ──
   const showAlert = useCallback((setter, msg, type = 'error') => {
     setter({ msg, type });
-    setTimeout(() => setter({ msg: '', type: 'error' }), 80000);
+    setTimeout(() => setter({ msg: '', type: 'error' }), 3000);
   }, []);
 
   const isBookmarked = useCallback((english) => {
@@ -435,6 +436,22 @@ export default function App() {
     } catch (e) { addToast('Delete failed: ' + e.message, 'error'); }
   }, [categoryFilter, addToast]);
 
+  const renameCategory = useCallback(async (oldName, newName, description) => {
+    try {
+      const res = await fetchWithRetry(`/api/categories/${encodeURIComponent(oldName)}`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: newName, description })
+      });
+      const data = await res.json();
+      if (!res.ok) { showAlert(setCatAlert, data.error || 'Failed to rename category.'); return false; }
+      setCategories(prev => prev.map(c => c.name === oldName ? data.category : c));
+      setWords(prev => prev.map(w => w.category === oldName ? { ...w, category: data.category.name } : w));
+      if (categoryFilter === oldName) setCategoryFilter(data.category.name);
+      addToast(`Category renamed to "${data.category.name}"`, 'success');
+      return true;
+    } catch (e) { showAlert(setCatAlert, 'Network error: ' + e.message); return false; }
+  }, [categoryFilter, showAlert, addToast]);
+
   // ── API: Move words (by index) ──
   const moveWordsToCategory = useCallback(async (indices, categoryName) => {
     const cat = categoryName || null;
@@ -681,7 +698,7 @@ export default function App() {
           toggleBookmark={toggleBookmark}
           bulkDelete={bulkDelete} bulkMove={bulkMove} bulkBookmark={bulkBookmark}
           setCatName={setCatName} setCatDesc={setCatDesc}
-          setCatAlert={setCatAlert} setCatModalOpen={setCatModalOpen}
+          setCatAlert={setCatAlert} setCatModalOpen={setCatModalOpen} setCatEditTarget={setCatEditTarget}
           addToast={addToast}
         />
       )}
@@ -773,7 +790,7 @@ export default function App() {
       {catModalOpen && (
         <div className="modal-overlay open" onClick={e => { if (e.target === e.currentTarget) setCatModalOpen(false); }}>
           <div className="modal">
-            <div className="modal-title">Create Category</div>
+            <div className="modal-title">{catEditTarget ? 'Rename Category' : 'Create Category'}</div>
             <div className="field">
               <label>Category Name *</label>
               <input type="text" placeholder="e.g. Grammar" value={catName}
@@ -791,9 +808,14 @@ export default function App() {
               <button id="cat-modal-save" className="btn btn-primary" onClick={async () => {
                 const name = catName.trim();
                 if (!name) { showAlert(setCatAlert, 'Category name is required.'); return; }
-                const ok = await createCategory(name, catDesc.trim());
-                if (ok) setCatModalOpen(false);
-              }}>Create</button>
+                if (catEditTarget) {
+                  const ok = await renameCategory(catEditTarget, name, catDesc.trim());
+                  if (ok) setCatModalOpen(false);
+                } else {
+                  const ok = await createCategory(name, catDesc.trim());
+                  if (ok) setCatModalOpen(false);
+                }
+              }}>{catEditTarget ? 'Rename' : 'Create'}</button>
             </div>
           </div>
         </div>
@@ -801,7 +823,7 @@ export default function App() {
 
       {/* ── Floating Bottom Nav Bar ── */}
       <FloatingNav
-        words={words} categories={categories} activeTab={activeTab} setActiveTab={setActiveTab}
+        words={words} categories={categories} filteredWords={filteredWords} activeTab={activeTab} setActiveTab={setActiveTab}
         searchQuery={searchQuery} setSearchQuery={setSearchQuery}
         bookmarkFilter={bookmarkFilter} setBookmarkFilter={setBookmarkFilter}
         categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter}
@@ -822,9 +844,9 @@ export default function App() {
         fnAddAdvancedOpen={fnAddAdvancedOpen} setFnAddAdvancedOpen={setFnAddAdvancedOpen}
         fnAddAlert={fnAddAlert}
         fnAddWord={fnAddWord}
-        bulkDelete={bulkDelete} bulkMove={bulkMove}
+        bulkDelete={bulkDelete} bulkMove={bulkMove} bulkBookmark={bulkBookmark}
         setCatName={setCatName} setCatDesc={setCatDesc}
-        setCatAlert={setCatAlert} setCatModalOpen={setCatModalOpen}
+        setCatAlert={setCatAlert} setCatModalOpen={setCatModalOpen} setCatEditTarget={setCatEditTarget}
       />
 
       {/* Show floating bar button (when hidden) */}

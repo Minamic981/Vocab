@@ -639,6 +639,36 @@ app.delete("/api/categories/:name", async (req, res) => {
     res.json({ message: `Category "${name}" deleted. ${movedWords.length} word(s) moved to uncategorized.` });
 });
 
+app.put("/api/categories/:name", async (req, res) => {
+    const oldName = decodeURIComponent(req.params.name);
+    const { name: rawNewName, description: rawDesc } = req.body;
+    const newName = rawNewName?.trim();
+    const description = rawDesc?.trim();
+
+    if (!newName) return res.status(400).json({ error: "New category name is required." });
+    if (newName.toLowerCase() === UNCATEGORIZED_KEY) return res.status(400).json({ error: `"${newName}" is a reserved name.` });
+
+    const data = await loadData();
+    const foundKey = Object.keys(data.categories).find(k => k !== UNCATEGORIZED_KEY && k.toLowerCase() === oldName.toLowerCase());
+
+    if (!foundKey) return res.status(404).json({ error: `Category "${oldName}" not found.` });
+
+    if (foundKey.toLowerCase() !== newName.toLowerCase() &&
+        Object.keys(data.categories).some(k => k.toLowerCase() === newName.toLowerCase())) {
+        return res.status(409).json({ error: `Category "${newName}" already exists.` });
+    }
+
+    const catData = data.categories[foundKey];
+    delete data.categories[foundKey];
+    data.categories[newName] = { description: description ?? catData.description, words: catData.words };
+
+    if (!(await saveData(data))) {
+        return res.status(500).json({ error: "Failed to save category to Cloudflare KV." });
+    }
+
+    res.json({ message: `Category renamed to "${newName}".`, category: { name: newName, description: data.categories[newName].description } });
+});
+
 // ── Definitions API ──────────────────────────────────────────────────────────
 
 app.post("/defs/:word", async (req, res) => {

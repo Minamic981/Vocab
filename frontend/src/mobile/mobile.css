@@ -674,6 +674,92 @@ textarea {
   border-color: var(--accent);
 }
 
+/* ── Bottom nav select bar ──────────────────────────────── */
+.mbn-select-bar {
+  display: none;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--danger-lt);
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  margin: 0 12px 8px;
+}
+
+.mbn-select-bar.open {
+  display: flex;
+}
+
+.mbn-select-count {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--danger);
+  flex-shrink: 0;
+}
+
+.mbn-select-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+
+.mbn-select-move-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--ink-light);
+}
+
+.mbn-bulk-move-select {
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  padding: 4px 8px;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius);
+  background: #fff;
+  color: var(--ink);
+  cursor: pointer;
+  outline: none;
+  max-width: 120px;
+}
+
+.mbn-select-btn {
+  font-size: 14px;
+  padding: 4px 8px;
+  border: none;
+  border-radius: var(--radius);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.mbn-select-bookmark {
+  background: var(--accent);
+  color: #fff;
+}
+
+.mbn-select-unbookmark {
+  background: var(--warn);
+  color: #fff;
+}
+
+.mbn-select-all {
+  background: var(--ink-light);
+  color: #fff;
+  font-size: 11px;
+}
+
+.mbn-select-delete {
+  background: var(--danger);
+  color: #fff;
+}
+
+.mbn-select-cancel {
+  background: transparent;
+  border: 1px solid var(--rule);
+  color: var(--ink-light);
+}
+
 /* ── Selection checkbox ──────────────────────────────────── */
 .word-checkbox {
   width: 18px;

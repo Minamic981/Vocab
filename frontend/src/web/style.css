@@ -1711,6 +1711,21 @@ textarea {
     color: #fff;
   }
 
+  .fn-select-bookmark {
+    background: var(--accent);
+    color: #fff;
+  }
+
+  .fn-select-unbookmark {
+    background: var(--warn);
+    color: #fff;
+  }
+
+  .fn-select-all {
+    background: var(--ink-light);
+    color: #fff;
+  }
+
   .fn-select-cancel {
     background: transparent;
     border: 1px solid var(--rule);

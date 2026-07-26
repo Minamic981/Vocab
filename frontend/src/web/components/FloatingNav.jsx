@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 
 export default function FloatingNav({
-  words, categories, activeTab, setActiveTab,
+  words, categories, filteredWords, activeTab, setActiveTab,
   searchQuery, setSearchQuery,
   bookmarkFilter, setBookmarkFilter,
   categoryFilter, setCategoryFilter,
@@ -21,11 +21,17 @@ export default function FloatingNav({
   fnAddAdvancedOpen, setFnAddAdvancedOpen,
   fnAddAlert,
   fnAddWord,
-  bulkDelete, bulkMove,
-  setCatName, setCatDesc, setCatAlert, setCatModalOpen,
+  bulkDelete, bulkMove, bulkBookmark,
+  setCatName, setCatDesc, setCatAlert, setCatModalOpen, setCatEditTarget,
 }) {
   const fnSearchRef = useRef(null);
   const fnAddEnRef = useRef(null);
+
+  const allSelected = filteredWords.length > 0 && filteredWords.every(f => selectedIndices.has(f.idx));
+  const toggleSelectAll = () => {
+    if (allSelected) setSelectedIndices(new Set());
+    else setSelectedIndices(new Set(filteredWords.map(f => f.idx)));
+  };
 
   return (
     <>
@@ -111,6 +117,7 @@ export default function FloatingNav({
                 ))}
                 <button className="fn-cat-popup-item fn-cat-popup-create"
                   onClick={() => {
+                    setCatEditTarget(null);
                     setCatName(''); setCatDesc(''); setCatAlert({ msg: '', type: 'error' });
                     setCatModalOpen(true); setFnCatOpen(false);
                   }}>
@@ -125,6 +132,7 @@ export default function FloatingNav({
             <div className="fn-select-bar open">
               <span className="fn-select-count">{selectedIndices.size} selected</span>
               <div className="fn-select-actions">
+                <button className="fn-select-btn fn-select-all" onClick={toggleSelectAll}>{allSelected ? 'Deselect All' : 'Select All'}</button>
                 <label className="fn-select-move-label">📁 Move to:</label>
                 <select className="fn-bulk-move-select" value="" onChange={e => {
                   if (e.target.value) bulkMove(e.target.value === '__none__' ? null : e.target.value);
@@ -133,6 +141,8 @@ export default function FloatingNav({
                   <option value="__none__">No Category</option>
                   {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
                 </select>
+                <button className="fn-select-btn fn-select-bookmark" onClick={() => bulkBookmark(true)}>🔖 Bookmark</button>
+                <button className="fn-select-btn fn-select-unbookmark" onClick={() => bulkBookmark(false)}>🔖 Unbookmark</button>
                 <button className="fn-select-btn fn-select-delete" onClick={bulkDelete}>Delete</button>
                 <button className="fn-select-btn fn-select-cancel" onClick={() => { setSelectMode(false); setSelectedIndices(new Set()); }}>Cancel</button>
               </div>
@@ -167,6 +177,7 @@ export default function FloatingNav({
                       onClick={() => setCategoryFilter(c.name)}>{c.name}</button>
                   ))}
                   <button className="fn-chip" onClick={() => {
+                    setCatEditTarget(null);
                     setCatName(''); setCatDesc(''); setCatAlert({ msg: '', type: 'error' });
                     setCatModalOpen(true);
                   }}>+ Create</button>

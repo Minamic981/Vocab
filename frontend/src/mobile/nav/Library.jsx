@@ -96,7 +96,7 @@ export default function Library({
   openEdit, deleteWord, deleteCategory, openPopup,
   toggleBookmark,
   bulkDelete, bulkMove, bulkBookmark,
-  setCatName, setCatDesc, setCatAlert, setCatModalOpen,
+  setCatName, setCatDesc, setCatAlert, setCatModalOpen, setCatEditTarget,
   isBookmarked,
   addToast,
   revealAll
@@ -193,9 +193,20 @@ export default function Library({
           {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
         </select>
         {categoryFilter && categoryFilter !== '' && (
-          <button className="btn btn-danger btn-sm" onClick={() => deleteCategory(categoryFilter)}>Delete</button>
+          <>
+            <button className="btn btn-ghost btn-sm" onClick={() => {
+              const cat = categories.find(c => c.name === categoryFilter);
+              setCatEditTarget(categoryFilter);
+              setCatName(categoryFilter);
+              setCatDesc(cat?.description || '');
+              setCatAlert({ msg: '', type: 'error' });
+              setCatModalOpen(true);
+            }}>Rename</button>
+            <button className="btn btn-danger btn-sm" onClick={() => deleteCategory(categoryFilter)}>Delete</button>
+          </>
         )}
         <button className="btn btn-ghost btn-sm" onClick={() => {
+          setCatEditTarget(null);
           setCatName(''); setCatDesc(''); setCatAlert({ msg: '', type: 'error' });
           setCatModalOpen(true);
         }}>+ Create</button>

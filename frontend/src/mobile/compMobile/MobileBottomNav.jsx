@@ -3,12 +3,20 @@ import React from 'react';
 export default function MobileBottomNav({
   activeTab, setActiveTab,
   categoryFilter, setCategoryFilter,
-  categories,
+  categories, filteredWords,
   mbnVisible, setMbnVisible,
   mbnNavOpen, setMbnNavOpen,
   mbnCatOpen, setMbnCatOpen,
   scrollToTop, setScrollToTop,
+  selectMode, setSelectMode, selectedIndices, setSelectedIndices,
+  bulkDelete, bulkMove, bulkBookmark,
 }) {
+  const allSelected = filteredWords.length > 0 && filteredWords.every(f => selectedIndices.has(f.idx));
+  const toggleSelectAll = () => {
+    if (allSelected) setSelectedIndices(new Set());
+    else setSelectedIndices(new Set(filteredWords.map(f => f.idx)));
+  };
+
   return (
     <>
       {mbnVisible ? (
@@ -63,6 +71,28 @@ export default function MobileBottomNav({
                 <button key={c.name} className={`mbn-cat-chip ${categoryFilter === c.name ? 'active' : ''}`}
                   onClick={() => { setCategoryFilter(c.name); setMbnCatOpen(false); }}>{c.name}</button>
               ))}
+            </div>
+          )}
+
+          {/* Select mode bar */}
+          {selectMode && (
+            <div className="mbn-select-bar open">
+              <span className="mbn-select-count">{selectedIndices.size} selected</span>
+              <div className="mbn-select-actions">
+                <button className="mbn-select-btn mbn-select-all" onClick={toggleSelectAll}>{allSelected ? '✕ All' : '☑ All'}</button>
+                <label className="mbn-select-move-label">📁</label>
+                <select className="mbn-bulk-move-select" value="" onChange={e => {
+                  if (e.target.value) bulkMove(e.target.value === '__none__' ? null : e.target.value);
+                }}>
+                  <option value="">—</option>
+                  <option value="__none__">No Category</option>
+                  {categories.map(c => <option key={c.name} value={c.name}>{c.name}</option>)}
+                </select>
+                <button className="mbn-select-btn mbn-select-bookmark" onClick={() => bulkBookmark(true)}>🔖</button>
+                <button className="mbn-select-btn mbn-select-unbookmark" onClick={() => bulkBookmark(false)}>🔖</button>
+                <button className="mbn-select-btn mbn-select-delete" onClick={bulkDelete}>🗑</button>
+                <button className="mbn-select-btn mbn-select-cancel" onClick={() => { setSelectMode(false); setSelectedIndices(new Set()); }}>✕</button>
+              </div>
             </div>
           )}
         </>
