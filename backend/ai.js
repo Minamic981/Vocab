@@ -55,7 +55,7 @@ and write ONE natural English sentence using that exact English word.
 Rules:
 - Use the exact English translation. Do not replace it with synonyms.
 - Keep the sentence realistic.
-- Sentence length: 12–20 words.
+- Sentence length: 12-20 words.
 - The sentence must clearly convey the meaning without ambiguity.
 - Avoid unclear time references like 'later' or 'then'.
 - Persian output must be a natural translation.
@@ -80,7 +80,7 @@ Rules:
   * Use different supporting words around the key word
   * Do NOT just change one word or one letter
 - Make it realistic.
-- Sentence length: 12–20 words.
+- Sentence length: 12-20 words.
 - The meaning must remain clear.
 - Persian must be a natural translation.
 
@@ -95,9 +95,10 @@ Respond ONLY in this exact JSON format:
 };
 
 function getSystemPrompt(style, custom_style) {
-    if (custom_style) return custom_style;
     const promptKey = style?.toUpperCase().replace(/-/g, '_');
-    return SYSTEM_PROMPTS[promptKey] || SYSTEM_PROMPTS.EN_WORD;
+    const basePrompt = SYSTEM_PROMPTS[promptKey] || SYSTEM_PROMPTS.EN_WORD;
+    if (custom_style) return basePrompt + `\n\nIMPORTANT: Apply this writing style: ${custom_style}`;
+    return basePrompt;
 }
 
 function cleanAIResponse(raw) {
